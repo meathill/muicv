@@ -21,6 +21,7 @@ import type {
   DefaultTemplateChangedPayload,
   FeedbackCommentOutcome,
   FeedbackRateOutcome,
+  MediaDeleteAllResult,
   MuirouterLinkResult,
   PhotoHistoryResult,
   PhotoUploadInput,
@@ -127,6 +128,9 @@ const api: RendererApi = {
       ipcRenderer.invoke('preview:uploadPhoto', input) as Promise<PhotoUploadResult>,
     listPhotos: (limit?: number) => ipcRenderer.invoke('preview:listPhotos', limit) as Promise<PhotoHistoryResult>,
     create: (input: CreatePreviewInput) => ipcRenderer.invoke('preview:create', input) as Promise<CreatePreviewResult>,
+  },
+  media: {
+    deleteAll: () => ipcRenderer.invoke('media:deleteAll') as Promise<MediaDeleteAllResult>,
   },
   skills: {
     catalog: () => ipcRenderer.invoke('skills:catalog') as ReturnType<RendererApi['skills']['catalog']>,

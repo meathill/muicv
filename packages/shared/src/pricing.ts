@@ -155,8 +155,9 @@ export const LLM_DISPLAY_META: Record<
     /**
      * 是否原生支持音频 input（Xiaomi MiMo OpenAI 兼容规范的 `input_audio` content part，
      * 文档：https://platform.xiaomimimo.com/static/docs/usage-guide/multimodal-understanding/audio-understanding.md）。
-     * 为 true 时桌面 app 录音不再先做 Whisper STT，wav 以 `data:audio/wav;base64,...` 形式
-     * 直接塞进 messages，让模型自己听音频——做模拟语音面试时省 STT 一次往返。
+     * 为 true 时桌面 app 录音不再先做 Whisper STT，wav 以裸 base64 形式塞进
+     * Agents SDK 的 `audio` content block，再由 SDK 转成上游 `input_audio`，
+     * 让模型自己听音频——做模拟语音面试时省 STT 一次往返。
      * 目前只有 mimo-v2.5（全模态版）勾上；未知 / false 维持现状走 STT 老路径。
      */
     supportsAudioInput?: boolean;

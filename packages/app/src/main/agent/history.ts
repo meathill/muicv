@@ -59,6 +59,42 @@ export function getModelBudget(_modelId: string): number {
 export type ImageReader = (ref: AttachmentRef) => Promise<string | null>;
 export type AudioReader = (ref: AttachmentRef) => Promise<string | null>;
 
+/** mimo-v2.5 / mimo-v2-omni 原生听音支持的容器格式，对应上游 input_audio.format。 */
+type AudioFormat = 'wav' | 'mp3' | 'flac' | 'm4a' | 'ogg';
+
+const AUDIO_FORMAT_BY_MIME: Record<string, AudioFormat> = {
+  'audio/wav': 'wav',
+  'audio/x-wav': 'wav',
+  'audio/wave': 'wav',
+  'audio/mpeg': 'mp3',
+  'audio/mp3': 'mp3',
+  'audio/flac': 'flac',
+  'audio/mp4': 'm4a',
+  'audio/m4a': 'm4a',
+  'audio/x-m4a': 'm4a',
+  'audio/ogg': 'ogg',
+};
+
+const AUDIO_FORMAT_BY_EXT: Record<string, AudioFormat> = {
+  wav: 'wav',
+  mp3: 'mp3',
+  flac: 'flac',
+  m4a: 'm4a',
+  ogg: 'ogg',
+};
+
+/**
+ * 从附件元数据推导上游需要的 audio format：优先 mimeType，回退文件扩展名，
+ * 都认不出来时兜底 'wav'（录音附件恒为 wav，是最安全的默认值）。
+ * 不能硬编码 'wav'——用户可直接上传 mp3/flac/m4a/ogg，错标格式会让模型解码失败。
+ */
+function resolveAudioFormat(ref: AttachmentRef): AudioFormat {
+  const byMime = AUDIO_FORMAT_BY_MIME[ref.mimeType?.toLowerCase() ?? ''];
+  if (byMime) return byMime;
+  const ext = (ref.name || ref.path).split('.').pop()?.toLowerCase() ?? '';
+  return AUDIO_FORMAT_BY_EXT[ext] ?? 'wav';
+}
+
 export type BuildAgentInputResult = {
   items: AgentInputItem[];
   /** 被丢弃的历史 ChatMessage 条数（不含插入的 ellipsis 提示）。 */
@@ -162,33 +198,33 @@ async function toItem(msg: ChatMessage, imageReader?: ImageReader, audioReader?:
       if (url) imageUrls.push(url);
     }
   }
-  const audioUrls: string[] = [];
+  const audioBlocks: { data: string; format: AudioFormat }[] = [];
   if (audioReader) {
     for (const audio of audios) {
-      const url = await audioReader(audio);
-      if (url) audioUrls.push(url);
+      const data = await audioReader(audio);
+      if (data) audioBlocks.push({ data, format: resolveAudioFormat(audio) });
     }
   }
-  if (imageUrls.length === 0 && audioUrls.length === 0) {
+  if (imageUrls.length === 0 && audioBlocks.length === 0) {
     // 全部读失败：留下文本（footer 里仍说"已附图/音频"，至少模型知道用户上传过——
     // 比偷换成空 array 更诚实，且老对话被搬迁过工作目录时不至于完全断流）
     return { role: 'user', content: text };
   }
 
-  // 注：input_audio block 用的是 Xiaomi MiMo 的单 `data` 字段格式（含 data URL 前缀），
-  // 跟 OpenAI 原生 `{ data, format }` 二字段写法不同。SDK 不强校验 content shape，
-  // 经 `as AgentInputItem` 透传，loggingFetch → muicv API → 小米上游一路 JSON 透传。
+  // 注：这里用 Agents SDK 的内部 audio content block。chat_completions converter
+  // 会把它转换成上游 API 的 `{ type: 'input_audio', input_audio: { data, format } }`。
+  // 直接塞 `type: 'input_audio'` 会在 SDK 层报 Unknown content。
   type UserContentBlock =
     | { type: 'input_text'; text: string }
     | { type: 'input_image'; image: string }
-    | { type: 'input_audio'; input_audio: { data: string } };
+    | { type: 'audio'; audio: string; format: AudioFormat };
   const content: UserContentBlock[] = [];
   if (text) content.push({ type: 'input_text', text });
   for (const url of imageUrls) {
     content.push({ type: 'input_image', image: url });
   }
-  for (const url of audioUrls) {
-    content.push({ type: 'input_audio', input_audio: { data: url } });
+  for (const block of audioBlocks) {
+    content.push({ type: 'audio', audio: block.data, format: block.format });
   }
   return { role: 'user', content } as AgentInputItem;
 }

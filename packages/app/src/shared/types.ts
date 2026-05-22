@@ -255,6 +255,12 @@ export type AttachmentRef = {
   mimeType: string;
   size: number;
   textPath?: string;
+  /** 云端公开 URL。上传失败或未登录时为空，本地 path 仍然可用。 */
+  url?: string;
+  /** R2 object key，用于排查 / 后续清理；用户侧通常只展示 url。 */
+  r2Key?: string;
+  /** mediaUpload 审计行 id。旧记录或审计写入失败时可能为空。 */
+  mediaId?: number;
 };
 
 export type AttachmentSaveFailureReason =
@@ -585,6 +591,10 @@ export type PhotoHistoryItem = {
 
 export type PhotoHistoryResult = { ok: true; items: PhotoHistoryItem[] } | PreviewApiFailure;
 
+export type MediaDeleteAllResult =
+  | { ok: true; deletedMedia: number; deletedPhotos: number; deletedObjects: number }
+  | PreviewApiFailure;
+
 export type CreatePreviewInput = {
   /** TemplateResumeData JSON（双语结构化） */
   resumeJson: unknown;
@@ -761,6 +771,10 @@ export type RendererApi = {
      * 第一次有人在预览页点「下载 PDF」时由 owner 扣 PDF_RENDER_COST 解锁公开下载。
      */
     create(input: CreatePreviewInput): Promise<CreatePreviewResult>;
+  };
+  media: {
+    /** 删除当前账号所有云端媒体文件（通用附件 + 旧证件照），不删除本地 inbox/。 */
+    deleteAll(): Promise<MediaDeleteAllResult>;
   };
   skills: {
     /** 公开 skill 目录：内置 skill、第三方官方来源、未来可安装扩展。 */

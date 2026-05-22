@@ -4,6 +4,12 @@
 import { isThinkingModeModel } from './reasoning-capture.ts';
 
 /**
+ * OpenAI Agents SDK 的 turn 指一次模型响应或工具往返。简历工作流经常会连续读写
+ * 多个素材文件、预览、渲染，30 轮偏紧；仍保留上限，防止工具循环失控。
+ */
+export const AGENT_MAX_TURNS = 80;
+
+/**
  * 普通模型 30s（GPT 经 muirouter 冷启动通常 8-15s，留 2 倍 headroom）；
  * thinking-mode 模型给 120s——multi-turn 深度推理时模型可能 30+s 才出第一个 chunk，
  * SDK 在 reasoning 阶段不一定 yield event，所以哪怕底层 SSE 在流也可能看起来"空转"。
@@ -28,6 +34,10 @@ export function isContextLengthError(msg: string): boolean {
     lower.includes('context length') ||
     lower.includes('too many tokens')
   );
+}
+
+export function isMaxTurnsError(msg: string): boolean {
+  return /max turns\s*\(\d+\)\s*exceeded/i.test(msg);
 }
 
 /**

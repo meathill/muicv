@@ -47,33 +47,25 @@ description: 管理本地 Markdown 简历素材库。帮用户在工作目录下
 
 不要追问次要字段。用户提供多少就用多少。
 
-### 3. 创建目录骨架
+### 3. 创建素材骨架
 
-生成以下文件（用 Write 工具，路径都**相对工作目录根**——不要嵌 `muicv/` 或 `.claude/muicv/` 子目录）：
+生成以下核心文件（用 Write 工具，路径都**相对工作目录根**——不要嵌 `muicv/` 或 `.claude/muicv/` 子目录）：
+
+> 注意：不要为了占位写 `.gitkeep`。桌面端 `write_file` 会自动创建父目录；Claude Code / Codex 等环境也应在真正有产物时再创建对应目录。`.gitkeep` 会制造大量无意义工具调用，不利于稳定性。
 
 ```
 <工作目录>/
 ├── profile.md            # 用第 2 步收集的信息填 frontmatter + summary 占位
-├── experience/
-│   └── .gitkeep
-├── projects/
-│   └── .gitkeep
+├── experience/           # 工作经历素材；有内容时写 experience/<company-slug>-<year>.md
+├── projects/             # 项目素材；有内容时写 projects/<slug>.md
 ├── targets/              # muicv-jobs:fetch 或手工粘贴的 JD
-│   └── .gitkeep
 ├── versions/             # muicv-generate 产出的简历版本（.md + 同名 .pdf）
-│   └── .gitkeep
 ├── applications/         # muicv-jobs:apply 产出的 cover letter
-│   └── .gitkeep
 ├── critiques/            # muicv-critique 产出的评审报告
-│   └── .gitkeep
 ├── debriefs/             # muicv-debrief 产出的真实面试复盘
-│   └── .gitkeep
 ├── interviews/           # muicv-interview 产出的模拟面试题目反馈（👍/👎 题库迭代）
-│   └── .gitkeep
 ├── audio-reviews/        # muicv-audio-review 产出的录音复盘（STT 转写 + 分析）
-│   └── .gitkeep
 ├── match/                # muicv-jobs:match 产出的匹配度报告
-│   └── .gitkeep
 ├── education.md          # 带占位说明的骨架
 ├── skills.md             # 带占位说明的骨架
 └── achievements.md       # 带占位说明的骨架
@@ -96,8 +88,6 @@ links: []
 
 <2~4 句自我介绍，后续可以随时让 muicv-core 帮你补。>
 ```
-
-`experience/.gitkeep`、`projects/.gitkeep`、`targets/.gitkeep`、`versions/.gitkeep`：空文件。
 
 `education.md` / `skills.md` / `achievements.md` 骨架示例：
 

@@ -204,12 +204,13 @@
   没这三件套发 dmg 上线后用户会"按了说话没声音"且控制台无报错。
 - **MiMo ASR（小米开源中文 ASR）已调研排除**：8B PyTorch + CUDA-only，桌面端不可行；
   中文方言识别强但只能做云端 provider（待用户量上来再考虑接，P2）。
-- **mimo-v2.5 跳过 STT，wav 直传 input_audio**（commit 3c1df06，2026-05）：Xiaomi MiMo
+- **mimo-v2.5 跳过 STT，wav 直传音频**（commit 3c1df06，2026-05）：Xiaomi MiMo
   支持音频理解。检测到 `supportsAudioInput(defaultModel)`（目前只 `mimo-*` 全模态版命
-  中）时，录音不走 transcribe，而是 `data:audio/wav;base64,...` 灌进 chat_completions 的
-  `input_audio` content part，**少一轮 Whisper 往返 + 模型直接听原音**。注意 Xiaomi 的
-  字段格式是单 `data` 字段（含 `data:` 前缀），跟 OpenAI 双字段（`data` + `format`）写
-  法不同；history.ts 的 `audioReader` 分支按 200 token/条估算预算。`AttachmentKind` 加
+  中）时，录音不走 transcribe，而是把 wav 裸 base64 灌进 Agents SDK 的
+  `{ type: 'audio', audio, format: 'wav' }` content block；SDK 的 chat_completions
+  converter 再转成上游 `input_audio`。**少一轮 Whisper 往返 + 模型直接听原音**。
+  注意不要直接构造 `{ type: 'input_audio' }`，Agents SDK 会报 `Unknown content`。
+  history.ts 的 `audioReader` 分支按 200 token/条估算预算。`AttachmentKind` 加
   `'audio'`，main/attachments classifier 接受 mp3/wav/flac/m4a/ogg。
   - 验证脚本：`scripts/verify-mimo-audio.ts`，`MIMO_API_KEY` 在手时一行 curl 验上游格
     式，避免悄悄回归。

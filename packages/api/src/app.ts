@@ -39,6 +39,7 @@ import {
   handleResumeSync,
 } from './routes/resume-sync.ts';
 import { handleTranscribe } from './routes/transcribe.ts';
+import { handleDeleteAllMedia, handleMediaHistory, handleUploadMedia } from './routes/upload-media.ts';
 import { handlePhotoHistory, handleUploadPhoto } from './routes/upload-photo.ts';
 import { handleWaitlist } from './routes/waitlist.ts';
 
@@ -69,8 +70,8 @@ app.use(
       if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return origin;
       return null;
     },
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['content-type'],
+    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['content-type', 'authorization'],
     maxAge: 600,
   }),
 );
@@ -91,6 +92,9 @@ app.get('/', (c) =>
       'POST /preview/:token/template',
       'POST /upload/photo（multipart/form-data，字段 file）',
       'GET /upload/photo/history?limit=20（列当前用户最近上传）',
+      'POST /upload/media（multipart/form-data，字段 file）',
+      'GET /upload/media/history（列当前用户最近附件上传）',
+      'DELETE /upload/media（删除当前用户所有云端媒体）',
       'POST /jobs/fetch',
       'POST /audio/transcribe（multipart/form-data，字段 file）',
       'POST /waitlist',
@@ -193,6 +197,9 @@ app.post('/preview/:token/template', requireApiKey, handlePreviewTemplate);
  */
 app.post('/upload/photo', requireApiKey, handleUploadPhoto);
 app.get('/upload/photo/history', requireApiKey, handlePhotoHistory);
+app.post('/upload/media', requireApiKey, handleUploadMedia);
+app.get('/upload/media/history', requireApiKey, handleMediaHistory);
+app.delete('/upload/media', requireApiKey, handleDeleteAllMedia);
 
 /**
  * POST /jobs/fetch —— 用 Browser Rendering 抓 JD 转 markdown。详见 src/routes/jobs.ts。

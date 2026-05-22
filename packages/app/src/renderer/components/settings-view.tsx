@@ -4,6 +4,7 @@ import {
   CpuIcon,
   GearSixIcon,
   PuzzlePieceIcon,
+  TrashIcon,
   WarningIcon,
 } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
@@ -178,8 +179,72 @@ function GeneralSettings({
 
       <PlanCard plan={session.plan} balance={session.balance} onRefresh={onRefreshSession} />
       <ThemeCard />
+      <MediaStorageCard />
       <SettingsFooter version={version} updaterStatus={updaterStatus} setUpdaterStatus={setUpdaterStatus} />
     </>
+  );
+}
+
+function MediaStorageCard() {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleDelete() {
+    if (!confirming) {
+      setConfirming(true);
+      setMessage('再点一次确认删除');
+      return;
+    }
+
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await window.muicv.media.deleteAll();
+      if (!result.ok) {
+        // 失败回到初始态：否则按钮停在“确认删除”，下一次点击会跳过二次确认直接删
+        setConfirming(false);
+        setMessage(result.message);
+        return;
+      }
+      setConfirming(false);
+      setMessage(`已删除 ${result.deletedObjects} 个云端文件`);
+    } catch (err) {
+      setConfirming(false);
+      setMessage(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-xl border-2 border-ink bg-paper p-4 shadow-[0_3px_0_0_var(--color-ink)]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-yellow-deep">云端文件</p>
+          <h2 className="mt-1 text-[16px] font-extrabold text-ink">媒体存储</h2>
+          <p className="mt-1 max-w-xl text-[12px] leading-5 text-mute">
+            删除当前账号上传到 R2 的图片、PDF、录音、文档和证件照；本机 inbox 与本地对话记录保留。
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void handleDelete()}
+          disabled={busy}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-[12px] font-extrabold transition disabled:cursor-default disabled:opacity-60 ${
+            confirming
+              ? 'border-tongue bg-tongue text-cream shadow-[0_2px_0_0_var(--color-ink)]'
+              : 'border-rule-strong bg-cream text-tongue hover:bg-tongue/10'
+          }`}
+        >
+          <TrashIcon size={14} weight="bold" />
+          <span>{busy ? '删除中' : confirming ? '确认删除' : '删除云端媒体'}</span>
+        </button>
+      </div>
+      {message && (
+        <p className={`mt-3 text-[12px] ${confirming ? 'font-semibold text-tongue' : 'text-mute'}`}>{message}</p>
+      )}
+    </section>
   );
 }
 

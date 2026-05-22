@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildAgentInput, IMAGE_TOKEN_BUDGET } from '../src/main/agent/history.ts';
-import { readImageAsDataUrl } from '../src/main/agent/multimodal.ts';
+import { readAudioAsBase64, readImageAsDataUrl } from '../src/main/agent/multimodal.ts';
 import type { AttachmentRef, ChatMessage } from '../src/shared/types.ts';
 
 const WORKSPACE = '/tmp/fake-workspace';
@@ -49,7 +49,7 @@ function audioRef(overrides: Partial<AttachmentRef> = {}): AttachmentRef {
 const fakeAudioReader = (mapping: Record<string, string | null> = {}) => {
   return async (ref: AttachmentRef): Promise<string | null> => {
     if (ref.path in mapping) return mapping[ref.path];
-    return `data:${ref.mimeType};base64,AUDIO_${ref.path}`;
+    return `AUDIO_${ref.path}`;
   };
 };
 
@@ -184,14 +184,44 @@ test('buildAgentInput audioReader 缺省 → 不内联音频，content 仍是纯
   assert.equal(u.content, '听这个');
 });
 
-test('buildAgentInput audioReader 提供 → 内联成 input_audio block（Xiaomi 单 data 字段）', async () => {
+test('buildAgentInput audioReader 提供 → 内联成 SDK audio block', async () => {
   const r = await buildAgentInput([msg('user', '请听', [audioRef()])], { audioReader: fakeAudioReader() });
-  const u = r.items[0] as { role: string; content: Array<{ type: string; input_audio?: { data: string } }> };
+  const u = r.items[0] as { role: string; content: Array<{ type: string; audio?: string; format?: string }> };
   assert.ok(Array.isArray(u.content));
-  // 至少应有一个 text + 一个 input_audio block
-  const audioBlock = u.content.find((c) => c.type === 'input_audio');
-  assert.ok(audioBlock, '应该出现 input_audio block');
-  assert.match(audioBlock?.input_audio?.data ?? '', /^data:audio\/wav;base64,/);
+  // 至少应有一个 text + 一个 audio block；Agents SDK 会再转成上游 input_audio。
+  const audioBlock = u.content.find((c) => c.type === 'audio');
+  assert.ok(audioBlock, '应该出现 SDK audio block');
+  assert.match(audioBlock?.audio ?? '', /^AUDIO_/);
+  assert.equal(audioBlock?.format, 'wav');
+});
+
+test('buildAgentInput 上传非 wav 音频 → format 按 mimeType 推导（不再硬编码 wav）', async () => {
+  const cases: Array<{ mimeType: string; name: string; expected: string }> = [
+    { mimeType: 'audio/mpeg', name: 'clip.mp3', expected: 'mp3' },
+    { mimeType: 'audio/mp4', name: 'clip.m4a', expected: 'm4a' },
+    { mimeType: 'audio/flac', name: 'clip.flac', expected: 'flac' },
+    { mimeType: 'audio/ogg', name: 'clip.ogg', expected: 'ogg' },
+  ];
+  for (const { mimeType, name, expected } of cases) {
+    const ref = audioRef({ path: `inbox/${name}`, name, mimeType });
+    const r = await buildAgentInput([msg('user', '请听', [ref])], { audioReader: fakeAudioReader() });
+    const u = r.items[0] as { content: Array<{ type: string; format?: string }> };
+    const audioBlock = u.content.find((c) => c.type === 'audio');
+    assert.equal(audioBlock?.format, expected, `${mimeType} 应推导成 ${expected}`);
+  }
+});
+
+test('buildAgentInput mimeType 缺失 → 回退文件扩展名推导 format', async () => {
+  const ref = audioRef({ path: 'inbox/clip.flac', name: 'clip.flac', mimeType: '' });
+  const r = await buildAgentInput([msg('user', '请听', [ref])], { audioReader: fakeAudioReader() });
+  const u = r.items[0] as { content: Array<{ type: string; format?: string }> };
+  const audioBlock = u.content.find((c) => c.type === 'audio');
+  assert.equal(audioBlock?.format, 'flac');
+});
+
+test('readAudioAsBase64 正常路径 → 裸 base64（不带 data URL 前缀）', async () => {
+  const url = await readAudioAsBase64(WORKSPACE, audioRef(), async () => Buffer.from('WAV'));
+  assert.equal(url, 'V0FW');
 });
 
 test('buildAgentInput audioReader 全部读失败 → 退化为纯字符串（不留空 array）', async () => {

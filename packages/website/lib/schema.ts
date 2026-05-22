@@ -304,3 +304,21 @@ export const photoUpload = sqliteTable('photoUpload', {
   originalName: text('originalName'),
   createdAt: integer('createdAt').notNull(),
 });
+
+/**
+ * 聊天附件通用媒体上传审计（packages/api/POST /upload/media 写入）。
+ * 对话正文不上传；这里只记录已经落到 R2 的图片 / PDF / 音频 / 文档 URL。
+ */
+export const mediaUpload = sqliteTable('mediaUpload', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('userId')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  r2Key: text('r2Key').notNull().unique(),
+  url: text('url').notNull(),
+  kind: text('kind').notNull(),
+  contentType: text('contentType').notNull(),
+  sizeBytes: integer('sizeBytes').notNull(),
+  originalName: text('originalName'),
+  createdAt: integer('createdAt').notNull(),
+});

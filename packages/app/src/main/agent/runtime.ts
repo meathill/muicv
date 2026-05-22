@@ -13,12 +13,14 @@ import { buildSyncTools } from './api-tools-sync.ts';
 import { buildApiTools } from './api-tools.ts';
 import { buildAgentInput, getModelBudget } from './history.ts';
 import { configureLlmForRun } from './llm-config.ts';
-import { readAudioAsDataUrl, readImageAsDataUrl } from './multimodal.ts';
+import { readAudioAsBase64, readImageAsDataUrl } from './multimodal.ts';
 import { resetReasoningState, setReasoningDeltaListener } from './reasoning-capture.ts';
 import { buildSystemPrompt } from './skills.ts';
 import {
+  AGENT_MAX_TURNS,
   cryptoRandomShort,
   isContextLengthError,
+  isMaxTurnsError,
   isReasoningContentError,
   streamIdleTimeoutMsForModel,
 } from './stream-helpers.ts';
@@ -113,7 +115,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   // 让 footer 的"调 upload_photo"提示引导 agent 走 R2 上传路径。
   const supportsVision = modelSupportsVision(config.defaultModel);
   // Audio 直通：mimo-v2.5（全模态版）原生听音频，把 wav 以 Xiaomi 规范的
-  // `data:audio/wav;base64,...` 灌进 input_audio content block，跳过 Whisper STT。
+  // wav 裸 base64 灌进 Agents SDK audio content block，跳过 Whisper STT。
   // 其它 model 维持现状（chatbox 麦克风走 recordAndTranscribe → 转写文本）。
   const supportsAudio = modelSupportsAudioInput(config.defaultModel);
 
@@ -128,7 +130,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   } = await buildAgentInput(messages, {
     budgetTokens: getModelBudget(config.defaultModel),
     ...(supportsVision ? { imageReader: (ref) => readImageAsDataUrl(workspaceDir, ref) } : {}),
-    ...(supportsAudio ? { audioReader: (ref) => readAudioAsDataUrl(workspaceDir, ref) } : {}),
+    ...(supportsAudio ? { audioReader: (ref) => readAudioAsBase64(workspaceDir, ref) } : {}),
   });
   if (droppedCount > 0) {
     console.log(
@@ -164,7 +166,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     const stream = await run(agent, input, {
       stream: true,
       signal: abort.signal,
-      maxTurns: 30,
+      maxTurns: AGENT_MAX_TURNS,
     });
 
     for await (const event of stream) {
@@ -247,6 +249,8 @@ export async function runAgent(opts: RunOpts): Promise<void> {
       const rawMsg = causeMsg ? `${baseMsg} (cause: ${causeMsg})` : baseMsg;
       const msg = isContextLengthError(rawMsg)
         ? '本次对话历史超出模型上下文长度。已尝试自动裁剪，仍超出的话请新开一个对话。'
+        : isMaxTurnsError(rawMsg)
+          ? `本次任务的 agent 工具调用超过 ${AGENT_MAX_TURNS} 轮，已自动停止。建议把任务拆小一点，或检查是否有某个工具在反复失败重试。`
         : isReasoningContentError(error, rawMsg)
           ? `当前模型「${config.defaultModel}」是带 thinking mode 的推理模型，多轮工具调用时要求回传 reasoning_content 字段，与 OpenAI Agents SDK 不兼容。请到设置切换到 GPT 系列（gpt-5.4）。`
           : rawMsg;

@@ -46,6 +46,34 @@ export type PhotoHistoryItem = {
 
 export type PhotoHistoryResult = { ok: true; items: PhotoHistoryItem[] } | ApiFailure;
 
+export type MediaUploadInput = {
+  name: string;
+  mimeType: string;
+  bytes: Uint8Array;
+};
+
+export type MediaUploadOk = {
+  ok: true;
+  id: number | null;
+  url: string;
+  key: string;
+  kind: 'image' | 'pdf' | 'audio' | 'document' | 'text';
+  contentType: string;
+  size: number;
+  createdAt: number;
+};
+
+export type MediaUploadResult = MediaUploadOk | ApiFailure;
+
+export type MediaDeleteAllOk = {
+  ok: true;
+  deletedMedia: number;
+  deletedPhotos: number;
+  deletedObjects: number;
+};
+
+export type MediaDeleteAllResult = MediaDeleteAllOk | ApiFailure;
+
 export type CreatePreviewInput = {
   resumeJson: TemplateResumeData;
   /** t1-classic / t2-minimal / t3-sidebar / t4-tech / t5-timeline / t6-academic */
@@ -81,6 +109,10 @@ function requireKey(config: AppConfig): ApiFailure | null {
 
 function authHeaders(config: AppConfig): Record<string, string> {
   return { authorization: `Bearer ${config.muicvApiKey ?? ''}` };
+}
+
+function apiUrl(config: AppConfig, path: string): string {
+  return `${config.muicvApiBase.replace(/\/$/, '')}${path}`;
 }
 
 function networkFailure(err: unknown): ApiFailure {
@@ -126,7 +158,7 @@ export async function uploadPhoto(config: AppConfig, input: PhotoUploadInput): P
 
   let res: Response;
   try {
-    res = await fetch(`${config.muicvApiBase}/upload/photo`, {
+    res = await fetch(apiUrl(config, '/upload/photo'), {
       method: 'POST',
       headers: authHeaders(config),
       body: fd,
@@ -142,7 +174,7 @@ export async function uploadPhoto(config: AppConfig, input: PhotoUploadInput): P
 export async function listPhotos(config: AppConfig, limit = 20): Promise<PhotoHistoryResult> {
   const denied = requireKey(config);
   if (denied) return denied;
-  const url = new URL(`${config.muicvApiBase}/upload/photo/history`);
+  const url = new URL(apiUrl(config, '/upload/photo/history'));
   url.searchParams.set('limit', String(limit));
   let res: Response;
   try {
@@ -155,12 +187,57 @@ export async function listPhotos(config: AppConfig, limit = 20): Promise<PhotoHi
   return { ok: true, items: body.items ?? [] };
 }
 
+export async function uploadMedia(config: AppConfig, input: MediaUploadInput): Promise<MediaUploadResult> {
+  const denied = requireKey(config);
+  if (denied) return denied;
+
+  const fd = new FormData();
+  const arrayBuffer = input.bytes.buffer.slice(
+    input.bytes.byteOffset,
+    input.bytes.byteOffset + input.bytes.byteLength,
+  ) as ArrayBuffer;
+  const blob = new Blob([arrayBuffer], { type: input.mimeType });
+  fd.append('file', blob, input.name);
+
+  let res: Response;
+  try {
+    res = await fetch(apiUrl(config, '/upload/media'), {
+      method: 'POST',
+      headers: authHeaders(config),
+      body: fd,
+    });
+  } catch (err) {
+    return networkFailure(err);
+  }
+  if (!res.ok) return nonOkFailure(res);
+  const body = (await res.json()) as MediaUploadOk;
+  return { ...body, ok: true };
+}
+
+export async function deleteAllMedia(config: AppConfig): Promise<MediaDeleteAllResult> {
+  const denied = requireKey(config);
+  if (denied) return denied;
+
+  let res: Response;
+  try {
+    res = await fetch(apiUrl(config, '/upload/media'), {
+      method: 'DELETE',
+      headers: authHeaders(config),
+    });
+  } catch (err) {
+    return networkFailure(err);
+  }
+  if (!res.ok) return nonOkFailure(res);
+  const body = (await res.json()) as MediaDeleteAllOk;
+  return { ...body, ok: true };
+}
+
 export async function createPreview(config: AppConfig, input: CreatePreviewInput): Promise<CreatePreviewResult> {
   const denied = requireKey(config);
   if (denied) return denied;
   let res: Response;
   try {
-    res = await fetch(`${config.muicvApiBase}/preview`, {
+    res = await fetch(apiUrl(config, '/preview'), {
       method: 'POST',
       headers: { ...authHeaders(config), 'content-type': 'application/json' },
       body: JSON.stringify({

@@ -4,7 +4,7 @@ import { join, resolve, sep } from 'node:path';
 import { BrowserWindow, Menu, ipcMain, shell } from 'electron';
 
 import type { AttachmentSaveResult, AttachmentUploadInput } from '../../shared/types.ts';
-import { saveAttachment } from '../attachments.ts';
+import { saveAttachmentWithRemote } from '../attachment-remote.ts';
 import { type WriteResult, writeFileToWorkspace } from '../fs-edit.ts';
 import { getConfig } from '../store.ts';
 
@@ -142,7 +142,7 @@ export function registerFsAttachmentsIpc(): void {
       if (!profileId || profileId !== cfg.activeProfileId) {
         return { ok: false, reason: 'profile-mismatch', message: '请先选中职业档案' };
       }
-      return saveAttachment(cfg.workspaceDir, file);
+      return saveAttachmentWithRemote(cfg, file);
     },
   );
 }

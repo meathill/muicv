@@ -5,13 +5,15 @@ import {
   type CreatePreviewInput,
   type CreatePreviewResult,
   createPreview,
+  deleteAllMedia,
+  type MediaDeleteAllResult,
   type PhotoHistoryResult,
   type PhotoUploadInput,
   type PhotoUploadResult,
   listPhotos,
   uploadPhoto,
 } from '../api-preview.ts';
-import { saveAttachment } from '../attachments.ts';
+import { saveAttachmentWithRemote } from '../attachment-remote.ts';
 import {
   MicPermissionDenied,
   RecordingCancelled,
@@ -111,7 +113,7 @@ export function registerAudioPreviewIpc(): void {
       const arrBuffer = wav.buffer.slice(wav.byteOffset, wav.byteOffset + wav.byteLength) as ArrayBuffer;
       const seconds = Math.max(1, Math.round(payload.durationMs / 1000));
       const name = `voice-${seconds}s.wav`;
-      return saveAttachment(cfg.workspaceDir, { name, mimeType: 'audio/wav', bytes: arrBuffer });
+      return saveAttachmentWithRemote(cfg, { name, mimeType: 'audio/wav', bytes: arrBuffer });
     },
   );
 
@@ -143,5 +145,9 @@ export function registerAudioPreviewIpc(): void {
 
   ipcMain.handle('preview:create', async (_e, input: CreatePreviewInput): Promise<CreatePreviewResult> => {
     return createPreview(getConfig(), input);
+  });
+
+  ipcMain.handle('media:deleteAll', async (): Promise<MediaDeleteAllResult> => {
+    return deleteAllMedia(getConfig());
   });
 }
