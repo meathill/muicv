@@ -39,6 +39,7 @@ const fontDisplay = Fraunces({
   style: ['normal', 'italic'],
   variable: '--font-display',
   display: 'swap',
+  preload: false,
 });
 
 // Body sans: Nunito，圆润 friendly，配柯基卡通气质
@@ -46,6 +47,7 @@ const fontSans = Nunito({
   subsets: ['latin'],
   variable: '--font-sans',
   display: 'swap',
+  preload: false,
 });
 
 // Mono：仅终端 / 代码块用
@@ -54,6 +56,7 @@ const fontMono = JetBrains_Mono({
   weight: ['400', '500', '600'],
   variable: '--font-mono',
   display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {

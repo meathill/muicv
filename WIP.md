@@ -16,6 +16,7 @@
 - [x] 首页 Header / hero CTA 不再为了登录态提前加载 auth client。
 - [x] Hero showcase 从 React hydration 路径移出，首屏先走静态 SSR。
 - [x] 构建后对比首页 first-load JS 与首屏 HTML。
+- [x] 关闭非关键字体 / Header logo 的首页 preload，减少移动端首屏关键资源竞争。
 - [ ] 部署后复跑 PSI mobile / desktop（当前 PSI API 返回 daily quota exceeded；本地 production 已完成 LCP 采样）。
 
 ### 插队任务：连接授权页简化

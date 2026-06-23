@@ -39,7 +39,7 @@ export function Header({ locale = 'zh', brand = DEFAULT_BRAND, nav = DEFAULT_NAV
           href={localizedHref(locale, '/')}
           className="flex min-w-0 items-center gap-2 text-ink no-underline md:gap-2.5"
         >
-          <CorgiMascot className="h-8 w-8" priority />
+          <CorgiMascot className="h-8 w-8" />
           <span className="shrink-0 whitespace-nowrap text-[16px] font-bold md:text-[18px]">{brand.name}</span>
           <span className="hidden font-mono text-[12px] font-semibold uppercase tracking-wider text-mute sm:inline">
             {brand.by}
