@@ -2,7 +2,6 @@ import { type Locale, localizedHref } from '../_i18n/locale';
 import type { Dictionary } from '../_i18n/types';
 import { zh } from '../_i18n/zh';
 import { ArrowUpRight, Highlight, PawIcon, Sparkle } from '../_icons';
-import { AccountLink } from './account-link';
 import { HeroShowcase } from './hero-showcase';
 
 export function Hero({ dict = zh, locale = 'zh' }: { dict?: Dictionary; locale?: Locale } = {}) {
@@ -50,11 +49,12 @@ export function Hero({ dict = zh, locale = 'zh' }: { dict?: Dictionary; locale?:
               {t.ctaSteps}
               <ArrowUpRight />
             </a>
-            <AccountLink
-              signedInLabel={t.accountSignedIn}
-              signedOutLabel={t.accountSignedOut}
+            <a
+              href={localizedHref(locale, '/sign-up')}
               className="ml-1 inline-flex items-center gap-1.5 text-[14px] font-semibold text-ink-soft underline decoration-rule decoration-2 underline-offset-4 transition hover:text-ink hover:decoration-yellow"
-            />
+            >
+              {t.accountSignedOut}
+            </a>
           </div>
 
           <p className="mt-10 max-w-lg border-t-2 border-dotted border-rule-strong pt-5 text-[14px] leading-[1.7] text-mute">

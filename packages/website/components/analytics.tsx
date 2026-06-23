@@ -16,7 +16,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
  * 站点分析 + Web Vitals 上报。
  *
  * - 没有 NEXT_PUBLIC_GA_ID 时本组件返回 null，dev / preview 默认安静。
- * - gtag.js 用 next/script afterInteractive 异步加载，不阻塞首屏。
+ * - gtag.js 等页面 load 后再加载，不和首页 LCP 抢网络 / 主线程。
  * - useReportWebVitals 把 LCP / CLS / INP / FCP / TTFB / FID 全部按 GA4 推荐方式发到
  *   "web-vitals" 事件，弥补 muicv.com 当前流量太小、CrUX 长期 No Data 的问题。
  */
@@ -27,7 +27,7 @@ export function Analytics() {
 
   return (
     <>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
       <Script id="gtag-init" strategy="afterInteractive">
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}

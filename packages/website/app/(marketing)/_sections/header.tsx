@@ -1,9 +1,5 @@
-'use client';
-
 import { CorgiMascot } from '@/components/corgi-mascot';
-import { useSession } from '@/lib/auth-client';
 
-import { ThemeToggle } from '../../_theme/theme-toggle';
 import { type Locale, localizedHref } from '../_i18n/locale';
 import type { Dictionary } from '../_i18n/types';
 import { ArrowUpRight } from '../_icons';
@@ -33,16 +29,9 @@ type HeaderProps = {
 };
 
 /**
- * 站点公共顶部导航。
- *
- * 走客户端 useSession 读登录态，让营销页 HTML 全部走 ISR 缓存（不再 force-dynamic）。
- * 初始 SSR / 水合前先按未登录态渲染，已登录用户会有一次短切换——可接受。
- * 这条权衡是把 mobile LCP 从 force-dynamic 的 TTFB 中拉回来的核心。
+ * 营销页顶部导航保持纯 SSR。登录态交给 `/dashboard` 自己处理，避免首页首屏提前加载 auth client。
  */
 export function Header({ locale = 'zh', brand = DEFAULT_BRAND, nav = DEFAULT_NAV, altHref }: HeaderProps = {}) {
-  const { data: session, isPending } = useSession();
-  const isLoggedIn = !isPending && !!session?.user;
-
   return (
     <header className="sticky top-0 z-30 border-b border-rule bg-cream/85 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 md:gap-4 md:px-8">
@@ -67,34 +56,19 @@ export function Header({ locale = 'zh', brand = DEFAULT_BRAND, nav = DEFAULT_NAV
             </a>
           ))}
           {altHref ? <LangSwitch locale={locale} altHref={altHref} /> : null}
-          <span className="ml-2 hidden md:inline-flex">
-            <ThemeToggle />
-          </span>
-          {isLoggedIn ? (
-            <a
-              href={localizedHref(locale, '/dashboard')}
-              className="press ml-1 inline-flex items-center gap-1.5 rounded-md border-2 border-ink bg-yellow px-3 py-1.5 font-semibold whitespace-nowrap text-ink md:px-3.5"
-            >
-              {nav.console}
-              <ArrowUpRight />
-            </a>
-          ) : (
-            <>
-              <a
-                href={localizedHref(locale, '/sign-in')}
-                className="hidden rounded px-2.5 py-1.5 transition hover:bg-fluff hover:text-ink sm:inline-block"
-              >
-                {nav.signIn}
-              </a>
-              <a
-                href={localizedHref(locale, '/sign-up')}
-                className="press ml-1 inline-flex items-center gap-1.5 rounded-md border-2 border-ink bg-yellow px-3 py-1.5 font-semibold whitespace-nowrap text-ink md:px-3.5"
-              >
-                {nav.signUp}
-                <ArrowUpRight />
-              </a>
-            </>
-          )}
+          <a
+            href={localizedHref(locale, '/sign-in')}
+            className="hidden rounded px-2.5 py-1.5 transition hover:bg-fluff hover:text-ink sm:inline-block"
+          >
+            {nav.signIn}
+          </a>
+          <a
+            href={localizedHref(locale, '/dashboard')}
+            className="press ml-1 inline-flex items-center gap-1.5 rounded-md border-2 border-ink bg-yellow px-3 py-1.5 font-semibold whitespace-nowrap text-ink md:px-3.5"
+          >
+            {nav.console}
+            <ArrowUpRight />
+          </a>
         </nav>
       </div>
     </header>

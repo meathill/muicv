@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { HomePage } from './_home';
 import { getDictionary } from './_i18n/dict';
 
-// 首页改 ISR：HTML 由 OpenNext R2 缓存兜底，登录态走 <Header>/<AccountLink> 客户端
-// useSession 在水合后补齐。1 小时刷一次足够营销文案的更新节奏。
+// 首页走 ISR：HTML 由 OpenNext R2 缓存兜底，首屏不再为登录态加载 auth client。
+// 登录态交给 /dashboard 入口处理。1 小时刷一次足够营销文案的更新节奏。
 export const revalidate = 3600;
 
 const SITE_URL = 'https://muicv.com';

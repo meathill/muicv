@@ -118,12 +118,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-CN" className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable}`}>
       <head>
-        {/* 提前打 TCP/TLS：GA 走 googletagmanager.com，证件照走 i.muicv.com（R2 CDN）。
-            crossOrigin 给字体 / fetch 那种 CORS 流量用，preconnect 只是为了热身连接。 */}
-        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        <link rel="preconnect" href="https://i.muicv.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://i.muicv.com" />
         <ThemeInitScript />
         <JsonLd data={ORGANIZATION_SCHEMA} />
         <JsonLd data={WEBSITE_SCHEMA} />

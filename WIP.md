@@ -8,6 +8,16 @@
 > 用户 API Key / Skill 目录 + Payload CMS / 腾讯校招内容落地）的决策和约束已沉淀进
 > [DEV_NOTE.md](./DEV_NOTE.md)，不再保留勾选列表。
 
+### 插队任务：Issue 11 首页移动端 LCP
+
+目标：降低 `muicv.com/` 首页移动端 LCP / Speed Index，并减少首屏未使用 JavaScript。
+
+- [x] 确认移动端 LCP 候选元素与首页首屏 JS 来源。
+- [x] 首页 Header / hero CTA 不再为了登录态提前加载 auth client。
+- [x] Hero showcase 从 React hydration 路径移出，首屏先走静态 SSR。
+- [x] 构建后对比首页 first-load JS 与首屏 HTML。
+- [ ] 部署后复跑 PSI mobile / desktop（当前 PSI API 返回 daily quota exceeded；本地 production 已完成 LCP 采样）。
+
 ### 插队任务：连接授权页简化
 
 目标：把浏览器授权页从“解释 API key / dashboard / callback”改成普通用户能立刻理解的“确认连接并回到桌面端继续”。
