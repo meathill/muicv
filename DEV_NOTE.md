@@ -2,7 +2,7 @@
 
 长期开发知识沉淀。记录决策依据、踩坑、框架/基建知识，避免日后重复。
 
-最后更新：2026-05-17
+最后更新：2026-07-01
 
 ---
 
@@ -79,8 +79,50 @@
 - **fallback OG 必须是 ASCII**：兜底图用 `fontFamily: 'sans-serif'`、只渲染 `MuiCV` / `AI Job Search Platform` 这种 ASCII 文字，**绝不能塞 CJK**——一旦走兜底就意味着没字体可用，再渲染中文会再次抛错。
 - **markdown heading 层级**：CMS 文章用 `##` 起算章节，页面外壳已经有 h1（post.title）。`markdown.tsx` 里 `new Marked()` 自定义 renderer 把 heading depth `Math.max(depth, 2)` 兜底到 h2，防止 markdown 出第二个 h1 / h1→h3 跳级。**不要做 +1 bump**——会把 `##` 推到 h3，反而制造 h1→h3 跳级。
 - **HTTP 安全 headers 在 `next.config.ts` 的 `async headers()`**：OpenNext 透传到 Cloudflare Worker 响应。设了 HSTS / nosniff / Referrer / Permissions / X-XSS=0。**没设 CSP**——SSR + GA + 多源动态 OG，CSP 容易把自己锁出去，等专门文档再加。
-- **GA4 + Web Vitals 上报**：客户端 `<Analytics>` 组件用 `next/script strategy="afterInteractive"` 异步加载 gtag；`useReportWebVitals` 把 TTFB / FCP / LCP / CLS / INP 作为自定义 event 发到 GA4。`anonymize_ip: true`。生产没有 CrUX 数据时，RUM 替代。
+- **GA4 + Web Vitals 上报**：客户端 `<Analytics>` 组件用 `next/script strategy="lazyOnload"`（首页 LCP 优化后从 `afterInteractive` 改成等 `load` 事件后再拉，避免和首屏抢网络/主线程）加载 gtag；`useReportWebVitals` 把 TTFB / FCP / LCP / CLS / INP 作为自定义 event 发到 GA4。`anonymize_ip: true`。生产没有 CrUX 数据时，RUM 替代。
 - **GSC / Bing 验证 token 走 env**：root layout `metadata.verification.google` / `other.msvalidate.01` 读 `NEXT_PUBLIC_GSC_VERIFICATION` / `NEXT_PUBLIC_BING_VERIFICATION`，没设就跳过。预留位置，不强制现在做。
+
+### 首页移动端 LCP / Speed Index 二次优化（Issue #11，2026-07-01）
+
+> 第一轮（commit `5f8ac66` / `9e86147`）已经把 hydration 挡首屏的根因解决：Header
+> 不再等 `useSession`、hero-showcase 改静态 SSR、字体/GA/preconnect 延后。这轮是
+> 部署一周后复测发现 Speed Index 仍偏高，顺藤摸瓜找到的两个后续问题。
+
+- **PSI API 配额是 0，不是限流**：`curl https://www.googleapis.com/pagespeedonline/v5/runPagespeed...`
+  直接返回 `quota_limit_value: "0"`——这个项目从一开始就没有配额，重试没有意义。
+  **替代方案**：本地 `npx lighthouse <url> --chrome-flags="--headless=new --no-sandbox"`
+  （mobile 默认预设）+ `--preset=desktop`（desktop），Lighthouse 引擎和 PSI 是同一套，
+  结果口径一致。注意：跑测的机器到目标站点的网络延迟会直接影响 FCP/LCP/TTI 这类
+  时间型指标（曾观测到同一页面 desktop FCP 在 1.2s~1.6s 之间波动），但 unused-JS /
+  文件体积这类字节型指标不受影响，更可信。当地网络条件不确定时，本地数据仅作方向性
+  参考，最终结论建议用 https://pagespeed.web.dev/ 手动跑一次交叉验证。
+- **favicon 不要拿 base64-PNG 包 SVG，也不要用远超展示尺寸的原图当 icon.png**：
+  `app/icon.svg`（874 KB）解开后是 SVG 壳包了一张 948×613 的 base64 PNG；
+  `app/icon.png`（491 KB）是同一张图直接合成到 1024×1024 画布。`metadata.icons`
+  在 `layout.tsx` 把同一个 URL 写了 3 遍（`icon` 数组 2 条 + `shortcut` 1 条），
+  Lighthouse 网络瀑布图能看到浏览器真的把 `/icon.svg` 拉了 3 次、每次 660 KB
+  ——这是本轮 Speed Index / TTI 偏高的主因（mobile Speed Index 5.2s → 4.2s，
+  TTI 6.9s → 3.4s，mobile score 93 → 95）。**根因在生成脚本**
+  [scripts/update-mui-logo-assets.ts](scripts/update-mui-logo-assets.ts)：
+  `writeSvgIcons()` 之前直接把未缩放的原图塞进 base64，`writeIconPngs()` 网页端和
+  electron 端共用同一张 1024 高清图。已修：网页端图标单独出一份缩小版（SVG 内嵌图
+  缩到 200px 宽、PNG 画布缩到 256×256），electron 端（多分辨率图标生成需要高清源图）
+  保持不变。**这个脚本是手动运行的一次性工具**（硬编码个人 `~/Downloads` 路径），
+  以后重新生成品牌资产（Phase 16 姆伊品牌形象重制会用到）时会自动产出正确尺寸，
+  不会重蹈覆辙。
+- **i18n 词典（`_i18n/zh.tsx` / `en.tsx`）不要塞 JSX**：`FaqItem.a` 字段类型是
+  `ReactNode`，词典里直接写 `<ul>/<strong>/<a>`——**类型设计上不好**（词典本该是纯
+  可序列化数据），但**不是性能问题**：曾怀疑这会导致整份词典被 Turbopack 打进客户端
+  bundle，用 `git worktree` 对比重构前后两版 `next build` 的
+  `page_client-reference-manifest.js` 验证后证伪——两版都只有 `analytics.tsx` 一个
+  真实 client 组件，词典内容在任何构建产物里都搜不到。Lighthouse 报告里那个看起来像
+  "zh 词典" 的 `~zh` 命名 chunk，实际内容是 Next.js 自己的 `getAssetToken` /
+  `getDeploymentId` 内部代码——**chunk 名带 "zh" 纯属 Turbopack 内容哈希巧合，与
+  `_i18n/zh.tsx` 无关**。已经把 FAQ 手风琴的 JSX 内容搬到就近的
+  `_sections/faq-items.tsx`（按 locale 拆分，`_home.tsx` 的 `faqPageSchema` 和
+  `faq.tsx` 的渲染共用同一份数据），作为类型卫生改进保留，但不再当作性能修复的理由。
+  真正的 unused-JS 大头是 Next.js 框架自身 chunk 和 GA `gtag.js`（162 KB，42% 未用），
+  后者出于保留 RUM/Web Vitals 上报能力的考虑暂不进一步延迟加载。
 
 ## Cloudflare Browser Rendering（packages/api）
 
@@ -147,6 +189,26 @@
   也保持 ≥ 26.8.2。参见 [pnpm/pnpm#10601](https://github.com/pnpm/pnpm/issues/10601)。
   **不要走 `node-linker=hoisted` 绕**——它只把根 node_modules 扁平化，不解决 workspace
   子包的 transitive，治标不治本。
+- **Node 26 下装不上 Electron 二进制 → `Error: Electron uninstall`**：electron 的
+  postinstall（`install.js` 用 `extract-zip`/yauzl）在 Node 26 解压会**静默中途失败**——
+  进程 exit 0，但 `dist/` 只解出 ~236K 半成品 `Electron.app`（无 `Frameworks/`、无
+  `dist/version`、不写 `path.txt`），于是 electron-vite 的 `getElectronPath()` 读不到
+  path.txt → `pnpm run dev` 崩在 `Error: Electron uninstall`。zip 本身是好的（缓存
+  `~/Library/Caches/electron/<hash>/electron-v<ver>-darwin-arm64.zip` 大小正常、checksum
+  对），`ditto` 能完整解出 268M，所以是 Node 26 与 electron 自带 JS 解压器不兼容，**不是
+  网络 / pnpm 配置问题**（`ignore-scripts` 未开、electron 已在根 `pnpm.onlyBuiltDependencies`）。
+  **别反复 `pnpm rebuild electron` / `node install.js`（同样残缺）**，用 macOS 原生补齐
+  （替换 `<ver>`）：
+  ```bash
+  ELE="node_modules/.pnpm/electron@<ver>/node_modules/electron"
+  ZIP=$(find ~/Library/Caches/electron -name "electron-v<ver>-darwin-arm64.zip")
+  rm -rf "$ELE/dist" "$ELE/path.txt"; mkdir -p "$ELE/dist"
+  ditto -x -k "$ZIP" "$ELE/dist"
+  printf '%s' 'Electron.app/Contents/MacOS/Electron' > "$ELE/path.txt"
+  ```
+  验证 `cat $ELE/path.txt` + `ls $ELE/dist/Electron.app/Contents/Frameworks/`。升 electron
+  版本后第一次 `pnpm install` 大概率复现。另：`dev` 脚本只在 packages/app（根目录没有），
+  要 `pnpm --filter @muicv/app run dev` 或 `cd packages/app && pnpm run dev`。
 
 ## packages/app UI 架构（IDE 三栏 + 多 profile）
 
