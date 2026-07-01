@@ -5,6 +5,7 @@ import { getDictionary, type Locale } from './_i18n/dict';
 import { faqPageSchema } from './_schema';
 import { DesktopApp } from './_sections/desktop-app';
 import { FaqAndArticles } from './_sections/faq';
+import { FAQ_ITEMS } from './_sections/faq-items';
 import { KeyFeatures } from './_sections/features';
 import { Footer } from './_sections/footer';
 import { Header } from './_sections/header';
@@ -20,7 +21,7 @@ export async function HomePage({ locale }: { locale: Locale }) {
 
   return (
     <div className="relative">
-      <JsonLd data={faqPageSchema(dict.faq.items, locale)} />
+      <JsonLd data={faqPageSchema(FAQ_ITEMS[locale], locale)} />
       <Header locale={locale} brand={dict.brand} nav={dict.nav} altHref={altHref} />
       <Hero dict={dict} locale={locale} />
       <KeyFeatures dict={dict} />

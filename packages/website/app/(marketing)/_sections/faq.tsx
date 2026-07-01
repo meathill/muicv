@@ -5,6 +5,7 @@ import { type Locale, localizedHref } from '../_i18n/locale';
 import type { Dictionary } from '../_i18n/types';
 import { zh } from '../_i18n/zh';
 import { ArrowUpRight, Highlight } from '../_icons';
+import { FAQ_ITEMS } from './faq-items';
 
 type FaqAndArticlesProps = {
   recentPosts: ContentPost[];
@@ -14,6 +15,7 @@ type FaqAndArticlesProps = {
 
 export function FaqAndArticles({ recentPosts, dict = zh, locale = 'zh' }: FaqAndArticlesProps) {
   const t = dict.faq;
+  const items = FAQ_ITEMS[locale];
   return (
     <section className="border-b border-rule">
       <div className="mx-auto grid max-w-6xl gap-12 px-5 py-20 md:px-8 md:py-24 lg:grid-cols-12 lg:gap-16">
@@ -26,7 +28,7 @@ export function FaqAndArticles({ recentPosts, dict = zh, locale = 'zh' }: FaqAnd
           </h2>
 
           <div className="mt-10 space-y-3">
-            {t.items.map((item, idx) => (
+            {items.map((item, idx) => (
               <details
                 key={item.q}
                 className="group rounded-lg border-2 border-rule-strong bg-cream transition-colors hover:border-corgi"

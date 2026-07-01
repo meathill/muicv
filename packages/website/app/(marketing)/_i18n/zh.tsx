@@ -1,8 +1,7 @@
 import type { Dictionary } from './types';
 
 // 中文词典：现有营销站文案原样抽出。改文案改这里。
-const faqLink =
-  'font-semibold text-yellow-deep underline decoration-corgi decoration-2 underline-offset-4 hover:decoration-yellow';
+// FAQ 手风琴问答（含 JSX）不放在这里，见 _sections/faq-items.tsx 的注释。
 
 export const zh: Dictionary = {
   brand: { name: 'Mui简历', by: 'by Mui 🐾' },
@@ -185,106 +184,6 @@ export const zh: Dictionary = {
     titleA: '想问的',
     titleHighlight: '大概率',
     titleEnd: '在这里。',
-    items: [
-      {
-        q: '我的简历数据存在哪？谁能看到？',
-        a: (
-          <>
-            全部存在你自己的电脑上——以纯 Markdown 文件的形式，由你完全掌握。要不要备份、要不要分享给别人，都由你决定。
-            我们的服务器只在你主动调用导出 PDF / 抓取岗位等功能时短暂经手数据，处理完即丢弃，不留存任何简历内容。
-          </>
-        ),
-        text: '全部存在你自己的电脑上——以纯 Markdown 文件的形式，由你完全掌握。要不要备份、要不要分享给别人都由你决定。我们的服务器只在你主动调用导出 PDF / 抓取岗位等功能时短暂经手数据，处理完即丢弃，不留存任何简历内容。',
-      },
-      {
-        q: '怎么收费？',
-        a: (
-          <>
-            统一 token 钱包：
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>
-                <strong>注册一次性赠送 10,000 tokens</strong>，永不过期，用完为止
-              </li>
-              <li>
-                <strong>订阅</strong>：Pro / Max 月付或年付，按周期自动续 token；年付一次发整年用量，约 17% 折扣
-              </li>
-              <li>
-                <strong>补充包</strong>：一次性买 10K / 35K / 130K tokens，随用随买
-              </li>
-              <li>
-                <strong>BYOK</strong>：在控制台绑你自己的 API 地址和 key，LLM 走你余额；PDF / JD 仍按 muicv tokens 扣
-              </li>
-            </ul>
-            云端服务（导出 PDF、寻找岗位等）按 token 扣费。具体价格请看{' '}
-            <a href="/pricing" className={faqLink}>
-              定价页
-            </a>
-            。
-          </>
-        ),
-        text: '统一 token 钱包：注册一次性赠送 10,000 tokens，永不过期；订阅 Pro / Max 月付或年付，按周期自动续 token，年付约 17% 折扣；补充包一次性买 10K / 35K / 130K tokens；BYOK 可绑自己的 API key 让 LLM 走你余额。云端服务（导出 PDF、寻找岗位等）按 token 扣费，具体看定价页。',
-      },
-      {
-        q: '什么是 BYOK？',
-        a: (
-          <>
-            BYOK = Bring Your Own Key，自带 LLM 余额。绑定之后，所有 AI 调用走你自己的余额， 我们不再消耗平台
-            token——适合已经有 LLM 服务订阅、希望统一成本管理的用户。
-          </>
-        ),
-        text: 'BYOK = Bring Your Own Key，自带 LLM 余额。绑定之后所有 AI 调用走你自己的余额，我们不再消耗平台 token——适合已经有 LLM 服务订阅、希望统一成本管理的用户。',
-      },
-      {
-        q: '桌面 app 什么时候发布？',
-        a: (
-          <>
-            <strong>已经上线</strong>，macOS / Windows / Linux 全平台可用。 去{' '}
-            <a href="/download" className={faqLink}>
-              下载页
-            </a>{' '}
-            获取最新版本。 已经在用 AI agent（Claude Code / Codex / Cursor 等）的用户也可以通过 skill
-            套件直接接入，二选一即可。
-          </>
-        ),
-        text: '已经上线，macOS / Windows / Linux 全平台可用，去下载页获取最新版本。已经在用 AI agent（Claude Code / Codex / Cursor 等）的用户也可以通过 skill 套件直接接入，二选一即可。',
-      },
-      {
-        q: '支持英文 / 双语简历吗？',
-        a: <>支持。素材是中文，简历就是中文；目标岗位是英文，生成的简历会按英文风格写； 中英对照模板已在规划中。</>,
-        text: '支持。素材是中文，简历就是中文；目标岗位是英文，生成的简历会按英文风格写；中英对照模板已在规划中。',
-      },
-      {
-        q: '会自动投递到 LinkedIn / Boss 直聘吗？',
-        a: (
-          <>
-            不会。我们只帮你抓岗位、生成针对性简历、写求职信、整理 checklist——
-            真正的“按提交按钮”由你手动完成。这是有意为之，避免账号风险和 ToS 违规。
-          </>
-        ),
-        text: '不会。我们只帮你抓岗位、生成针对性简历、写求职信、整理 checklist——真正的“按提交按钮”由你手动完成。这是有意为之，避免账号风险和 ToS 违规。',
-      },
-      {
-        q: 'MuiCV 适合谁用？',
-        a: (
-          <>
-            正在找工作、需要反复改简历的人——校招生、社招跳槽、转行，或者同时投很多岗位的人。已经在用 Claude Code、Cursor
-            等 AI agent 的可以直接接 skill；不想折腾命令行就下载桌面 app。你负责经历，Mui
-            负责把它整理成对得上岗位的简历。
-          </>
-        ),
-        text: '正在找工作、需要反复改简历的人——校招生、社招跳槽、转行，或者同时投很多岗位的人。已经在用 Claude Code、Cursor 等 AI agent 的可以直接接 skill；不想折腾命令行就下载桌面 app。你负责经历，Mui 负责把它整理成对得上岗位的简历。',
-      },
-      {
-        q: 'AI 会帮我优化 / 修改简历吗？',
-        a: (
-          <>
-            会，但只基于你提供的事实。Mui 按 STAR、量化结果、岗位关键词、篇幅等维度评审草稿，指出哪句太虚、哪段缺数据、
-            哪些关键词没覆盖，并给出可直接采用的改写建议。贴上目标岗位描述，它还会针对该岗位重新挑选和改写素材。绝不替你编造经历。
-          </>
-        ),
-        text: '会，但只基于你提供的事实。Mui 按 STAR、量化结果、岗位关键词、篇幅等维度评审草稿，指出哪句太虚、哪段缺数据、哪些关键词没覆盖，并给出可直接采用的改写建议。贴上目标岗位描述，它还会针对该岗位重新挑选和改写素材。绝不替你编造经历。',
-      },
-    ],
     articlesEyebrow: '求职文章',
     articlesTitle: '简历、面试和 offer，遇到问题时翻一篇。',
     articlesLede: '这里整理找工作时常见的卡点：怎么改简历、怎么准备面试、怎么判断机会值不值得去。',

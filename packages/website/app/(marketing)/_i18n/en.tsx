@@ -1,10 +1,7 @@
-import { localizedHref } from './locale';
 import type { Dictionary } from './types';
 
 // English dictionary. English-native marketing copy, not a literal translation.
-// FAQ links go through localizedHref('en', …) so they stay on the zh page until an /en version ships.
-const faqLink =
-  'font-semibold text-yellow-deep underline decoration-corgi decoration-2 underline-offset-4 hover:decoration-yellow';
+// FAQ accordion Q&A (JSX) lives in _sections/faq-items.tsx instead, see the comment there.
 
 export const en: Dictionary = {
   brand: { name: 'MuiCV', by: 'by Mui 🐾' },
@@ -192,118 +189,6 @@ export const en: Dictionary = {
     titleA: "What you're wondering is",
     titleHighlight: 'probably',
     titleEnd: ' here.',
-    items: [
-      {
-        q: 'Where is my resume data stored? Who can see it?',
-        a: (
-          <>
-            It all lives on your own computer — as plain Markdown files, fully under your control. Whether to back it up
-            or share it is up to you. Our servers only touch data briefly when you actively call features like PDF
-            export or job scraping, then discard it — we keep none of your resume content.
-          </>
-        ),
-        text: 'It all lives on your own computer as plain Markdown files, fully under your control. Whether to back it up or share it is up to you. Our servers only touch data briefly when you actively call features like PDF export or job scraping, then discard it — we keep none of your resume content.',
-      },
-      {
-        q: 'How much does it cost?',
-        a: (
-          <>
-            A single token wallet:
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>
-                <strong>Sign up and get 10,000 tokens once</strong>, no expiry, until used up
-              </li>
-              <li>
-                <strong>Subscription</strong>: Pro / Max monthly or yearly, auto-refilled each period; yearly grants the
-                full year at once, about 17% off
-              </li>
-              <li>
-                <strong>Top-up packs</strong>: buy 10K / 35K / 130K tokens one-off, anytime
-              </li>
-              <li>
-                <strong>BYOK</strong>: bind your own API endpoint and key in the console so the LLM runs on your
-                balance; PDF / JD still bill muicv tokens
-              </li>
-            </ul>
-            Cloud features (PDF export, job search, etc.) bill by token. See the{' '}
-            <a href={localizedHref('en', '/pricing')} className={faqLink}>
-              pricing page
-            </a>{' '}
-            for details.
-          </>
-        ),
-        text: 'A single token wallet: sign up and get 10,000 tokens once, no expiry; Pro / Max subscriptions bill monthly or yearly and auto-refill each period (yearly about 17% off); top-up packs buy 10K / 35K / 130K tokens one-off; BYOK lets you bind your own API key so the LLM runs on your balance. Cloud features (PDF export, job search, etc.) bill by token. See the pricing page for details.',
-      },
-      {
-        q: 'What is BYOK?',
-        a: (
-          <>
-            BYOK = Bring Your Own Key — use your own LLM balance. Once bound, all AI calls run on your own balance and
-            we stop spending platform tokens — ideal if you already subscribe to an LLM service and want unified cost
-            control.
-          </>
-        ),
-        text: 'BYOK = Bring Your Own Key — use your own LLM balance. Once bound, all AI calls run on your own balance and we stop spending platform tokens — ideal if you already subscribe to an LLM service and want unified cost control.',
-      },
-      {
-        q: 'When does the desktop app ship?',
-        a: (
-          <>
-            <strong>It's already live</strong>, on macOS / Windows / Linux. Head to the{' '}
-            <a href={localizedHref('en', '/download')} className={faqLink}>
-              download page
-            </a>{' '}
-            for the latest build. If you already use an AI agent (Claude Code / Codex / Cursor, etc.), you can plug in
-            via the skill kit instead — either path works.
-          </>
-        ),
-        text: "It's already live, on macOS / Windows / Linux — head to the download page for the latest build. If you already use an AI agent (Claude Code / Codex / Cursor, etc.), you can plug in via the skill kit instead. Either path works.",
-      },
-      {
-        q: 'Does it support English / bilingual resumes?',
-        a: (
-          <>
-            Yes. Write your material in any language; the generated resume follows the target job — an English role gets
-            an English-style resume. Side-by-side bilingual templates are on the roadmap.
-          </>
-        ),
-        text: 'Yes. Write your material in any language; the generated resume follows the target job — an English role gets an English-style resume. Side-by-side bilingual templates are on the roadmap.',
-      },
-      {
-        q: 'Will it auto-apply to LinkedIn / job boards?',
-        a: (
-          <>
-            No. We only help you scrape jobs, generate targeted resumes, write cover letters, and organize a checklist —
-            you press “submit” yourself. That's intentional, to avoid account risk and ToS violations.
-          </>
-        ),
-        text: "No. We only help you scrape jobs, generate targeted resumes, write cover letters, and organize a checklist — you press “submit” yourself. That's intentional, to avoid account risk and ToS violations.",
-      },
-      {
-        q: 'Who is MuiCV for?',
-        a: (
-          <>
-            People job-hunting who revise resumes a lot — new grads, people switching jobs, career changers, or anyone
-            applying to many roles at once. Already on an AI agent like Claude Code or Cursor? Plug in the skill. Don't
-            want the command line? Download the desktop app. You bring the experience; Mui shapes it into a resume that
-            fits the role.
-          </>
-        ),
-        text: "People job-hunting who revise resumes a lot — new grads, people switching jobs, career changers, or anyone applying to many roles at once. Already on an AI agent like Claude Code or Cursor? Plug in the skill. Don't want the command line? Download the desktop app. You bring the experience; Mui shapes it into a resume that fits the role.",
-      },
-      {
-        q: 'Does MuiCV optimize my resume with AI?',
-        a: (
-          <>
-            Yes — but only from the facts you provide. Mui reviews drafts against STAR, quantified results, job
-            keywords, and length; flags lines that are vague, sections missing data, and keywords you haven't covered;
-            and suggests rewrites you can use directly. Paste a target job description and it re-selects and rewrites
-            material for that role. It never fabricates experience.
-          </>
-        ),
-        text: "Yes — but only from the facts you provide. Mui reviews drafts against STAR, quantified results, job keywords, and length; flags vague lines, sections missing data, and keywords you haven't covered; and suggests rewrites you can use directly. Paste a target job description and it re-selects and rewrites material for that role. It never fabricates experience.",
-      },
-    ],
     articlesEyebrow: 'Job articles',
     articlesTitle: 'Resumes, interviews, and offers — read one when you hit a wall.',
     articlesLede:

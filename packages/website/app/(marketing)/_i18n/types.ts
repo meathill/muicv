@@ -113,7 +113,6 @@ export type Dictionary = {
     titleA: string;
     titleHighlight: string;
     titleEnd: string;
-    items: FaqItem[];
     articlesEyebrow: string;
     articlesTitle: string;
     articlesLede: string;
