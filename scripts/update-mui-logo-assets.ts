@@ -106,21 +106,52 @@ async function writeIconPngs(logo: Buffer): Promise<void> {
     .png()
     .toBuffer();
 
-  await Promise.all([writeFile(outputPaths.appIconPng, icon), writeFile(outputPaths.websiteIconPng, icon)]);
+  // 网页 favicon 用不到 1024 分辨率——之前 appIconPng / websiteIconPng 共用同一张
+  // 1024 图，导致首页 favicon 有 491 KB（issue #11）。electron 端图标要多分辨率
+  // 缩放，必须保留高清源图；网页端单独出一份小尺寸版本。
+  const websiteIcon = await sharp({
+    create: {
+      width: 256,
+      height: 256,
+      channels: 4,
+      background: '#fdfaf2',
+    },
+  })
+    .composite([
+      {
+        input: await sharp(logo).resize({ width: 205, height: 205, fit: 'inside' }).png().toBuffer(),
+        gravity: 'center',
+      },
+    ])
+    .png()
+    .toBuffer();
+
+  await Promise.all([writeFile(outputPaths.appIconPng, icon), writeFile(outputPaths.websiteIconPng, websiteIcon)]);
 }
 
 async function writeSvgIcons(logo: Buffer): Promise<void> {
-  const dataUri = `data:image/png;base64,${logo.toString('base64')}`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  const appDataUri = `data:image/png;base64,${logo.toString('base64')}`;
+  const appSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <rect width="1024" height="1024" rx="224" ry="224" fill="#fdfaf2"/>
-  <image href="${dataUri}" x="102" y="102" width="820" height="820" preserveAspectRatio="xMidYMid meet"/>
+  <image href="${appDataUri}" x="102" y="102" width="820" height="820" preserveAspectRatio="xMidYMid meet"/>
+</svg>
+`;
+
+  // 网页 favicon：内嵌图先缩到 200px 宽再编码（SVG 的 viewBox/rect/image 坐标不变，
+  // 浏览器按 width="820" 缩放显示，源图分辨率不影响布局），之前直接塞原图导致
+  // icon.svg 一度到 874 KB（issue #11）。
+  const websiteLogo = await sharp(logo).resize({ width: 200, fit: 'inside' }).png().toBuffer();
+  const websiteDataUri = `data:image/png;base64,${websiteLogo.toString('base64')}`;
+  const websiteSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" rx="224" ry="224" fill="#fdfaf2"/>
+  <image href="${websiteDataUri}" x="102" y="102" width="820" height="820" preserveAspectRatio="xMidYMid meet"/>
 </svg>
 `;
 
   await Promise.all([
-    writeFile(join(repoRoot, 'packages/app/build/icon.svg'), svg),
-    writeFile(join(repoRoot, 'packages/app/src/renderer/public/icon.svg'), svg),
-    writeFile(join(repoRoot, 'packages/website/app/icon.svg'), svg),
+    writeFile(join(repoRoot, 'packages/app/build/icon.svg'), appSvg),
+    writeFile(join(repoRoot, 'packages/app/src/renderer/public/icon.svg'), appSvg),
+    writeFile(join(repoRoot, 'packages/website/app/icon.svg'), websiteSvg),
   ]);
 }
 

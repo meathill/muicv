@@ -104,7 +104,7 @@ export const metadata: Metadata = {
   },
   // 浏览器仍会请求 /favicon.ico（旧标准），显式指向 SVG icon 避免 404。
   icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon.svg' }],
+    icon: { url: '/icon.svg', type: 'image/svg+xml' },
     shortcut: '/icon.svg',
   },
   // GSC / Bing 验证 token：从 env 读，没设置就跳过——本地 / preview 不写。
