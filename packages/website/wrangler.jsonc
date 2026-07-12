@@ -62,10 +62,26 @@
     }
   ],
   "vars": {
+    "PUBLIC_NEXT_SIET_URL": "https://muicv.com",
     "BETTER_AUTH_URL": "https://muicv.com",
     "GITHUB_CLIENT_ID": "3dbc98e657fc50a08577",
+    "HSM_BASE_URL": "",
+    "MUIROUTER_OAUTH_AUTHORIZE_URL": "",
+    "MUIROUTER_OAUTH_CLIENT_ID": "",
+    "MUIROUTER_OAUTH_REVOKE_URL": "",
+    "MUIROUTER_OAUTH_TOKEN_URL": "",
     // Stripe priceId 不在这里维护，统一在 packages/website/lib/stripe-prices.ts 的常量表
     // （结构 plan × interval × currency / pack × currency 更适合 TS 类型表达；jsonc 扁平 key-value 容易漏改）。
     "ADMIN_EMAILS": "meathill@gmail.com"
+  },
+  "secrets": {
+    "required": [
+      "BETTER_AUTH_SECRET",
+      "GITHUB_CLIENT_SECRET",
+      "STRIPE_SECRET_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "MUIROUTER_OAUTH_CLIENT_SECRET",
+      "HSM_SECRET"
+    ]
   }
 }

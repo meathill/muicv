@@ -25,7 +25,7 @@ import type { AppEnv } from '../middleware/api-key.ts';
  *   1. **平台 OpenAI**：余额 > 0 + model 是 `gpt-*` → worker secret OPENAI_API_KEY，
  *      上游 https://api.openai.com/v1，按 model 分价扣费（见 LLM_PRICING）。
  *   2. **平台 Xiaomi**：余额 > 0 + model 是 `mimo-*` → worker secret MIMO_API_KEY，
- *      上游 https://token-plan-sgp.xiaomimimo.com/v1（OpenAI 兼容），同样按表扣费。
+ *      上游 https://token-plan-cn.xiaomimimo.com/v1（OpenAI 兼容），同样按表扣费。
  *   3. **muirouter fallback**：余额 = 0 + 用户绑了 muirouter → 解密 access_token
  *      转发到 https://api.muirouter.com，**不扣 muicv 余额**（用户自己的 muirouter
  *      钱包扣）；客户端没指定 model 时注入用户的 defaultModel。
@@ -40,7 +40,7 @@ import type { AppEnv } from '../middleware/api-key.ts';
  */
 
 const OPENAI_BASE = 'https://api.openai.com';
-const XIAOMI_BASE = 'https://token-plan-sgp.xiaomimimo.com';
+const XIAOMI_BASE = 'https://token-plan-cn.xiaomimimo.com';
 const MUIROUTER_BASE = 'https://api.muirouter.com';
 
 const CHAT_COMPLETIONS_PATH = '/v1/chat/completions';
@@ -270,7 +270,7 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
           promptTokens: usage.prompt_tokens,
           completionTokens: usage.completion_tokens,
           cachedTokens,
-        }).catch(() => {});
+        }).catch(() => { });
       }),
     );
 
@@ -291,10 +291,10 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
       ? extractUsageFromResponsesJson(json)
       : json?.usage?.prompt_tokens != null && json?.usage?.completion_tokens != null
         ? {
-            prompt_tokens: json.usage.prompt_tokens as number,
-            completion_tokens: json.usage.completion_tokens as number,
-            cached_tokens: (json.usage.prompt_tokens_details?.cached_tokens ?? 0) as number,
-          }
+          prompt_tokens: json.usage.prompt_tokens as number,
+          completion_tokens: json.usage.completion_tokens as number,
+          cached_tokens: (json.usage.prompt_tokens_details?.cached_tokens ?? 0) as number,
+        }
         : null;
     if (usage) {
       const chargedModel = json?.model ?? model;
@@ -307,8 +307,8 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
             completionTokens: usage.completion_tokens,
             cachedTokens: usage.cached_tokens ?? 0,
           })
-            .then(() => {})
-            .catch(() => {}),
+            .then(() => { })
+            .catch(() => { }),
         );
       }
     }

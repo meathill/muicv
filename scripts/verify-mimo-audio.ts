@@ -14,7 +14,7 @@
 
 import { readFileSync } from 'node:fs';
 
-const XIAOMI_BASE = 'https://token-plan-sgp.xiaomimimo.com/v1';
+const XIAOMI_BASE = 'https://token-plan-cn.xiaomimimo.com/v1';
 
 async function main() {
   const apiKey = process.env.MIMO_API_KEY;

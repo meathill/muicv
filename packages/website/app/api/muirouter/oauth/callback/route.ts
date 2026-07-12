@@ -166,7 +166,7 @@ function errorRedirect(stored: { from: 'web' | 'app'; appState?: string }, reaso
 function absoluteWebUrl(path: string): string {
   // 在 worker 里 redirect 字符串可以是相对 URL，但显式拼绝对地址更稳；
   // 实际 URL 由 Better Auth 那一套环境变量提供。
-  const base = process.env.MUICV_BASE_URL ?? process.env.BETTER_AUTH_URL ?? '';
+  const base = process.env.PUBLIC_NEXT_SIET_URL ?? process.env.BETTER_AUTH_URL ?? '';
   if (!base) return path;
   return new URL(path, base).toString();
 }

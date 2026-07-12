@@ -464,7 +464,7 @@
   `LLM_PRICING` / `LLM_DISPLAY_META` 删条目 → 调 `DEFAULT_LLM_MODEL` / `isDefault` →
   顺手扫 `routes.test.ts` / `pricing.test.ts` 里硬编码的旧 id → 文案里旧 id 提示。
 - **平台第二上游**：`packages/api/src/routes/llm.ts` 在余额 > 0 路径里按 `model.startsWith('mimo-')`
-  分流：`mimo-*` 走 Xiaomi（`https://token-plan-sgp.xiaomimimo.com`，`MIMO_API_KEY`），
+  分流：`mimo-*` 走 Xiaomi（`https://token-plan-cn.xiaomimimo.com`，`MIMO_API_KEY`），
   其它走 OpenAI（`https://api.openai.com`，`OPENAI_API_KEY`）。muirouter fallback 路径
   不被本表约束（其 model 列表由 muirouter 端管理）。前缀分流的取舍：客户端零改动、
   未来加 deepseek/moonshot 一行 case 即可；缺点是 model id 命名空间冲突时会路由错

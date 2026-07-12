@@ -26,7 +26,7 @@ export async function getMuirouterOauthConfig(): Promise<MuirouterOauthConfig> {
   if (!clientSecret) {
     throw new Error('MUIROUTER_OAUTH_CLIENT_SECRET 未配置，OAuth 流程不可用');
   }
-  const baseUrl = env.MUICV_BASE_URL ?? env.BETTER_AUTH_URL;
+  const baseUrl = process.env.PUBLIC_NEXT_SIET_URL ?? env.BETTER_AUTH_URL;
   if (!baseUrl) {
     throw new Error('MUICV_BASE_URL / BETTER_AUTH_URL 未配置，无法生成 OAuth redirect_uri');
   }

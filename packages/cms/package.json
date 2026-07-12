@@ -17,7 +17,7 @@
     "migrate:create": "PAYLOAD_SECRET=local-migration-secret NEXT_PHASE=phase-production-build payload migrate:create",
     "migrate": "node scripts/apply-migrations.ts",
     "migrate:status": "node scripts/apply-migrations.ts --status",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv"
   },
   "dependencies": {
     "@muicv/shared": "workspace:*",

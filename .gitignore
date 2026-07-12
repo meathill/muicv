@@ -32,3 +32,8 @@ release
 
 # macOS Finder metadata
 .DS_Store
+
+env.d.ts
+worker-configuration.d.ts
+.claude
+.claude-plugin
