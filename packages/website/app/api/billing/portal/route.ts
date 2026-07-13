@@ -1,4 +1,3 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { eq } from 'drizzle-orm';
 
 import { getDb, schema } from '@/lib/db';
@@ -37,8 +36,7 @@ export async function POST() {
   }
 
   const stripe = await getStripe();
-  const { env } = await getCloudflareContext({ async: true });
-  const baseUrl = env.BETTER_AUTH_URL || 'https://muicv.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'https://muicv.com';
 
   const portal = await stripe.billingPortal.sessions.create({
     customer: customerId,

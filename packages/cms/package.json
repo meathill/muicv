@@ -21,23 +21,23 @@
   },
   "dependencies": {
     "@muicv/shared": "workspace:*",
-    "@opennextjs/cloudflare": "^1.19.11",
-    "@payloadcms/db-d1-sqlite": "^3.85.0",
-    "@payloadcms/next": "^3.85.0",
-    "@payloadcms/richtext-lexical": "^3.85.0",
-    "@payloadcms/storage-r2": "^3.85.0",
-    "next": "^16.2.6",
-    "payload": "^3.85.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "@opennextjs/cloudflare": "^1.20.1",
+    "@payloadcms/db-d1-sqlite": "^3.86.0",
+    "@payloadcms/next": "^3.86.0",
+    "@payloadcms/richtext-lexical": "^3.86.0",
+    "@payloadcms/storage-r2": "^3.86.0",
+    "next": "^16.2.10",
+    "payload": "^3.86.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@types/node": "^22.19.19",
-    "@types/react": "19.2.7",
+    "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.95.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.110.0",
     "zod": "^4.4.3"
   }
 }

@@ -31,7 +31,7 @@ export async function getAuth(): Promise<Auth> {
   // 字面量推断出更窄的类型，和 Better Auth 内部 PluginContext<BetterAuthOptions>
   // 不兼容（Drizzle adapter 的 generic 也跟着炸）。
   const options: BetterAuthOptions = {
-    baseURL: env.BETTER_AUTH_URL || 'https://muicv.com',
+    baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'https://muicv.com',
     basePath: '/api/auth',
     secret: env.BETTER_AUTH_SECRET,
     database: drizzleAdapter(db, {
@@ -48,10 +48,10 @@ export async function getAuth(): Promise<Auth> {
     // 社会化登录 —— 只在配齐两份 secret 时启用，否则保持只走邮箱密码。
     // GitHub callback URL: ${BETTER_AUTH_URL}/api/auth/callback/github
     socialProviders:
-      env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
+      process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
         ? {
             github: {
-              clientId: env.GITHUB_CLIENT_ID,
+              clientId: process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID,
               clientSecret: env.GITHUB_CLIENT_SECRET,
             },
           }

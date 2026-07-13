@@ -79,10 +79,6 @@
     "mode": "smart"
   },
   "secrets": {
-    "required": [
-      "OPENAI_API_KEY",
-      "MIMO_API_KEY",
-      "HSM_SECRET"
-    ]
+    "required": ["OPENAI_API_KEY", "MIMO_API_KEY", "HSM_SECRET"]
   }
 }

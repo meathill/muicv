@@ -7,6 +7,6 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 export async function getAuthFlags() {
   const { env } = await getCloudflareContext({ async: true });
   return {
-    githubEnabled: !!(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
+    githubEnabled: !!(process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
   };
 }

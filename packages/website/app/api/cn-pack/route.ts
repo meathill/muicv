@@ -1,5 +1,4 @@
 import { type CnPackKey, CN_PACKS, cnPackPeriod } from '@muicv/shared';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 import { getCnPackCooldownEnd } from '@/lib/cn-pack';
 import { getRequestCurrency } from '@/lib/region';
@@ -64,8 +63,7 @@ export async function POST(request: Request) {
   });
   const priceId = cnPackToPriceId(packKey);
   const stripe = await getStripe();
-  const { env } = await getCloudflareContext({ async: true });
-  const baseUrl = env.BETTER_AUTH_URL || 'https://muicv.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'https://muicv.com';
 
   const tokens = CN_PACKS[packKey].tokens;
   const checkout = await stripe.checkout.sessions.create({

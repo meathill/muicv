@@ -1,4 +1,3 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { notFound, redirect } from 'next/navigation';
 
 import { getCurrentSession } from './session';
@@ -11,9 +10,8 @@ import { getCurrentSession } from './session';
  */
 
 export async function getAdminEmails(): Promise<Set<string>> {
-  const { env } = await getCloudflareContext({ async: true });
   return new Set(
-    (env.ADMIN_EMAILS ?? '')
+    (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? '')
       .split(',')
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean),

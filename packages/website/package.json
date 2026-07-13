@@ -18,25 +18,25 @@
     "@muicv/shared": "workspace:*",
     "@muicv/ui": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
-    "better-auth": "^1.6.11",
+    "better-auth": "^1.6.23",
     "drizzle-orm": "^0.45.2",
     "gray-matter": "^4.0.3",
-    "marked": "^18.0.4",
-    "next": "^16.2.6",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "stripe": "^22.1.1"
+    "marked": "^18.0.6",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "stripe": "^22.3.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.19.11",
-    "@tailwindcss/postcss": "^4.3.0",
+    "@opennextjs/cloudflare": "^1.20.1",
+    "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^22.19.19",
-    "@types/react": "19.2.7",
+    "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
-    "autoprefixer": "^10.5.0",
-    "postcss": "^8.5.15",
-    "tailwindcss": "^4.3.0",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.95.0"
+    "autoprefixer": "^10.5.2",
+    "postcss": "^8.5.18",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.110.0"
   }
 }

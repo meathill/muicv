@@ -2,8 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "muicv-cms",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2025-12-01",
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
   "account_id": "fdc63eeea83ae8f5234357308b9a638b",
   "routes": [
     {

@@ -9,7 +9,6 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/renderer/*"],
       "@main/*": ["./src/main/*"],

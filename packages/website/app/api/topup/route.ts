@@ -1,5 +1,4 @@
 import { type TopupPackKey, TOPUP_PACKS } from '@muicv/shared';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type Stripe from 'stripe';
 
 import { getRequestCurrency } from '@/lib/region';
@@ -43,8 +42,7 @@ export async function POST(request: Request) {
   });
   const priceId = topupPackToPriceId(pack as TopupPackKey, currency);
   const stripe = await getStripe();
-  const { env } = await getCloudflareContext({ async: true });
-  const baseUrl = env.BETTER_AUTH_URL || 'https://muicv.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'https://muicv.com';
 
   const tokens = TOPUP_PACKS[pack as TopupPackKey].tokens;
   // CN topup（一次性付款）三方齐开。WeChat Pay 在 Hosted Checkout 需 client='web'。

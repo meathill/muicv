@@ -109,7 +109,7 @@ function mockEnv(opts: MockOptions = {}): unknown {
         return {
           body: new Response(u8).body,
           size: u8.length,
-          writeHttpMetadata: (_h: Headers) => { },
+          writeHttpMetadata: (_h: Headers) => {},
         };
       },
       delete: async (key: string) => {
@@ -126,9 +126,9 @@ function mockEnv(opts: MockOptions = {}): unknown {
     // 路径，不会真的走 puppeteer 渲染 / KV 读写。
     BROWSER: { fetch: async () => new Response('') },
     MUICV_KV: {
-      put: async () => { },
+      put: async () => {},
       get: async () => null,
-      delete: async () => { },
+      delete: async () => {},
     },
     // R2 mock：内存 Map，覆盖 put / get / delete 三件套；handler 不依赖 list / multipart upload
     MUICV_RESUME_BLOB: makeR2Stub(r2Store),
@@ -152,7 +152,7 @@ function mockEnv(opts: MockOptions = {}): unknown {
 const AUTH = { authorization: `Bearer ${FAKE_API_KEY}` };
 const authedEnv = (opts: Omit<MockOptions, 'authenticated'> = {}) => mockEnv({ ...opts, authenticated: true });
 
-const ctx = { waitUntil: () => { }, passThroughOnException: () => { } } as unknown as ExecutionContext;
+const ctx = { waitUntil: () => {}, passThroughOnException: () => {} } as unknown as ExecutionContext;
 
 test('GET / 返回 routes 清单', async () => {
   const res = await app.request('/', undefined, mockEnv(), ctx);

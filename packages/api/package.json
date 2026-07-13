@@ -20,13 +20,13 @@
     "@cloudflare/puppeteer": "^1.1.0",
     "@mozilla/readability": "^0.6.0",
     "@muicv/shared": "workspace:*",
-    "hono": "^4.12.23",
+    "hono": "^4.12.30",
     "turndown": "^7.2.4"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "^22.19.19",
     "@types/turndown": "^5.0.6",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.95.0"
+    "typescript": "^5.7.3",
+    "wrangler": "^4.110.0"
   }
 }

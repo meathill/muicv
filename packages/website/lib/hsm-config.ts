@@ -14,7 +14,7 @@ export async function getHsmConfig(): Promise<HsmConfig> {
     throw new Error('HSM_SECRET 未配置，无法读写 muirouter token 存储');
   }
   return {
-    baseUrl: env.HSM_BASE_URL ?? DEFAULT_HSM_BASE,
+    baseUrl: process.env.NEXT_PUBLIC_HSM_BASE_URL || DEFAULT_HSM_BASE,
     secret,
   };
 }

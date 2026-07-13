@@ -270,7 +270,7 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
           promptTokens: usage.prompt_tokens,
           completionTokens: usage.completion_tokens,
           cachedTokens,
-        }).catch(() => { });
+        }).catch(() => {});
       }),
     );
 
@@ -291,10 +291,10 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
       ? extractUsageFromResponsesJson(json)
       : json?.usage?.prompt_tokens != null && json?.usage?.completion_tokens != null
         ? {
-          prompt_tokens: json.usage.prompt_tokens as number,
-          completion_tokens: json.usage.completion_tokens as number,
-          cached_tokens: (json.usage.prompt_tokens_details?.cached_tokens ?? 0) as number,
-        }
+            prompt_tokens: json.usage.prompt_tokens as number,
+            completion_tokens: json.usage.completion_tokens as number,
+            cached_tokens: (json.usage.prompt_tokens_details?.cached_tokens ?? 0) as number,
+          }
         : null;
     if (usage) {
       const chargedModel = json?.model ?? model;
@@ -307,8 +307,8 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
             completionTokens: usage.completion_tokens,
             cachedTokens: usage.cached_tokens ?? 0,
           })
-            .then(() => { })
-            .catch(() => { }),
+            .then(() => {})
+            .catch(() => {}),
         );
       }
     }

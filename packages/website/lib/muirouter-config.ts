@@ -26,18 +26,18 @@ export async function getMuirouterOauthConfig(): Promise<MuirouterOauthConfig> {
   if (!clientSecret) {
     throw new Error('MUIROUTER_OAUTH_CLIENT_SECRET 未配置，OAuth 流程不可用');
   }
-  const baseUrl = process.env.PUBLIC_NEXT_SIET_URL ?? env.BETTER_AUTH_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_BETTER_AUTH_URL;
   if (!baseUrl) {
-    throw new Error('MUICV_BASE_URL / BETTER_AUTH_URL 未配置，无法生成 OAuth redirect_uri');
+    throw new Error('NEXT_PUBLIC_SITE_URL / NEXT_PUBLIC_BETTER_AUTH_URL 未配置，无法生成 OAuth redirect_uri');
   }
   return {
     endpoints: {
-      authorizeUrl: env.MUIROUTER_OAUTH_AUTHORIZE_URL ?? DEFAULTS.authorizeUrl,
-      tokenUrl: env.MUIROUTER_OAUTH_TOKEN_URL ?? DEFAULTS.tokenUrl,
-      revokeUrl: env.MUIROUTER_OAUTH_REVOKE_URL ?? DEFAULTS.revokeUrl,
+      authorizeUrl: process.env.NEXT_PUBLIC_MUIROUTER_OAUTH_AUTHORIZE_URL || DEFAULTS.authorizeUrl,
+      tokenUrl: process.env.NEXT_PUBLIC_MUIROUTER_OAUTH_TOKEN_URL || DEFAULTS.tokenUrl,
+      revokeUrl: process.env.NEXT_PUBLIC_MUIROUTER_OAUTH_REVOKE_URL || DEFAULTS.revokeUrl,
     },
     client: {
-      clientId: env.MUIROUTER_OAUTH_CLIENT_ID ?? DEFAULTS.clientId,
+      clientId: process.env.NEXT_PUBLIC_MUIROUTER_OAUTH_CLIENT_ID || DEFAULTS.clientId,
       clientSecret,
     },
     redirectUri: new URL(REDIRECT_PATH, baseUrl).toString(),
