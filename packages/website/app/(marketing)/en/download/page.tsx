@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { getDictionary } from '../../_i18n/dict';
+import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '../../_page-meta';
 import { DownloadView } from '../../download/_view';
 
 export const revalidate = 300;
@@ -24,8 +25,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     title,
     description,
+    images: [DEFAULT_OPEN_GRAPH_IMAGE],
   },
-  twitter: { card: 'summary_large_image', title, description },
+  twitter: { card: 'summary_large_image', title, description, images: [DEFAULT_TWITTER_IMAGE] },
 };
 
 export default function EnDownloadPage() {

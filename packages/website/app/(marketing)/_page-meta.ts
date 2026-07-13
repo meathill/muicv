@@ -4,6 +4,20 @@ import type { Locale } from './_i18n/locale';
 
 const SITE_URL = 'https://muicv.com';
 
+export const SOCIAL_IMAGE_ALT = 'MuiCV · AI 求职工作台——把真实经历整理成更好的简历';
+export const DEFAULT_OPEN_GRAPH_IMAGE = {
+  url: '/opengraph-image.png',
+  width: 1200,
+  height: 630,
+  alt: SOCIAL_IMAGE_ALT,
+};
+export const DEFAULT_TWITTER_IMAGE = {
+  url: '/twitter-image.png',
+  width: 1200,
+  height: 630,
+  alt: SOCIAL_IMAGE_ALT,
+};
+
 // 双语营销页统一 metadata：canonical 自指 + hreflang 互指 + 完整 openGraph/twitter。
 // title 为纯串，走各自 layout 的模板（zh ' · Mui简历' / en ' · MuiCV'）。首页用 title.absolute 不走这里。
 export function pageMetadata({
@@ -31,7 +45,8 @@ export function pageMetadata({
       locale: locale === 'en' ? 'en_US' : 'zh_CN',
       title,
       description,
+      images: [DEFAULT_OPEN_GRAPH_IMAGE],
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: { card: 'summary_large_image', title, description, images: [DEFAULT_TWITTER_IMAGE] },
   };
 }

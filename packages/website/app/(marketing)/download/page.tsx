@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '../_page-meta';
 import { getDictionary } from '../_i18n/dict';
 import { DownloadView } from './_view';
 
@@ -19,8 +20,16 @@ export const metadata: Metadata = {
     canonical: '/download',
     languages: { 'zh-CN': '/download', en: '/en/download', 'x-default': '/download' },
   },
-  openGraph: { type: 'website', siteName: 'Mui简历', url: `${SITE_URL}/download`, locale: 'zh_CN', title, description },
-  twitter: { card: 'summary_large_image', title, description },
+  openGraph: {
+    type: 'website',
+    siteName: 'Mui简历',
+    url: `${SITE_URL}/download`,
+    locale: 'zh_CN',
+    title,
+    description,
+    images: [DEFAULT_OPEN_GRAPH_IMAGE],
+  },
+  twitter: { card: 'summary_large_image', title, description, images: [DEFAULT_TWITTER_IMAGE] },
 };
 
 export default function DownloadPage() {
