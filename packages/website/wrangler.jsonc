@@ -3,10 +3,7 @@
   "name": "muicv-web",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-07-01",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "global_fetch_strictly_public"
-  ],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "account_id": "fdc63eeea83ae8f5234357308b9a638b",
   "routes": [
     {
