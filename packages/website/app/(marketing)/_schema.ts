@@ -30,7 +30,7 @@ export function softwareApplicationSchema({
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'MuiCV',
-    alternateName: 'Mui简历',
+    alternateName: ['Mui简历', 'Mui CV', 'MuiCV.com'],
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'macOS, Windows, Linux',
     inLanguage: locale === 'en' ? 'en' : 'zh-CN',

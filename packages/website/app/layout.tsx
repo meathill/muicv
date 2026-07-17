@@ -17,7 +17,7 @@ const ORGANIZATION_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Mui简历',
-  alternateName: 'MuiCV',
+  alternateName: ['MuiCV', 'Mui CV', 'MuiCV.com'],
   url: SITE_URL,
   logo: `${SITE_URL}/brand/mui-logo.png`,
   description: DESCRIPTION,
@@ -28,6 +28,7 @@ const WEBSITE_SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Mui简历',
+  alternateName: ['MuiCV', 'Mui CV', 'MuiCV.com'],
   url: SITE_URL,
   inLanguage: 'zh-CN',
 };
