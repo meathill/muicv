@@ -236,9 +236,9 @@ export const zh: Dictionary = {
   },
   meta: {
     home: {
-      title: 'Mui简历 MuiCV — AI 简历生成与优化，找到更好工作',
+      title: 'Mui简历 MuiCV 官网 — AI 简历生成与优化，找到更好工作',
       description:
-        'Mui简历是一站式 AI 求职平台：用 AI 生成、优化、润色简历，按目标岗位定制版本，导出 A4 PDF。素材存本地、数据由你掌控，还能模拟面试、写求职信。',
+        'Mui简历（MuiCV）官网 muicv.com，一站式 AI 求职平台：AI 生成、优化、润色简历，按目标岗位定制，导出 A4 PDF。素材存本地，还能模拟面试、写求职信。',
     },
     download: {
       title: '下载 Mui简历桌面 app（macOS / Windows / Linux）',

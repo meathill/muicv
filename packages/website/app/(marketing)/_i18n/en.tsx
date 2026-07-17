@@ -256,7 +256,7 @@ export const en: Dictionary = {
     home: {
       title: 'MuiCV — AI Resume Builder & Optimizer to Land a Better Job',
       description:
-        'MuiCV is an AI job-search platform that builds, optimizes, and tailors your resume for each role, then exports a clean A4 PDF. Your data stays local — plus mock interviews and cover letters.',
+        'MuiCV (muicv.com) is an AI job-search platform: build, optimize, and tailor your resume for each role, then export a clean A4 PDF. Data stays local.',
     },
     download: {
       title: 'Download MuiCV Desktop App (macOS / Windows / Linux)',
