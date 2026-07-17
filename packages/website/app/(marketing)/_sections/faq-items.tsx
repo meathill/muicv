@@ -108,6 +108,16 @@ const FAQ_ITEMS_ZH: FaqItem[] = [
     ),
     text: '会，但只基于你提供的事实。Mui 按 STAR、量化结果、岗位关键词、篇幅等维度评审草稿，指出哪句太虚、哪段缺数据、哪些关键词没覆盖，并给出可直接采用的改写建议。贴上目标岗位描述，它还会针对该岗位重新挑选和改写素材。绝不替你编造经历。',
   },
+  {
+    q: 'MuiCV 官网是哪个？',
+    a: (
+      <>
+        官网只有一个：<strong>muicv.com</strong>，www.muicv.com 会自动跳转过来。产品中文名叫 Mui简历，英文名
+        MuiCV。网上有一些名字相近的简历工具，和我们没有关联；收藏或搜索时认准 muicv.com 就不会走错。
+      </>
+    ),
+    text: '官网只有一个：muicv.com，www.muicv.com 会自动跳转过来。产品中文名叫 Mui简历，英文名 MuiCV。网上有一些名字相近的简历工具，和我们没有关联；收藏或搜索时认准 muicv.com 就不会走错。',
+  },
 ];
 
 const FAQ_ITEMS_EN: FaqItem[] = [
@@ -219,6 +229,16 @@ const FAQ_ITEMS_EN: FaqItem[] = [
       </>
     ),
     text: "Yes — but only from the facts you provide. Mui reviews drafts against STAR, quantified results, job keywords, and length; flags vague lines, sections missing data, and keywords you haven't covered; and suggests rewrites you can use directly. Paste a target job description and it re-selects and rewrites material for that role. It never fabricates experience.",
+  },
+  {
+    q: 'What is the official MuiCV website?',
+    a: (
+      <>
+        Just one: <strong>muicv.com</strong> — www.muicv.com redirects here. Some resume tools have similar names but
+        aren't related to us; bookmark muicv.com and you'll always land in the right place.
+      </>
+    ),
+    text: "Just one: muicv.com — www.muicv.com redirects here. Some resume tools have similar names but aren't related to us; bookmark muicv.com and you'll always land in the right place.",
   },
 ];
 
