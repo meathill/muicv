@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload';
 
 import { publishedOrAuthenticated } from './access';
+import { validateSlugFormat } from './validate-slug';
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -13,6 +14,9 @@ export const Posts: CollectionConfig = {
   },
   versions: {
     drafts: true,
+  },
+  hooks: {
+    beforeValidate: [validateSlugFormat('posts')],
   },
   fields: [
     { name: 'title', type: 'text', required: true },
