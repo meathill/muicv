@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 
 import { H2, H3, Lead, Li, P, UL } from '../_legal-typography';
+import { soloPageMetadata } from '../_page-meta';
 import { Footer } from '../_sections/footer';
 import { Header } from '../_sections/header';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = soloPageMetadata({
+  path: '/privacy',
   title: '隐私政策',
   description: 'Mui简历隐私政策——我们收集什么、怎么用、你有什么权利。',
-  alternates: { canonical: '/privacy' },
-};
+});
 
 export const revalidate = 3600;
 

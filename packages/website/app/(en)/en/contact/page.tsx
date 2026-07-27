@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { pageMetadata } from '../../_page-meta';
-import { ContactView, getContactMeta } from '../../contact/_view';
+import { pageMetadata } from '@/app/(zh)/(marketing)/_page-meta';
+import { ContactView, getContactMeta } from '@/app/(zh)/(marketing)/contact/_view';
 
 export const revalidate = 3600;
 

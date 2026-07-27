@@ -4,12 +4,13 @@ import { getWebsitePublishedSkills } from '@/lib/cms-content';
 import { ContentCard } from '../_content/content-card';
 import { MarketingShell } from '../_content/marketing-shell';
 import { Highlight } from '../_icons';
+import { soloPageMetadata } from '../_page-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = soloPageMetadata({
+  path: '/skills',
   title: 'Skill 目录',
   description: 'Mui 简历收集的求职相关 skill：自有内置能力、第三方官方来源索引和后续可安装扩展。',
-  alternates: { canonical: '/skills' },
-};
+});
 
 export const revalidate = 3600;
 

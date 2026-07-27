@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { pageMetadata } from '../../_page-meta';
-import { getPricingContent } from '../../pricing/_content';
-import { PricingView } from '../../pricing/_view';
+import { pageMetadata } from '@/app/(zh)/(marketing)/_page-meta';
+import { getPricingContent } from '@/app/(zh)/(marketing)/pricing/_content';
+import { PricingView } from '@/app/(zh)/(marketing)/pricing/_view';
 
 export const dynamic = 'force-dynamic';
 

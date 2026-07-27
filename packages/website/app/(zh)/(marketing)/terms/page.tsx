@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 
 import { H2, Lead, Li, P, UL } from '../_legal-typography';
+import { soloPageMetadata } from '../_page-meta';
 import { Footer } from '../_sections/footer';
 import { Header } from '../_sections/header';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = soloPageMetadata({
+  path: '/terms',
   title: '服务条款',
   description: 'Mui简历服务条款——使用本服务前请仔细阅读。',
-  alternates: { canonical: '/terms' },
-};
+});
 
 export const revalidate = 3600;
 

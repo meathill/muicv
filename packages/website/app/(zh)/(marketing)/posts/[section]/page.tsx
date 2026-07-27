@@ -6,6 +6,7 @@ import { getWebsitePublishedPosts } from '@/lib/cms-content';
 import { ContentCard } from '../../_content/content-card';
 import { MarketingShell } from '../../_content/marketing-shell';
 import { Highlight } from '../../_icons';
+import { soloPageMetadata } from '../../_page-meta';
 
 export const revalidate = 3600;
 
@@ -19,11 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const resolvedParams = await params;
   if (!isPostSection(resolvedParams.section)) return {};
   const meta = POST_SECTION_META[resolvedParams.section];
-  return {
-    title: meta.label,
-    description: meta.description,
-    alternates: { canonical: meta.path },
-  };
+  return soloPageMetadata({ path: meta.path, title: meta.label, description: meta.description });
 }
 
 export default async function PostSectionPage({ params }: { params: Promise<Params> }) {

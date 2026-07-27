@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
-import { HomePage } from '../_home';
-import { getDictionary } from '../_i18n/dict';
-import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '../_page-meta';
+import { HomePage } from '@/app/(zh)/(marketing)/_home';
+import { getDictionary } from '@/app/(zh)/(marketing)/_i18n/dict';
+import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '@/app/(zh)/(marketing)/_page-meta';
 
 export const revalidate = 3600;
 

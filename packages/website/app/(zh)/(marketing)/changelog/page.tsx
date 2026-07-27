@@ -4,12 +4,13 @@ import { getWebsitePublishedChangelog } from '@/lib/cms-content';
 import { MarketingShell } from '../_content/marketing-shell';
 import { MarkdownBody } from '../_content/markdown';
 import { Highlight } from '../_icons';
+import { soloPageMetadata } from '../_page-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = soloPageMetadata({
+  path: '/changelog',
   title: '更新日志',
   description: 'Mui 简历产品、skill、app 和网站内容中心的更新记录。',
-  alternates: { canonical: '/changelog' },
-};
+});
 
 export const revalidate = 3600;
 

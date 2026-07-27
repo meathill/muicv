@@ -50,13 +50,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   const contentPages = [
     ...posts.map((post) => ({
-      path: `${POST_SECTION_META[post.section].path}/${post.slug}`,
+      path: `${POST_SECTION_META[post.section].path}/${encodeURIComponent(post.slug)}`,
       priority: post.section === 'jobs' ? 0.75 : 0.6,
       changeFrequency: 'monthly' as const,
       lastModified: toDate(post.updatedAt),
     })),
     ...skills.map((skill) => ({
-      path: `/skills/${skill.slug}`,
+      path: `/skills/${encodeURIComponent(skill.slug)}`,
       priority: 0.7,
       changeFrequency: 'weekly' as const,
       lastModified: toDate(skill.updatedAt),

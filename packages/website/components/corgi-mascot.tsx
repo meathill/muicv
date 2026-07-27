@@ -17,7 +17,7 @@ export function CorgiMascot({ className = 'h-9 w-9', priority = false }: Props) 
       {/* biome-ignore lint/performance/noImgElement: 已经手动管理 dimensions/loading；next/image 在 cf workers 上额外配置不值。 */}
       <img
         src="/brand/mui-logo.png"
-        alt=""
+        alt="MuiCV"
         width={320}
         height={207}
         loading={priority ? 'eager' : 'lazy'}

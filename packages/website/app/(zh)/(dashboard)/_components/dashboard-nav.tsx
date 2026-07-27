@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { ThemeToggle } from '../../_theme/theme-toggle';
+import { ThemeToggle } from '../../../_theme/theme-toggle';
 
 type NavItem = {
   href: string;

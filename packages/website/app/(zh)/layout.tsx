@@ -1,64 +1,17 @@
 import type { Metadata } from 'next';
-import { Fraunces, JetBrains_Mono, Nunito } from 'next/font/google';
 
 import { Analytics } from '@/components/analytics';
 import { JsonLd } from '@/components/json-ld';
 
-import { ThemeInitScript } from './_theme/theme-init-script';
-import './globals.css';
+import { fontDisplay, fontMono, fontSans } from '../_theme/fonts';
+import { ORGANIZATION_SCHEMA, websiteSchema } from '../_theme/root-schema';
+import { ThemeInitScript } from '../_theme/theme-init-script';
+import '../globals.css';
 
 const SITE_URL = 'https://muicv.com';
 const TITLE = 'Mui简历 — 找到更好工作的 AI 求职平台';
 const DESCRIPTION =
   '一站式 AI 求职平台：智能简历、岗位发现、模拟面试、就业辅导。素材存本地，数据由你掌控；可以接入你的 AI agent，也可以用我们的桌面 app。';
-
-/** 全站默认 Organization 结构化数据。让 Google Knowledge Graph 能识别品牌。 */
-const ORGANIZATION_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Mui简历',
-  alternateName: ['MuiCV', 'Mui CV', 'MuiCV.com'],
-  url: SITE_URL,
-  logo: `${SITE_URL}/brand/mui-logo.png`,
-  description: DESCRIPTION,
-};
-
-/** WebSite schema，给 Google 提供潜在的 sitelinks search box 钩子。 */
-const WEBSITE_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'Mui简历',
-  alternateName: ['MuiCV', 'Mui CV', 'MuiCV.com'],
-  url: SITE_URL,
-  inLanguage: 'zh-CN',
-};
-
-// Display serif: Fraunces 是 variable font，opsz/SOFT 轴帮我们实现优雅 italic
-const fontDisplay = Fraunces({
-  subsets: ['latin'],
-  axes: ['SOFT', 'opsz'],
-  style: ['normal', 'italic'],
-  variable: '--font-display',
-  display: 'swap',
-  preload: false,
-});
-
-// Body sans: Nunito，圆润 friendly，配柯基卡通气质
-const fontSans = Nunito({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-  preload: false,
-});
-
-// Mono：仅终端 / 代码块用
-const fontMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-mono',
-  display: 'swap',
-  preload: false,
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -118,13 +71,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function ZhRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable}`}>
       <head>
         <ThemeInitScript />
         <JsonLd data={ORGANIZATION_SCHEMA} />
-        <JsonLd data={WEBSITE_SCHEMA} />
+        <JsonLd data={websiteSchema('zh')} />
       </head>
       <body className="bg-cream text-ink antialiased">
         {children}
