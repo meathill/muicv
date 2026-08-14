@@ -8,6 +8,21 @@
 > 用户 API Key / Skill 目录 + Payload CMS / 腾讯校招内容落地 / Issue 11 首页移动端
 > LCP）的决策和约束已沉淀进 [DEV_NOTE.md](./DEV_NOTE.md)，不再保留勾选列表。
 
+### 插队任务：Pricing 缓存化 + 缓存栈补全 + 统计/IndexNow（issue #14 + #13）
+
+目标：中英文 Pricing 从每次完整 SSR 改为构建期静态化（动态数据走客户端 API），静态资源加 immutable 头，补 DO Queue 让时间型 ISR revalidation 真正生效；接入 IndexNow 提升 Bing 收录。
+
+- [x] `GET /api/pricing/state` 聚合登录态 / 订阅 / 币种 / CN cooldown（issue #14）
+- [x] PricingView 拆静态壳 + `_pricing-client.tsx` 客户端动态区，两个 pricing page 去掉 `force-dynamic`
+- [x] `CurrencyToggle` 加可选 `onSwitch`（dashboard 行为不变）
+- [x] website / cms `public/_headers`：`/_next/static/*` immutable
+- [x] website：regional cache + DO Queue + `enableCacheInterception`；cms：regional cache + interception
+- [x] IndexNow key 文件 + `scripts/indexnow-submit.ts`（issue #13）
+- [x] website / cms build + dev 手测通过
+- [x] 验收补充：/api/* 全局 no-store（next.config）；Pricing CDN 缓存规则评估后不做（见 DEV_NOTE）
+- [ ] 部署 website + cms（DO migration 随部署应用）
+- [ ] 部署后 curl 验证 immutable 头 + 跑 indexnow 脚本 + 关闭两个 issue
+
 ### 插队任务：连接授权页简化
 
 目标：把浏览器授权页从“解释 API key / dashboard / callback”改成普通用户能立刻理解的“确认连接并回到桌面端继续”。

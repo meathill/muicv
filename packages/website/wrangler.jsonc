@@ -61,6 +61,21 @@
       "service": "muicv-web"
     }
   ],
+  // OpenNext ISR revalidation queue：时间型 revalidate（posts / sitemap）后台排队执行。
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler"]
+    }
+  ],
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://muicv.com",
     "NEXT_PUBLIC_BETTER_AUTH_URL": "https://muicv.com",

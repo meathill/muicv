@@ -8,12 +8,13 @@ import { useState, useTransition } from 'react';
  * 展示币种 toggle —— ¥ CN / $ USD 二选一。
  *
  * 受控显示，当前选中币种由 server component 通过 `currency` prop 传入（来自 `getRequestCurrency`）。
- * 点击非当前币种时：POST /api/billing/currency 写 cookie，然后 router.refresh() 让 server
- * component 用新币种重新渲染对应的价格 / Checkout 流。
+ * 点击非当前币种时：POST /api/billing/currency 写 cookie，然后：
+ *   - 默认（dashboard 等）：router.refresh() 让 server component 用新币种重渲染
+ *   - 传了 onSwitch（静态页如 pricing）：由父组件更新本地 state，不做整页刷新
  *
  * 不在前端持有本地状态，避免和 cookie / SSR 结果不同步。
  */
-export function CurrencyToggle({ currency }: { currency: Currency }) {
+export function CurrencyToggle({ currency, onSwitch }: { currency: Currency; onSwitch?: (next: Currency) => void }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [requesting, setRequesting] = useState<Currency | null>(null);
@@ -28,7 +29,11 @@ export function CurrencyToggle({ currency }: { currency: Currency }) {
     })
       .then((res) => res.json().catch(() => ({})))
       .then(() => {
-        startTransition(() => router.refresh());
+        if (onSwitch) {
+          onSwitch(next);
+        } else {
+          startTransition(() => router.refresh());
+        }
       })
       .finally(() => setRequesting(null));
   }

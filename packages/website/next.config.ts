@@ -59,6 +59,13 @@ const nextConfig: NextConfig = {
           { key: 'X-XSS-Protection', value: '0' },
         ],
       },
+      {
+        // API 一律 no-store：Next 16 不会自动给 route handler 加 Cache-Control，
+        // force-dynamic 只保证 OpenNext 不缓存。显式声明防止浏览器启发式缓存 /
+        // 未来加 CDN 缓存规则时误缓存用户数据（登录态 / 订阅 / 支付等）。
+        source: '/api/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
     ];
   },
 };

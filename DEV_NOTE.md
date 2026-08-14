@@ -54,6 +54,15 @@
 - `worker-configuration.d.ts`（14k+ 行，wrangler 自动生成）不要 review、不要手改；
   跑 `pnpm --filter @muicv/website cf-typegen` 重新生成即可。
 - 本地开发两套：`pnpm dev` 是纯 Next.js，最快；`pnpm dev:cf` 走 Wrangler，更贴近生产 Worker 行为。
+- **缓存栈（2026-08，issue #14）**：`open-next.config.ts` = R2 incremental cache + regional cache（long-lived）+ DO Queue + `enableCacheInterception`。
+  - **时间型 revalidation（posts / sitemap 的 `revalidate=3600`）必须有 DO Queue**（`NEXT_CACHE_DO_QUEUE` binding + `new_sqlite_classes: ["DOQueueHandler"]` migration）才会后台排队执行——之前只配了 R2 没配 queue，revalidate 实际没生效。
+  - 刻意不加 tag cache / cache purge：站点不用 `revalidateTag` / `revalidatePath`，按需失效链路用不到。
+  - `deploy` 命令会跑 `populateCache` 把构建期预渲染数据写进 R2，所以纯静态页（如 pricing）改内容 = 部署即生效，不需要 revalidate 兜底。
+- **静态资源 immutable 头**：`public/_headers` 配 `/_next/static/*` → `Cache-Control: public,max-age=31536000,immutable`。OpenNext 会把 public/ 拷进 `.open-next/assets`，Cloudflare Workers Assets 直接吃这份 `_headers`；`next.config.ts` 的 headers 对静态资源无效（Worker 不跑在 assets 前面）。website / cms 都要各放一份。
+- **Pricing 页静态化（issue #14）**：跟首页同套路——静态壳 + 客户端动态区。动态数据（登录态 / 订阅 / 币种 / CN cooldown）由 `GET /api/pricing/state` 挂载后一次拿齐；币种切换走 `CurrencyToggle` 新增的可选 `onSwitch` prop（本地 state 更新，不再 router.refresh，dashboard 不传保持原行为）；interval 只维护本地 state 并 `history.replaceState` 同步 URL。价格未返回前显示占位符避免「先 $ 后 ¥」闪烁。
+- **IndexNow（issue #13）**：key 文件 `public/<key>.txt`（内容 = key）随构建发布，`scripts/indexnow-submit.ts` 抓 sitemap 一次性提交全部 URL 到 api.indexnow.org，部署后手跑一次，不引入 cron。
+- **CDN 层缓存 Pricing（评估后不做，2026-08）**：OpenNext 缓存命中后 TTFB 仍有 1~3s（Worker 执行 + R2 读取），因为 Cloudflare CDN 默认不缓存 Worker 返回的 HTML。曾写过一个 Cache Rules API 脚本想给 `/pricing*` 加 `cache_everything` + `edge_ttl 1h`，但**最终决定不做**：ISR 已保证内容正确且命中，CDN 规则只是省掉 Worker 执行；代价是「部署改了价格/文案，但边缘还在发旧版」的失效心智负担（要记得 purge），低流量站点不划算。如果哪天要加，流程是 Dashboard 两条规则（hostname `muicv.com` + path `starts_with /pricing`、`/en/pricing`，Cache Everything + Edge TTL 1h），验证 `cf-cache-status: HIT`。
+- **API 路由统一 no-store**：Next 16 不会自动给 route handler 加 `Cache-Control`，`force-dynamic` 只保证 OpenNext 不缓存；防浏览器启发式缓存 / 未来加缓存规则时误缓存用户数据，在 `next.config.ts` 加 `/api/:path*` → `Cache-Control: no-store` 全局规则（已验证对 route handler 生效）。
 
 ## SEO / OG / 安全 headers（packages/website）
 
@@ -79,6 +88,8 @@
 - **fallback OG 必须是 ASCII**：兜底图用 `fontFamily: 'sans-serif'`、只渲染 `MuiCV` / `AI Job Search Platform` 这种 ASCII 文字，**绝不能塞 CJK**——一旦走兜底就意味着没字体可用，再渲染中文会再次抛错。
 - **markdown heading 层级**：CMS 文章用 `##` 起算章节，页面外壳已经有 h1（post.title）。`markdown.tsx` 里 `new Marked()` 自定义 renderer 把 heading depth `Math.max(depth, 2)` 兜底到 h2，防止 markdown 出第二个 h1 / h1→h3 跳级。**不要做 +1 bump**——会把 `##` 推到 h3，反而制造 h1→h3 跳级。
 - **HTTP 安全 headers 在 `next.config.ts` 的 `async headers()`**：OpenNext 透传到 Cloudflare Worker 响应。设了 HSTS / nosniff / Referrer / Permissions / X-XSS=0。**没设 CSP**——SSR + GA + 多源动态 OG，CSP 容易把自己锁出去，等专门文档再加。
+- **统计接入（issue #13，2026-07~08）**：GA4（`NEXT_PUBLIC_GA_ID`，构建期内联）+ Web Vitals 上报（`components/analytics.tsx`，LCP/CLS/INP 走 `web-vitals` 事件，弥补 CrUX 长期 No Data）；GSC / Bing 验证 token 同前缀 env 写进 `layout.tsx` 的 `verification` meta。GA 脚本 `lazyOnload`，不和首页 LCP 抢资源。
+- **渠道策略（issue #13）**：目标用户是中文求职人群，Google 上几乎没有自然流量（GSC / Bing 关键词全是品牌拼写 / 域名变体，0 点击）——**Bing / 百度收录为主，Google 佛系**；内容承接（“简历怎么写”类）走 CMS posts 频道，不批量造 SEO 页。海外英文落地页（/en/*）已存在但暂不主动投搜索。
 - **GA4 + Web Vitals 上报**：客户端 `<Analytics>` 组件用 `next/script strategy="lazyOnload"`（首页 LCP 优化后从 `afterInteractive` 改成等 `load` 事件后再拉，避免和首屏抢网络/主线程）加载 gtag；`useReportWebVitals` 把 TTFB / FCP / LCP / CLS / INP 作为自定义 event 发到 GA4。`anonymize_ip: true`。生产没有 CrUX 数据时，RUM 替代。
 - **GSC / Bing 验证 token 走 env**：root layout `metadata.verification.google` / `other.msvalidate.01` 读 `NEXT_PUBLIC_GSC_VERIFICATION` / `NEXT_PUBLIC_BING_VERIFICATION`，没设就跳过。预留位置，不强制现在做。
 
