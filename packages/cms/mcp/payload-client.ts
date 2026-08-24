@@ -1,6 +1,26 @@
+import type { CmsArticlePayload } from './article-input.ts';
 import type { CmsChangelogPayload } from './changelog-input.ts';
 import type { CmsPostPayload } from './post-input.ts';
 import type { CmsSkillPayload } from './skill-input.ts';
+
+export type CmsArticleDocument = {
+  id: number | string;
+  site: string;
+  locale: string;
+  title: string;
+  slug: string;
+  status: string;
+  summary: string;
+  bodyMarkdown: string;
+  tags?: Array<{ value: string }>;
+  keywords?: Array<{ value: string }>;
+  author: string;
+  publishedAt: string;
+  seoTitle: string;
+  seoDescription: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 export type CmsPostDocument = CmsPostPayload & {
   id: number | string;
@@ -96,6 +116,36 @@ export class CmsClient {
   async updatePost(id: number | string, payload: CmsPostPayload): Promise<CmsPostDocument> {
     return unwrapMutationDocument(
       await this.request<PayloadMutationResponse<CmsPostDocument>>(`/api/posts/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    );
+  }
+
+  async findArticleBySlug(site: string, locale: string, slug: string): Promise<CmsArticleDocument | null> {
+    const params = new URLSearchParams({
+      depth: '0',
+      limit: '1',
+      'where[site][equals]': site,
+      'where[locale][equals]': locale,
+      'where[slug][equals]': slug,
+    });
+    const result = await this.request<PayloadListResponse<CmsArticleDocument>>(`/api/articles?${params.toString()}`);
+    return result.docs?.[0] ?? null;
+  }
+
+  async createArticle(payload: CmsArticlePayload): Promise<CmsArticleDocument> {
+    return unwrapMutationDocument(
+      await this.request<PayloadMutationResponse<CmsArticleDocument>>('/api/articles', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    );
+  }
+
+  async updateArticle(id: number | string, payload: CmsArticlePayload): Promise<CmsArticleDocument> {
+    return unwrapMutationDocument(
+      await this.request<PayloadMutationResponse<CmsArticleDocument>>(`/api/articles/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),
       }),

@@ -7,6 +7,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { r2Storage } from '@payloadcms/storage-r2';
 import { buildConfig } from 'payload';
 
+import { Articles } from './collections/articles';
 import { Changelog } from './collections/changelog';
 import { Media } from './collections/media';
 import { Posts } from './collections/posts';
@@ -43,7 +44,7 @@ export default buildConfig({
       importMapFile: path.resolve(dirname, 'app/(payload)/admin/importMap.js'),
     },
   },
-  collections: [Users, Media, Posts, SkillExtensions, Changelog],
+  collections: [Users, Media, Posts, Articles, SkillExtensions, Changelog],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

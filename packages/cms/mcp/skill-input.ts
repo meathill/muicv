@@ -1,6 +1,5 @@
-import * as z from 'zod/v4';
-
 import type { SkillAppAvailability, SkillDistributionMode, SkillPublisherType } from '@muicv/shared';
+import * as z from 'zod/v4';
 
 import { contentStatusSchema, slugifyTitle } from './post-input.ts';
 

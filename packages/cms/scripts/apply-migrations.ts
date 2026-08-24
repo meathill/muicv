@@ -1,8 +1,8 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
 
 type WranglerConfig = {
   d1_databases?: Array<{
@@ -123,7 +123,9 @@ function extractUpStatements(migration: Migration): string[] {
   const source = readFileSync(migration.path, 'utf8');
   const upSection = source.split(/export\s+async\s+function\s+down/)[0] ?? '';
   const runCallCount = upSection.match(/await\s+db\.run/g)?.length ?? 0;
-  const statementPattern = /await\s+db\.run\(\s*sql`([\s\S]*?)`\s*,?\s*\)/g;
+  // 模板串内的反引号都写作 \`（如 FOREIGN KEY (`_parent_id`)），因此串结束的反引号
+  // 前面必然不是反斜杠；不加负向后顾会把 `\`) 截断成残缺 SQL。
+  const statementPattern = /await\s+db\.run\(\s*sql`((?:\\.|[^`])*)(?<!\\)`\s*,?\s*\)/g;
   const statements = Array.from(upSection.matchAll(statementPattern), (match) => normalizeSqlStatement(match[1] ?? ''));
 
   if (statements.length !== runCallCount) {

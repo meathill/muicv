@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     posts: Post;
+    articles: Article;
     skillExtensions: SkillExtension;
     changelog: Changelog;
     'payload-kv': PayloadKv;
@@ -82,6 +83,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
+    articles: ArticlesSelect<false> | ArticlesSelect<true>;
     skillExtensions: SkillExtensionsSelect<false> | SkillExtensionsSelect<true>;
     changelog: ChangelogSelect<false> | ChangelogSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -205,6 +207,39 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles".
+ */
+export interface Article {
+  id: number;
+  site: 'muicv' | 'dyqr' | 'taomenu';
+  locale: 'en' | 'zh-CN' | 'fr' | 'es' | 'pt' | 'th' | 'vi' | 'ja';
+  title: string;
+  slug: string;
+  status: 'draft' | 'published';
+  summary: string;
+  bodyMarkdown: string;
+  tags?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  keywords?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  author: string;
+  publishedAt: string;
+  seoTitle: string;
+  seoDescription: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "skillExtensions".
  */
 export interface SkillExtension {
@@ -299,6 +334,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'posts';
         value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'articles';
+        value: number | Article;
       } | null)
     | ({
         relationTo: 'skillExtensions';
@@ -402,6 +441,38 @@ export interface PostsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   section?: T;
+  status?: T;
+  summary?: T;
+  bodyMarkdown?: T;
+  tags?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  keywords?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  author?: T;
+  publishedAt?: T;
+  seoTitle?: T;
+  seoDescription?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles_select".
+ */
+export interface ArticlesSelect<T extends boolean = true> {
+  site?: T;
+  locale?: T;
+  title?: T;
+  slug?: T;
   status?: T;
   summary?: T;
   bodyMarkdown?: T;

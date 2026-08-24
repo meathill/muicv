@@ -1,12 +1,25 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-05-17
+最后更新：2026-08-24
 
 ## 当前进行中
 
 > 已完成的插队任务（设置页三分组重构 / 腾讯校招内容降级 / Changelog 工作流 / Payload
 > 用户 API Key / Skill 目录 + Payload CMS / 腾讯校招内容落地 / Issue 11 首页移动端
 > LCP）的决策和约束已沉淀进 [DEV_NOTE.md](./DEV_NOTE.md)，不再保留勾选列表。
+
+### 插队任务：多站点博客 CMS（taomenu / dyqr 共用 articles 集合）
+
+目标：muicv 的 Payload CMS 成为多个项目共用的博客后台。新增 `articles` 集合
+（site + locale + slug 复合唯一），与 muicv 自己的 `posts`（求职博文）互不影响。
+
+- [x] `packages/cms/collections/articles.ts`：site(muicv/dyqr/taomenu) × locale(en/zh-CN/fr/es/pt/th/vi/ja) 枚举，复合唯一索引，drafts 版本化，匿名只读 published
+- [x] 迁移 `20260823_183718_add_articles_collection` + 集合测试
+- [x] seed 工具 `packages/cms/scripts/seed-blog-articles.ts`：拉 dyqr 公开 `/api/site-content` → 写入 articles（幂等，`--dry-run` 支持）；dry-run 实测 37 篇可导入
+- [x] dyqr 公开博客切到读 CMS（CMS 优先、本地 D1 存档兜底），见 dyqr 仓库 aa60840
+- [x] taomenu 新增博客列表/详情页 + 导航入口 + sitemap，数据源 CMS site=taomenu
+- [ ] 用户在 Payload 后台建 API key 后跑 seed（`MUICV_CMS_API_KEY=xxx node packages/cms/scripts/seed-blog-articles.ts`）
+- [ ] `pnpm --filter @muicv/cms migrate` 应用迁移到生产 D1，然后部署 cms
 
 ### 插队任务：Pricing 缓存化 + 缓存栈补全 + 统计/IndexNow（issue #14 + #13）
 
