@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "muicv-cms": {
+      "command": "node",
+      "args": [
+        "./packages/cms/mcp/server.ts"
+      ],
+      "env": {
+        "MUICV_CMS_URL": "https://cms.muicv.com",
+        "NODE_PATH": "./packages/cms/node_modules"
+      }
+    }
+  }
+}
+

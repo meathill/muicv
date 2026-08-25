@@ -7,10 +7,10 @@
  *   node scripts/seed-seo-posts.ts --dry-run                        # 只看会写什么
  */
 
-import { type CreatePostInput, normalizeUpsertPostInput } from '../mcp/post-input.ts';
+import { type CreatePostRawInput, normalizeUpsertPostInput } from '../mcp/post-input.ts';
 import { CmsClient } from '../mcp/payload-client.ts';
 
-export const SEO_POSTS: CreatePostInput[] = [
+export const SEO_POSTS: CreatePostRawInput[] = [
   {
     title: 'AI 写简历的 7 个实战技巧：程序员如何用 AI 改出一份拿大厂 Offer 的硬核简历',
     slug: 'ai-resume-tips-for-developers',
@@ -283,7 +283,7 @@ flowchart LR
 
 MuiCV 在设计之初，就将 **ATS 机器友好性** 与 **人类视觉美感** 深度统一：
 
-1. **标准语义化 DOM 结构**：所有模板均采用标准的 `<header>`, `<article>`, `<section>`, `<ul>`, `<li>` 语义结构，保证文本抽取器 100% 正确还原层级。
+1. **标准语义化 DOM 结构**：所有模板均采用标准的 header, article, section, ul, li 语义结构，保证文本抽取器 100% 正确还原层级。
 2. **纯矢量文字 A4 渲染**：导出的每一份 PDF 都具备完整可复制的高保真文字图层与标准 UTF-8 字体嵌入，绝无图片伪装或文本框错位。
 3. **AI 智能 JD 契合度分析**：内置 AI 对话式助手，能一键读取目标岗位的 JD，自动扫描你的简历素材库，标出缺失的关键高频词，并协助你以真实项目量化改写。
 `,
@@ -321,11 +321,13 @@ async function main(): Promise<void> {
 
   for (const post of SEO_POSTS) {
     const normalized = normalizeUpsertPostInput({ ...post, onConflict: 'update' });
-    const result = await client.upsertPost(normalized);
-    if (result.action === 'created') {
+    const existing = await client.findPostBySlug(normalized.payload.slug);
+    if (!existing) {
+      await client.createPost(normalized.payload);
       created += 1;
       process.stdout.write(`  ✓ 新建: ${post.slug}\n`);
     } else {
+      await client.updatePost(existing.id, normalized.payload);
       updated += 1;
       process.stdout.write(`  ✓ 更新: ${post.slug}\n`);
     }

@@ -40,7 +40,9 @@ export const getPostInputSchema = z.object({
 });
 
 export type CreatePostInput = z.output<typeof createPostInputSchema>;
+export type CreatePostRawInput = z.input<typeof createPostInputSchema>;
 export type UpsertPostInput = z.output<typeof upsertPostInputSchema>;
+export type UpsertPostRawInput = z.input<typeof upsertPostInputSchema>;
 export type GetPostInput = z.output<typeof getPostInputSchema>;
 
 export type PayloadArrayField = Array<{ value: string }>;
