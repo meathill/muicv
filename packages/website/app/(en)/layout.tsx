@@ -22,6 +22,18 @@ export const metadata: Metadata = {
   // 英文页用 '%s · MuiCV' 模板（首页用 title.absolute 绕过）；default 给没设 title 的页兜底。
   title: { default: dict.meta.home.title, template: '%s · MuiCV' },
   description: dict.meta.home.description,
+  keywords: [
+    'AI resume builder',
+    'developer resume templates',
+    'software engineer resume',
+    'ATS resume maker',
+    'tech CV templates',
+    'online resume generator',
+    'PDF resume export',
+    'mock interview',
+    'career workspace',
+    'resume tailoring',
+  ],
   robots: {
     index: true,
     follow: true,

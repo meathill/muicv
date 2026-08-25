@@ -9,9 +9,9 @@ import { ThemeInitScript } from '../_theme/theme-init-script';
 import '../globals.css';
 
 const SITE_URL = 'https://muicv.com';
-const TITLE = 'Mui简历 — 找到更好工作的 AI 求职平台';
+const TITLE = 'MuiCV — AI 简历生成器 | 程序员简历模板、英文简历在线制作';
 const DESCRIPTION =
-  '一站式 AI 求职平台：智能简历、岗位发现、模拟面试、就业辅导。素材存本地，数据由你掌控；可以接入你的 AI agent，也可以用我们的桌面 app。';
+  'MuiCV（Mui简历）是一站式 AI 求职与简历生成平台：提供程序员简历模板、AI 简历优化润色、英文简历在线制作与一键导出 A4 PDF。素材本地保存，隐私安全可控。';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -22,21 +22,25 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   applicationName: 'Mui简历',
   keywords: [
-    '简历',
+    'AI简历生成器',
+    '程序员简历模板',
+    '英文简历在线制作',
+    'AI简历制作',
+    '简历模板',
+    'AI resume builder',
+    '软件工程师简历',
+    '在线简历生成',
+    '一键PDF导出',
+    'AI求职',
+    '模拟面试',
+    '简历优化',
+    'ATS简历',
     'resume',
     'cv',
-    '求职',
-    'job search',
-    '岗位匹配',
-    '模拟面试',
-    'mock interview',
-    '就业辅导',
-    'cover letter',
-    'AI 求职',
-    'AI agent',
   ],
   authors: [{ name: 'Mui简历' }],
   creator: 'Mui简历',
+
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',

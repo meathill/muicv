@@ -8,8 +8,8 @@ import type { TemplateSlots } from './registry';
 export type T5Props = {
   resume: TemplateResumeData;
   lang: TemplateLang;
-  accent?: string;
-  slots?: TemplateSlots;
+  accent?: string | undefined;
+  slots?: TemplateSlots | undefined;
 };
 
 export default function T5Timeline({ resume, lang, accent, slots }: T5Props) {

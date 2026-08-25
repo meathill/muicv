@@ -8,8 +8,8 @@ import type { TemplateSlots } from './registry';
 export type T1Props = {
   resume: TemplateResumeData;
   lang: TemplateLang;
-  accent?: string;
-  slots?: TemplateSlots;
+  accent?: string | undefined;
+  slots?: TemplateSlots | undefined;
 };
 
 export default function T1Classic({ resume, lang, accent, slots }: T1Props) {

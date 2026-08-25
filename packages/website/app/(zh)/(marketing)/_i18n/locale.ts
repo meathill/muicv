@@ -8,7 +8,7 @@ export const DEFAULT_LOCALE: Locale = 'zh';
 
 // 已经有英文版的路由（白名单）。英文页链到不在此列的路由时透传中文 URL，避免链到尚不存在的 /en/* 页。
 // 加一个英文页 = 往这里加它的路径（如 Wave 2 加 '/pricing'、'/about'、'/contact'）。
-export const EN_ROUTES = ['/', '/download', '/pricing', '/about', '/contact'];
+export const EN_ROUTES = ['/', '/download', '/pricing', '/about', '/contact', '/templates'];
 
 /**
  * 把站内路径映射成当前 locale 对应的 href。

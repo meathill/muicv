@@ -25,8 +25,8 @@ export type TemplateSlots = { photo?: ReactNode };
 export type JsonTemplateProps = {
   resume: TemplateResumeData;
   lang: TemplateLang;
-  accent?: string;
-  slots?: TemplateSlots;
+  accent?: string | undefined;
+  slots?: TemplateSlots | undefined;
 };
 
 export type TemplateName = TemplateId;

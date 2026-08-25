@@ -7,6 +7,8 @@ import {
   type SkillCatalogItem,
   type SkillDistributionMode,
   type SkillPublisherType,
+  getPostBySlug,
+  getPublishedPosts,
 } from './content-registry.ts';
 
 const DEFAULT_CMS_BASE_URL = 'https://cms.muicv.com';
@@ -28,6 +30,7 @@ export async function fetchCmsPublishedPosts(
   section?: PostSection,
   options: CmsContentOptions = {},
 ): Promise<ContentPost[]> {
+  const fallback = getPublishedPosts(section);
   const params = new URLSearchParams({
     depth: '0',
     limit: FETCH_LIMIT,
@@ -41,10 +44,13 @@ export async function fetchCmsPublishedPosts(
 
   const docs = await fetchPayloadDocs('posts', params, options);
   if (!docs) {
-    return [];
+    return fallback;
   }
 
-  return byPublishedAtDesc(docs.map(parsePost).filter(isContentPost));
+  const cmsPosts = docs.map(parsePost).filter(isContentPost);
+  const cmsSlugs = new Set(cmsPosts.map((p) => p.slug));
+  const merged = [...cmsPosts, ...fallback.filter((p) => !cmsSlugs.has(p.slug))];
+  return byPublishedAtDesc(merged);
 }
 
 export async function fetchCmsPostBySlug(
@@ -52,6 +58,7 @@ export async function fetchCmsPostBySlug(
   slug: string,
   options: CmsContentOptions = {},
 ): Promise<ContentPost | null> {
+  const fallback = getPostBySlug(section, slug);
   const params = new URLSearchParams({
     depth: '0',
     limit: '1',
@@ -61,10 +68,10 @@ export async function fetchCmsPostBySlug(
   });
   const docs = await fetchPayloadDocs('posts', params, options);
   if (!docs) {
-    return null;
+    return fallback;
   }
 
-  return parsePost(docs[0]) ?? null;
+  return parsePost(docs[0]) ?? fallback;
 }
 
 export async function fetchCmsPublishedSkills(options: CmsContentOptions = {}): Promise<SkillCatalogItem[]> {

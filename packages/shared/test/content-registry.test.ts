@@ -9,8 +9,11 @@ import {
 } from '../src/cms-content.ts';
 import { getPublishedPosts, getPublishedSkills } from '../src/content-registry.ts';
 
-test('content registry 不再内置发布内容', () => {
-  assert.deepEqual(getPublishedPosts('jobs'), []);
+test('content registry 内置核心 SEO 求职文章', () => {
+  const jobsPosts = getPublishedPosts('jobs');
+  assert.ok(jobsPosts.length >= 2);
+  assert.ok(jobsPosts.some((p) => p.slug === 'ai-resume-tips-for-developers'));
+  assert.ok(jobsPosts.some((p) => p.slug === 'english-resume-for-chinese-developers'));
   assert.deepEqual(getPublishedSkills(), []);
 });
 

@@ -7,6 +7,7 @@ export const en: Dictionary = {
   brand: { name: 'MuiCV', by: 'by Mui 🐾' },
   nav: {
     links: [
+      { label: 'Templates', href: '/templates' },
       { label: 'Articles', href: '/posts/jobs' },
       { label: 'Skills', href: '/skills' },
       { label: 'Pricing', href: '/pricing' },
@@ -25,12 +26,14 @@ export const en: Dictionary = {
         label: 'Product',
         links: [
           { label: 'Features', href: '/#features' },
+          { label: 'Resume Templates', href: '/templates' },
           { label: 'Pricing', href: '/pricing' },
           { label: 'Desktop app', href: '/download' },
           { label: 'Skills', href: '/skills' },
           { label: 'Console', href: '/dashboard' },
         ],
       },
+
       {
         label: 'Content',
         links: [
@@ -254,9 +257,9 @@ export const en: Dictionary = {
   },
   meta: {
     home: {
-      title: 'MuiCV — AI Resume Builder & Optimizer to Land a Better Job',
+      title: 'MuiCV — AI Resume Builder | Developer Resume Templates & ATS Resume Maker',
       description:
-        'MuiCV (muicv.com) is an AI job-search platform: build, optimize, and tailor your resume for each role, then export a clean A4 PDF. Data stays local.',
+        'MuiCV (muicv.com) is the all-in-one AI resume builder for software engineers and tech professionals: developer resume templates, AI bullet optimization, bilingual resume generation, and clean A4 PDF export.',
     },
     download: {
       title: 'Download MuiCV Desktop App (macOS / Windows / Linux)',

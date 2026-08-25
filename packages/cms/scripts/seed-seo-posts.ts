@@ -1,87 +1,30 @@
-export type ContentStatus = 'draft' | 'published';
+#!/usr/bin/env node
+/**
+ * 把 SEO 核心技术博文 seed 到 muicv CMS 的 posts 集合（幂等，可重复执行）。
+ *
+ * 用法：
+ *   MUICV_CMS_API_KEY=xxx node scripts/seed-seo-posts.ts            # 正式写入
+ *   node scripts/seed-seo-posts.ts --dry-run                        # 只看会写什么
+ */
 
-export type PostSection = 'jobs' | 'product' | 'guide';
+import { type CreatePostInput, normalizeUpsertPostInput } from '../mcp/post-input.ts';
+import { CmsClient } from '../mcp/payload-client.ts';
 
-export type ContentPost = {
-  slug: string;
-  section: PostSection;
-  status: ContentStatus;
-  title: string;
-  summary: string;
-  bodyMarkdown: string;
-  tags: string[];
-  keywords: string[];
-  author: string;
-  publishedAt: string;
-  updatedAt: string;
-  seoTitle: string;
-  seoDescription: string;
-};
-
-export type SkillPublisherType = 'muicv' | 'official' | 'community';
-export type SkillDistributionMode = 'built_in' | 'link_only' | 'hosted' | 'external_direct';
-export type SkillAppAvailability = 'built_in' | 'link_only' | 'installable' | 'coming_soon';
-
-export type SkillCatalogItem = {
-  slug: string;
-  status: ContentStatus;
-  title: string;
-  publisher: string;
-  publisherType: SkillPublisherType;
-  sourceUrl?: string;
-  sourceLabel?: string;
-  sourceNote?: string;
-  distributionMode: SkillDistributionMode;
-  appAvailability: SkillAppAvailability;
-  summary: string;
-  bodyMarkdown: string;
-  useCases: string[];
-  tags: string[];
-  keywords: string[];
-  disclaimer?: string;
-  publishedAt: string;
-  updatedAt: string;
-  seoTitle: string;
-  seoDescription: string;
-};
-
-export type ChangelogItem = {
-  slug: string;
-  status: ContentStatus;
-  title: string;
-  summary: string;
-  bodyMarkdown: string;
-  version?: string;
-  publishedAt: string;
-  updatedAt: string;
-};
-
-export const POST_SECTION_META: Record<PostSection, { label: string; path: string; description: string }> = {
-  jobs: {
-    label: '求职博文',
-    path: '/posts/jobs',
-    description: '围绕校招、社招、简历、面试、offer 决策的实用文章。',
-  },
-  product: {
-    label: '产品文章',
-    path: '/posts/product',
-    description: 'Mui 简历的产品思考、能力说明和使用方式。',
-  },
-  guide: {
-    label: '使用教程',
-    path: '/posts/guide',
-    description: '从下载安装到素材整理、简历生成、面试复盘的操作指南。',
-  },
-};
-
-export const CONTENT_POSTS: ContentPost[] = [
+export const SEO_POSTS: CreatePostInput[] = [
   {
+    title: 'AI 写简历的 7 个实战技巧：程序员如何用 AI 改出一份拿大厂 Offer 的硬核简历',
     slug: 'ai-resume-tips-for-developers',
     section: 'jobs',
     status: 'published',
-    title: 'AI 写简历的 7 个实战技巧：程序员如何用 AI 改出一份拿大厂 Offer 的硬核简历',
     summary:
       '很多程序员用 AI 改简历，结果往往是「满篇假大空的形容词」或「千篇一律的套话」。本文系统拆解如何用 AI 挖掘深层技术难点、量化业务指标、提炼 STAR 项目亮点，并给出真实修改前后对比。',
+    tags: ['求职攻略', '简历技巧', 'AI工具', '程序员'],
+    keywords: ['AI写简历技巧', '程序员简历优化', 'AI简历修改', 'STAR原则', '大厂简历模板', 'ATS优化'],
+    author: 'Mui简历',
+    publishedAt: '2026-08-25T00:00:00.000Z',
+    seoTitle: 'AI 写简历的 7 个实战技巧：程序员如何用 AI 改出高通过率硬核简历 - MuiCV',
+    seoDescription:
+      '程序员如何正确用 AI 优化简历？从 STAR 原则、技术深度挖掘、量化指标提炼到 ATS 关键词对齐，7 个实战技巧与真实案例对比，助你拿到更多面试。',
     bodyMarkdown: `在 AI 时代，越来越多的程序员开始使用大语言模型（如 ChatGPT、Claude、DeepSeek 或 MuiCV）来辅助修改简历。然而，很多人得到的反馈却是：**「这篇简历一看就是 AI 写的，充满了空话套话，毫无技术细节。」**
 
 HR 和技术面试官每天看上百份简历，对「显著提升了系统性能」「极大优化了用户体验」这种 AI 常见的车轱辘话早已免疫。
@@ -163,22 +106,28 @@ Google 招聘团队推荐的简历黄金公式是：**Accomplished [X] as measur
 2. **针对不同 JD 一键派生**：同一个素材库，一键针对前端架构师、全栈或海外岗位派生出不同版本的量化简历；
 3. **专业 A4 渲染引擎**：内置极客科技、经典双栏等 6 套设计模板，保证导出的 PDF 100% 符合 ATS 机器解析与打印排版标准。
 `,
-    tags: ['求职攻略', '简历技巧', 'AI工具', '程序员'],
-    keywords: ['AI写简历技巧', '程序员简历优化', 'AI简历修改', 'STAR原则', '大厂简历模板', 'ATS优化'],
-    author: 'Mui简历',
-    publishedAt: '2026-08-25',
-    updatedAt: '2026-08-25',
-    seoTitle: 'AI 写简历的 7 个实战技巧：程序员如何用 AI 改出高通过率硬核简历 - MuiCV',
-    seoDescription:
-      '程序员如何正确用 AI 优化简历？从 STAR 原则、技术深度挖掘、量化指标提炼到 ATS 关键词对齐，7 个实战技巧与真实案例对比，助你拿到更多面试。',
   },
   {
+    title: '中国程序员如何写出一份地道的英文简历？外企与 Remote 远程求职避坑指南',
     slug: 'english-resume-for-chinese-developers',
     section: 'jobs',
     status: 'published',
-    title: '中国程序员如何写出一份地道的英文简历？外企与 Remote 远程求职避坑指南',
     summary:
       '中文简历直翻英文最容易踩的坑：动词无力（Responsible for 泛滥）、中式英语表达、版式不符合欧美 ATS 标准。本文梳理强动词库（Action Verbs）、单页规范与外企 HR 偏好。',
+    tags: ['英文简历', '外企求职', 'Remote', '程序员'],
+    keywords: [
+      '程序员英文简历',
+      '外企简历模板',
+      '英文简历Action Verbs',
+      'Remote求职简历',
+      'ATS英文简历',
+      '英文简历在线制作',
+    ],
+    author: 'Mui简历',
+    publishedAt: '2026-08-25T00:00:00.000Z',
+    seoTitle: '中国程序员如何写出地道英文简历？外企与 Remote 求职避坑指南 - MuiCV',
+    seoDescription:
+      '中国程序员写英文简历指南：告别 Responsible for，掌握 50+ 强力 Action Verbs 与量化表达公式，符合欧美 ATS 筛选标准，助你顺利斩获外企与远程工作 Offer。',
     bodyMarkdown: `随着海外外企（如 Microsoft、Google、Amazon、Apple）国内研发中心以及全球 Remote（远程办公）岗位的普及，越来越多的国内程序员开始准备英文简历。
 
 然而，很多技术实力极其过硬的工程师，投递海外岗位时却频频石沉大海。查看他们的英文简历，最常见的问题并不是「语法错误」，而是**「中式直翻味过浓、动词乏力、版式不符合欧美 ATS 规范」**。
@@ -251,29 +200,21 @@ Google 招聘团队推荐的简历黄金公式是：**Accomplished [X] as measur
 2. **文本可读性与字体**：使用标准清晰字体（如 Inter、Helvetica、Roboto），避免花哨的非标图标与图片式文本框。
 3. **双语版本同步维护**：推荐使用 MuiCV 双语模板引擎，原生支持同一份数据在 \`zh\` 与 \`en\` 视图间自由切换并一键导出标准 A4 PDF。
 `,
-    tags: ['英文简历', '外企求职', 'Remote', '程序员'],
-    keywords: [
-      '程序员英文简历',
-      '外企简历模板',
-      '英文简历Action Verbs',
-      'Remote求职简历',
-      'ATS英文简历',
-      '英文简历在线制作',
-    ],
-    author: 'Mui简历',
-    publishedAt: '2026-08-25',
-    updatedAt: '2026-08-25',
-    seoTitle: '中国程序员如何写出地道英文简历？外企与 Remote 求职避坑指南 - MuiCV',
-    seoDescription:
-      '中国程序员写英文简历指南：告别 Responsible for，掌握 50+ 强力 Action Verbs 与量化表达公式，符合欧美 ATS 筛选标准，助你顺利斩获外企与远程工作 Offer。',
   },
   {
+    title: '程序员如何针对 ATS 招聘筛选系统优化简历？从算法解析到 100% 关键字匹配实操',
     slug: 'how-to-optimize-resume-for-ats',
     section: 'guide',
     status: 'published',
-    title: '程序员如何针对 ATS 招聘筛选系统优化简历？从算法解析到 100% 关键字匹配实操',
     summary:
       '超过 85% 的大厂和外企使用 ATS 招聘系统进行简历机器初筛。本文深度拆解 ATS 的解析机制、文本框/双栏排版陷阱、关键词匹配算法以及如何通过 MuiCV 提升通过率。',
+    tags: ['ATS系统', '简历优化', '求职指南', '面试求职'],
+    keywords: ['ATS简历优化', '什么是ATS筛选', '程序员简历ATS', 'ATS关键词匹配', '简历通过率', 'AI简历生成器'],
+    author: 'Mui简历',
+    publishedAt: '2026-08-25T00:00:00.000Z',
+    seoTitle: '程序员如何针对 ATS 招聘系统优化简历？算法解析与关键字匹配实操 - MuiCV',
+    seoDescription:
+      '深度解析 ATS（Applicant Tracking System）机器初筛原理，避免排版格式雷区，教你科学提取目标岗位 JD 关键词并实现自然高匹配度。',
     bodyMarkdown: `在今天的招聘流程中，当你向腾讯、字节、阿里巴巴、微软、亚马逊或外企投递简历时，**你的第一位读者几乎 100% 不是人类 HR，而是 ATS 系统（Applicant Tracking System，求职者追踪系统）**。
 
 据统计，知名科技公司的每一个技术岗位通常会收到 300~1000 份简历，其中 **超过 75% 的简历在到达招聘官桌前就被 ATS 机器算法直接过滤淘汰**。
@@ -342,48 +283,58 @@ flowchart LR
 
 MuiCV 在设计之初，就将 **ATS 机器友好性** 与 **人类视觉美感** 深度统一：
 
-1. **标准语义化 DOM 结构**：所有模板均采用标准的 \`<header>\`, \`<article>\`, \`<section>\`, \`<ul>\`, \`<li>\` 语义结构，保证文本抽取器 100% 正确还原层级。
+1. **标准语义化 DOM 结构**：所有模板均采用标准的 `<header>`, `<article>`, `<section>`, `<ul>`, `<li>` 语义结构，保证文本抽取器 100% 正确还原层级。
 2. **纯矢量文字 A4 渲染**：导出的每一份 PDF 都具备完整可复制的高保真文字图层与标准 UTF-8 字体嵌入，绝无图片伪装或文本框错位。
 3. **AI 智能 JD 契合度分析**：内置 AI 对话式助手，能一键读取目标岗位的 JD，自动扫描你的简历素材库，标出缺失的关键高频词，并协助你以真实项目量化改写。
 `,
-    tags: ['ATS系统', '简历优化', '求职指南', '面试求职'],
-    keywords: ['ATS简历优化', '什么是ATS筛选', '程序员简历ATS', 'ATS关键词匹配', '简历通过率', 'AI简历生成器'],
-    author: 'Mui简历',
-    publishedAt: '2026-08-25',
-    updatedAt: '2026-08-25',
-    seoTitle: '程序员如何针对 ATS 招聘系统优化简历？算法解析与关键字匹配实操 - MuiCV',
-    seoDescription:
-      '深度解析 ATS（Applicant Tracking System）机器初筛原理，避免排版格式雷区，教你科学提取目标岗位 JD 关键词并实现自然高匹配度。',
   },
 ];
 
-export const SKILL_CATALOG: SkillCatalogItem[] = [];
-
-export const CHANGELOG_ITEMS: ChangelogItem[] = [];
-
-function byPublishedAtDesc<T extends { publishedAt: string }>(items: T[]): T[] {
-  return [...items].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+function parseArgs(argv: string[]): { dryRun: boolean } {
+  return { dryRun: argv.includes('--dry-run') };
 }
 
-export function getPublishedPosts(section?: PostSection): ContentPost[] {
-  const posts = CONTENT_POSTS.filter((post) => post.status === 'published' && (!section || post.section === section));
-  return byPublishedAtDesc(posts);
+async function main(): Promise<void> {
+  const { dryRun } = parseArgs(process.argv.slice(2));
+
+  process.stdout.write(`共 ${SEO_POSTS.length} 篇 SEO 核心文章待同步${dryRun ? '（dry run，不写入）' : ''}\n`);
+  for (const post of SEO_POSTS) {
+    process.stdout.write(`  [${post.section}] ${post.slug} · ${post.title}\n`);
+  }
+
+  if (dryRun) {
+    return;
+  }
+
+  const apiKey = process.env.MUICV_CMS_API_KEY?.trim();
+  if (!apiKey) {
+    process.stdout.write(
+      '提示：未检测到 MUICV_CMS_API_KEY。如需正式写入远端 Payload CMS，请提供环境变量 MUICV_CMS_API_KEY=xxx。\n',
+    );
+    return;
+  }
+
+  const cmsBaseUrl = process.env.MUICV_CMS_URL?.trim();
+  const client = new CmsClient({ ...(cmsBaseUrl ? { baseUrl: cmsBaseUrl } : {}), apiKey });
+  let created = 0;
+  let updated = 0;
+
+  for (const post of SEO_POSTS) {
+    const normalized = normalizeUpsertPostInput({ ...post, onConflict: 'update' });
+    const result = await client.upsertPost(normalized);
+    if (result.action === 'created') {
+      created += 1;
+      process.stdout.write(`  ✓ 新建: ${post.slug}\n`);
+    } else {
+      updated += 1;
+      process.stdout.write(`  ✓ 更新: ${post.slug}\n`);
+    }
+  }
+
+  process.stdout.write(`完成：新建 ${created} 篇，更新 ${updated} 篇。\n`);
 }
 
-export function getPostBySlug(section: PostSection, slug: string): ContentPost | null {
-  return (
-    CONTENT_POSTS.find((post) => post.status === 'published' && post.section === section && post.slug === slug) ?? null
-  );
-}
-
-export function getPublishedSkills(): SkillCatalogItem[] {
-  return byPublishedAtDesc(SKILL_CATALOG.filter((skill) => skill.status === 'published'));
-}
-
-export function getSkillBySlug(slug: string): SkillCatalogItem | null {
-  return SKILL_CATALOG.find((skill) => skill.status === 'published' && skill.slug === slug) ?? null;
-}
-
-export function getPublishedChangelog(): ChangelogItem[] {
-  return byPublishedAtDesc(CHANGELOG_ITEMS.filter((item) => item.status === 'published'));
-}
+main().catch((error) => {
+  process.stderr.write(`执行失败: ${error instanceof Error ? error.message : String(error)}\n`);
+  process.exit(1);
+});

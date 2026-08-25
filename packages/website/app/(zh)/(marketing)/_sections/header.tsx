@@ -21,11 +21,11 @@ const DEFAULT_NAV: Dictionary['nav'] = {
 };
 
 type HeaderProps = {
-  locale?: Locale;
-  brand?: Dictionary['brand'];
-  nav?: Dictionary['nav'];
+  locale?: Locale | undefined;
+  brand?: Dictionary['brand'] | undefined;
+  nav?: Dictionary['nav'] | undefined;
   /** 对侧语言的 href；仅双语页传，传了才渲染语言切换。 */
-  altHref?: string;
+  altHref?: string | undefined;
 };
 
 /**

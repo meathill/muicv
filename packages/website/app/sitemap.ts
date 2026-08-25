@@ -1,4 +1,4 @@
-import { POST_SECTION_META } from '@muicv/shared';
+import { POST_SECTION_META, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
 import type { MetadataRoute } from 'next';
 import { getWebsitePublishedChangelog, getWebsitePublishedPosts, getWebsitePublishedSkills } from '@/lib/cms-content';
 
@@ -10,6 +10,7 @@ const DOWNLOAD_ALT = { languages: { 'zh-CN': `${BASE}/download`, en: `${BASE}/en
 const PRICING_ALT = { languages: { 'zh-CN': `${BASE}/pricing`, en: `${BASE}/en/pricing` } };
 const ABOUT_ALT = { languages: { 'zh-CN': `${BASE}/about`, en: `${BASE}/en/about` } };
 const CONTACT_ALT = { languages: { 'zh-CN': `${BASE}/contact`, en: `${BASE}/en/contact` } };
+const TEMPLATES_ALT = { languages: { 'zh-CN': `${BASE}/templates`, en: `${BASE}/en/templates` } };
 
 // sitemap 走 ISR：1 小时刷一次。爬虫不会每秒访问，不需要 force-dynamic 让 D1 每次硬扛。
 export const revalidate = 3600;
@@ -28,11 +29,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages: StaticSitemapPage[] = [
     { path: '/', priority: 1, changeFrequency: 'weekly', alternates: HOME_ALT },
     { path: '/pricing', priority: 0.9, changeFrequency: 'monthly', alternates: PRICING_ALT },
+    { path: '/templates', priority: 0.85, changeFrequency: 'weekly', alternates: TEMPLATES_ALT },
     { path: '/about', priority: 0.6, changeFrequency: 'monthly', alternates: ABOUT_ALT },
     { path: '/contact', priority: 0.5, changeFrequency: 'monthly', alternates: CONTACT_ALT },
     { path: '/download', priority: 0.7, changeFrequency: 'weekly', alternates: DOWNLOAD_ALT },
     // 英文营销页（增量加页时往这里补，并给对应中文页加 alternates）
     { path: '/en', priority: 1, changeFrequency: 'weekly', alternates: HOME_ALT },
+    { path: '/en/templates', priority: 0.85, changeFrequency: 'weekly', alternates: TEMPLATES_ALT },
     { path: '/en/download', priority: 0.7, changeFrequency: 'weekly', alternates: DOWNLOAD_ALT },
     { path: '/en/pricing', priority: 0.9, changeFrequency: 'monthly', alternates: PRICING_ALT },
     { path: '/en/about', priority: 0.6, changeFrequency: 'monthly', alternates: ABOUT_ALT },
@@ -48,7 +51,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
     { path: '/terms', priority: 0.3, changeFrequency: 'yearly' },
   ];
+  const templatePages = SAMPLE_RESUME_TEMPLATES.flatMap((item) => {
+    const slug = encodeURIComponent(item.slug);
+    const alternates = {
+      languages: {
+        'zh-CN': `${BASE}/templates/${slug}`,
+        en: `${BASE}/en/templates/${slug}`,
+      },
+    };
+    return [
+      {
+        path: `/templates/${slug}`,
+        priority: 0.8,
+        changeFrequency: 'weekly' as const,
+        lastModified: generatedAt,
+        alternates,
+      },
+      {
+        path: `/en/templates/${slug}`,
+        priority: 0.8,
+        changeFrequency: 'weekly' as const,
+        lastModified: generatedAt,
+        alternates,
+      },
+    ];
+  });
   const contentPages = [
+    ...templatePages,
     ...posts.map((post) => ({
       path: `${POST_SECTION_META[post.section].path}/${encodeURIComponent(post.slug)}`,
       priority: post.section === 'jobs' ? 0.75 : 0.6,

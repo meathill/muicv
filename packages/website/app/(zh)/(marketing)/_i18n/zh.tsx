@@ -7,6 +7,7 @@ export const zh: Dictionary = {
   brand: { name: 'Mui简历', by: 'by Mui 🐾' },
   nav: {
     links: [
+      { label: '模板', href: '/templates' },
       { label: '文章', href: '/posts/jobs' },
       { label: 'Skill', href: '/skills' },
       { label: '价格', href: '/pricing' },
@@ -24,12 +25,14 @@ export const zh: Dictionary = {
         label: '产品',
         links: [
           { label: '重点特性', href: '/#features' },
+          { label: '简历模板', href: '/templates' },
           { label: '定价', href: '/pricing' },
           { label: '桌面 app', href: '/download' },
           { label: 'Skill 目录', href: '/skills' },
           { label: '控制台', href: '/dashboard' },
         ],
       },
+
       {
         label: '内容',
         links: [
@@ -236,9 +239,9 @@ export const zh: Dictionary = {
   },
   meta: {
     home: {
-      title: 'Mui简历 MuiCV 官网 — AI 简历生成与优化，找到更好工作',
+      title: 'MuiCV — AI 简历生成器 | 程序员简历模板、英文简历在线制作',
       description:
-        'Mui简历（MuiCV）官网 muicv.com，一站式 AI 求职平台：AI 生成、优化、润色简历，按目标岗位定制，导出 A4 PDF。素材存本地，还能模拟面试、写求职信。',
+        'MuiCV 官网（muicv.com）是一站式 AI 简历生成器与求职工作台：提供程序员简历模板、英文简历在线制作、ATS 关键词智能优化与 A4 PDF 导出。素材本地掌控，隐私安全。',
     },
     download: {
       title: '下载 Mui简历桌面 app（macOS / Windows / Linux）',

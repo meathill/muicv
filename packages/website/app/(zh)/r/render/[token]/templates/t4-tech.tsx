@@ -8,8 +8,8 @@ import type { TemplateSlots } from './registry';
 export type T4Props = {
   resume: TemplateResumeData;
   lang: TemplateLang;
-  accent?: string;
-  slots?: TemplateSlots;
+  accent?: string | undefined;
+  slots?: TemplateSlots | undefined;
 };
 
 export default function T4Tech({ resume, lang, accent, slots }: T4Props) {
