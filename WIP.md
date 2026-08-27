@@ -1,12 +1,26 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-08-24
+最后更新：2026-08-27
 
 ## 当前进行中
 
 > 已完成的插队任务（设置页三分组重构 / 腾讯校招内容降级 / Changelog 工作流 / Payload
 > 用户 API Key / Skill 目录 + Payload CMS / 腾讯校招内容落地 / Issue 11 首页移动端
 > LCP）的决策和约束已沉淀进 [DEV_NOTE.md](./DEV_NOTE.md)，不再保留勾选列表。
+
+### 插队任务：LLM 供给切换 OpenCode Go + TTS 端点（2026-08-27）
+
+目标：早期降成本——文字主力切 OpenCode Go 包月，GPT-5.6 升级档留 OpenAI；顺手建
+`/audio/tts` 用小米限免 TTS。决策与风险备忘见 DEV_NOTE「LLM 供给切换」章节。
+
+- [x] 共享定价表驱动上游 + 新五档模型表（deepseek-v4-flash 默认 / mimo-v2.5 语音 / gpt-5.6 三兄弟）
+- [x] `/llm/v1` 查表分流，Xiaomi completion 分支退役，新增 OPENCODE_GO_API_KEY secret 接线
+- [x] reasoning effort 可调（app 设置 低/中/高/极高，runtime 按端点形状注入）
+- [x] `POST /audio/tts` 端点 + 计费 + 桌面端消息「朗读」按钮
+- [x] 单测全绿（shared 85 / api 128 / app 128）+ format/typecheck/api dry-run 构建
+- [ ] **用户**：export OPENCODE_GO_API_KEY 后跑 `node scripts/opencode-go-probe.ts` 实探确认模型 id 与 tools/SSE 兼容性
+- [ ] **用户**：`wrangler secret put OPENCODE_GO_API_KEY` + 部署 packages/api
+- [ ] `node scripts/api-smoke.ts --full`（带 MUICV_API_KEY）线上验证三路对话 + TTS 出声 + 扣账
 
 ### 插队任务：多站点博客 CMS（taomenu / dyqr 共用 articles 集合）
 
