@@ -28,6 +28,13 @@ import { isThinkingModeModel, loggingFetch } from './reasoning-capture.ts';
  */
 let configuredKey: string | null = null;
 let configuredBase: string | null = null;
+/** 最近一次 configureLlmForRun 选定的 endpoint 形态。runtime 据此决定 reasoning effort 的注入字段名。 */
+let configuredAPI: 'chat_completions' | 'responses' = 'responses';
+
+/** 当前 run 使用的 OpenAI 端点形态（configureLlmForRun 之后读取才有意义）。 */
+export function currentOpenAIAPI(): 'chat_completions' | 'responses' {
+  return configuredAPI;
+}
 
 /**
  * 决定这次 run 用谁的 endpoint：
@@ -79,6 +86,7 @@ function selectOpenAIAPI(config: AppConfig): 'chat_completions' | 'responses' {
  */
 export function configureLlmForRun(config: AppConfig): boolean {
   if (!ensureConfigured(config)) return false;
-  setOpenAIAPI(selectOpenAIAPI(config));
+  configuredAPI = selectOpenAIAPI(config);
+  setOpenAIAPI(configuredAPI);
   return true;
 }

@@ -1,5 +1,5 @@
 import { CheckIcon } from '@phosphor-icons/react';
-import { DEFAULT_LLM_MODEL } from '@muicv/shared';
+import { DEFAULT_LLM_MODEL, SUPPORTED_LLM_MODELS } from '@muicv/shared';
 import { useEffect, useState } from 'react';
 
 import { useAppStore } from '../../lib/store';
@@ -84,10 +84,10 @@ export function CustomLlmCard() {
         />
         <Field
           label="默认模型"
-          hint="走 muicv 平台支持：mimo-v2.5-pro / mimo-v2.5 / gpt-5.4（前两个国内便宜，后一个国际）。自带 endpoint 时按你的清单填。"
+          hint={`走 muicv 平台支持：${SUPPORTED_LLM_MODELS.join(' / ')}（以平台最新清单为准）。自带 endpoint 时按你的清单填。`}
           value={defaultModel}
           onChange={setDefaultModel}
-          placeholder="mimo-v2.5-pro"
+          placeholder={DEFAULT_LLM_MODEL}
           mono
         />
 

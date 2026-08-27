@@ -30,6 +30,7 @@ import type {
   RendererApi,
   SessionCheckResult,
   SttPreference,
+  TtsSpeakOutcome,
   UpdaterStatus,
   WhisperEngineStatus,
   WhisperInstallOutcome,
@@ -199,6 +200,9 @@ const api: RendererApi = {
       ipcRenderer.on('whisperEngine:progress', listener);
       return () => ipcRenderer.removeListener('whisperEngine:progress', listener);
     },
+  },
+  speech: {
+    speak: (text: string) => ipcRenderer.invoke('speech:tts', text) as Promise<TtsSpeakOutcome>,
   },
 };
 

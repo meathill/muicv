@@ -4,6 +4,7 @@
 
 import {
   DEFAULT_LLM_MODEL,
+  type ReasoningEffort,
   type SkillAppAvailability,
   type SkillDistributionMode,
   type SkillPublisherType,
@@ -49,6 +50,12 @@ export type AppConfig = {
   /** 默认模型 id。 */
   defaultModel: string;
   /**
+   * reasoning effort 力度（low/medium/high/xhigh，默认 xhigh）。
+   * 仅对 modelSupportsReasoningEffort() 为 true 的模型生效（当前 GPT-5.6 家族），
+   * responses 端注入 `reasoning: { effort }`、chat_completions 端 `reasoning_effort`。
+   */
+  llmReasoningEffort: ReasoningEffort;
+  /**
    * 用户自带 LLM endpoint（OpenAI 兼容）。例如：
    *   - https://api.openai.com/v1
    *   - https://api.muirouter.com/v1
@@ -69,6 +76,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   muicvApiKey: null,
   muicvApiBase: 'https://api.muicv.com',
   defaultModel: DEFAULT_LLM_MODEL,
+  llmReasoningEffort: 'xhigh',
   customLlmBase: null,
   customLlmKey: null,
   onboardingCompleted: false,
@@ -236,6 +244,12 @@ export type FeedbackCommentOutcome =
       error: 'no-api-key' | 'network-error' | 'invalid-key' | 'bad-request' | 'server-error';
       message: string;
     };
+
+/**
+ * TTS 朗读（POST /audio/tts，上游 Xiaomi MiMo-V2.5-TTS）。按输入字符数扣 token。
+ * 成功回 wav base64，renderer 用 data URL 直接喂 <audio> 播放。
+ */
+export type TtsSpeakOutcome = { ok: true; audioBase64: string } | { ok: false; message: string };
 
 /** 附件支持的文件种类。新增类型时同步更新 main/attachments.ts 的白名单。 */
 export type AttachmentKind = 'pdf' | 'docx' | 'markdown' | 'text' | 'image' | 'audio';
@@ -625,7 +639,13 @@ export type RendererApi = {
       patch: Partial<
         Pick<
           AppConfig,
-          'muicvApiBase' | 'defaultModel' | 'muicvApiKey' | 'customLlmBase' | 'customLlmKey' | 'onboardingCompleted'
+          | 'muicvApiBase'
+          | 'defaultModel'
+          | 'llmReasoningEffort'
+          | 'muicvApiKey'
+          | 'customLlmBase'
+          | 'customLlmKey'
+          | 'onboardingCompleted'
         >
       >,
     ): Promise<AppConfig>;
@@ -807,6 +827,13 @@ export type RendererApi = {
      * 给一条 AI 消息留文字反馈。不限次数；text 长度 ≥ minChars 才发奖（50,000 显示 token）。
      */
     comment(args: { messageId: string; conversationId: string; text: string }): Promise<FeedbackCommentOutcome>;
+  };
+  speech: {
+    /**
+     * 把文本合成为语音并返回 wav（main 进程持 key 调 muicv /audio/tts）。
+     * 超 TTS_MAX_TEXT_CHARS 由 main 端截断。
+     */
+    speak(text: string): Promise<TtsSpeakOutcome>;
   };
   audio: {
     /** 监听 main 端 agent tool 发起的录音请求。返回 unsubscribe。 */

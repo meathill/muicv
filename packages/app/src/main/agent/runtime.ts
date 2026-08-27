@@ -4,7 +4,7 @@ import { Agent, run } from '@openai/agents';
 
 import { randomUUID } from 'node:crypto';
 
-import { modelSupportsAudioInput, modelSupportsVision } from '@muicv/shared';
+import { modelSupportsAudioInput, modelSupportsReasoningEffort, modelSupportsVision } from '@muicv/shared';
 
 import type { AgentChunk, AppConfig, ChatMessage, ConversationType, ToolCallRecord } from '../../shared/types.ts';
 import { getConversation, saveConversation } from '../conversations.ts';
@@ -12,7 +12,7 @@ import { buildSttTools } from './api-tools-stt.ts';
 import { buildSyncTools } from './api-tools-sync.ts';
 import { buildApiTools } from './api-tools.ts';
 import { buildAgentInput, getModelBudget } from './history.ts';
-import { configureLlmForRun } from './llm-config.ts';
+import { configureLlmForRun, currentOpenAIAPI } from './llm-config.ts';
 import { readAudioAsBase64, readImageAsDataUrl } from './multimodal.ts';
 import { resetReasoningState, setReasoningDeltaListener } from './reasoning-capture.ts';
 import { buildSystemPrompt } from './skills.ts';
@@ -79,11 +79,26 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     ...buildSyncTools(config),
     ...buildSttTools(config, sender),
   ];
+  // Reasoning effort 注入：仅对支持调节的模型（GPT-5.6 家族）生效。
+  // OpenAI Agents SDK 的 modelSettings.providerData 会原样并进请求体——
+  // responses 端要 `reasoning: { effort }`，chat_completions 端是平铺的
+  // `reasoning_effort`，字段名由本 run 选定的端点形态决定。
+  const apiChoice = currentOpenAIAPI();
+  const agentModelSettings = modelSupportsReasoningEffort(config.defaultModel)
+    ? {
+        providerData:
+          apiChoice === 'responses'
+            ? { reasoning: { effort: config.llmReasoningEffort } }
+            : { reasoning_effort: config.llmReasoningEffort },
+      }
+    : undefined;
+
   const agent = new Agent({
     name: 'Mui简历',
     instructions: buildSystemPrompt(type),
     model: config.defaultModel,
     tools,
+    ...(agentModelSettings ? { modelSettings: agentModelSettings } : {}),
   });
 
   const lastUser = messages[messages.length - 1];
@@ -252,7 +267,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
         : isMaxTurnsError(rawMsg)
           ? `本次任务的 agent 工具调用超过 ${AGENT_MAX_TURNS} 轮，已自动停止。建议把任务拆小一点，或检查是否有某个工具在反复失败重试。`
           : isReasoningContentError(error, rawMsg)
-            ? `当前模型「${config.defaultModel}」是带 thinking mode 的推理模型，多轮工具调用时要求回传 reasoning_content 字段，与 OpenAI Agents SDK 不兼容。请到设置切换到 GPT 系列（gpt-5.4）。`
+            ? `当前模型「${config.defaultModel}」是带 thinking mode 的推理模型，多轮工具调用时要求回传 reasoning_content 字段，与 OpenAI Agents SDK 不兼容。请到设置切换到 GPT 系列（如 gpt-5.6-luna）。`
             : rawMsg;
       send({ type: 'error', message: msg });
       send({ type: 'finish', reason: 'error' });

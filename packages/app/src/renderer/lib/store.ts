@@ -32,7 +32,13 @@ type AppStore = {
     patch: Partial<
       Pick<
         AppConfig,
-        'muicvApiBase' | 'defaultModel' | 'muicvApiKey' | 'customLlmBase' | 'customLlmKey' | 'onboardingCompleted'
+        | 'muicvApiBase'
+        | 'defaultModel'
+        | 'llmReasoningEffort'
+        | 'muicvApiKey'
+        | 'customLlmBase'
+        | 'customLlmKey'
+        | 'onboardingCompleted'
       >
     >,
   ) => Promise<void>;

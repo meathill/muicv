@@ -112,7 +112,12 @@ export function MessageBubble({
 
         {showFeedback && (
           <div className="mt-1 self-stretch px-1">
-            <MessageFeedbackBar messageId={messageId} conversationId={conversationId} feedback={feedback} />
+            <MessageFeedbackBar
+              messageId={messageId}
+              conversationId={conversationId}
+              text={displayContent}
+              feedback={feedback}
+            />
           </div>
         )}
       </div>
