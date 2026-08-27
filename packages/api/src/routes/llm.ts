@@ -4,6 +4,8 @@ import {
   computeLlmCharge,
   insufficientBalanceError,
   isSupportedLlmModel,
+  LLM_PRICING,
+  type LlmUpstream,
   MuirouterOauthError,
   SUPPORTED_LLM_MODELS,
 } from '@muicv/shared';
@@ -21,46 +23,63 @@ import type { AppEnv } from '../middleware/api-key.ts';
 /**
  * /llm/v1/* —— OpenAI 兼容反向代理。
  *
- * 三种上游路径（按 muicv 平台余额优先 + body.model 分流）：
- *   1. **平台 OpenAI**：余额 > 0 + model 是 `gpt-*` → worker secret OPENAI_API_KEY，
- *      上游 https://api.openai.com/v1，按 model 分价扣费（见 LLM_PRICING）。
- *   2. **平台 Xiaomi**：余额 > 0 + model 是 `mimo-*` → worker secret MIMO_API_KEY，
- *      上游 https://token-plan-cn.xiaomimimo.com/v1（OpenAI 兼容），同样按表扣费。
+ * 三种上游路径（按 muicv 平台余额优先 + 计费表 upstream 字段分流）：
+ *   1. **平台 OpenAI**：余额 > 0 + 表内 gpt-5.6-* → worker secret OPENAI_API_KEY，
+ *      上游 https://api.openai.com/v1，按 model 分价扣费（见 shared LLM_PRICING）。
+ *      premium 升级档，支持 /v1/responses 与 reasoning effort。
+ *   2. **平台 OpenCode Go**：余额 > 0 + 表内 deepseek-v4-flash / mimo-v2.5 →
+ *      worker secret OPENCODE_GO_API_KEY，上游 https://opencode.ai/zen/go/v1
+ *      （包月订阅，成本锁死）。只暴露 chat/completions；/v1/responses 直接 400 挡掉。
  *   3. **muirouter fallback**：余额 = 0 + 用户绑了 muirouter → 解密 access_token
  *      转发到 https://api.muirouter.com，**不扣 muicv 余额**（用户自己的 muirouter
  *      钱包扣）；客户端没指定 model 时注入用户的 defaultModel。
  *   4. **都没有**：余额 = 0 且没绑 muirouter → 402 insufficient_balance。
  *
- * 平台路径（1+2）只接受 LLM_PRICING 表里的 model；表外 model（如老的 gpt-4o-mini）
- * → 400 unsupported_model，让客户端显式升级 default。muirouter 路径不受本表约束。
+ * 平台路径（1+2）只接受 LLM_PRICING 表里的 model 且按表里 upstream 字段选上游；
+ * 表外 model（含已下架的 gpt-5.4 / mimo-v2.5-pro）→ 400 unsupported_model。
+ * Xiaomi（token-plan-cn）completion 直连已退役——小米侧现在只剩 TTS（lib/tts.ts）。
  *
  * Path 映射：/llm/v1/{chat/completions|responses} → <upstream>/v1/...。
- * `/v1/responses` 是 OpenAI 的 reasoning 模型必经端点（function tools + reasoning_effort
- * 在 chat_completions 端不支持），mimo 系列不实现该端点，请求会被这里直接 400 挡掉。
+ * `/v1/responses` 是 OpenAI reasoning 模型必经端点（function tools + reasoning_effort
+ * 在 chat_completions 端不支持）；OpenCode Go 目录只承诺 chat/completions，
+ * 所以 responses 请求打到 opencode-go 上游时在这里直接挡掉，不转发猜 404。
  */
 
 const OPENAI_BASE = 'https://api.openai.com';
-const XIAOMI_BASE = 'https://token-plan-cn.xiaomimimo.com';
+// 注意不带尾缀 /v1：handler 统一拼 upstreamPath（=/v1/chat/completions 等）
+const OPENCODE_GO_BASE = 'https://opencode.ai/zen/go';
 const MUIROUTER_BASE = 'https://api.muirouter.com';
 
 const CHAT_COMPLETIONS_PATH = '/v1/chat/completions';
 const RESPONSES_PATH = '/v1/responses';
 
-type PlatformProvider = {
-  name: 'openai' | 'xiaomi';
-  base: string;
+type ResolvedPlatformUpstream = {
   key: string | undefined;
-  missingErr: 'openai-key-missing' | 'mimo-key-missing';
+  base: string;
+  missingErr: 'openai-key-missing' | 'opencode-go-key-missing';
+  /** 是否支持 /v1/responses 端点 */
+  supportsResponses: boolean;
 };
 
-function pickPlatformProvider(
-  model: string,
-  env: { OPENAI_API_KEY?: string; MIMO_API_KEY?: string },
-): PlatformProvider {
-  if (model.startsWith('mimo-')) {
-    return { name: 'xiaomi', base: XIAOMI_BASE, key: env.MIMO_API_KEY, missingErr: 'mimo-key-missing' };
+/** 按计费表的 upstream 字段解析平台上游。key 取自 worker secrets，缺了由 caller 报错。 */
+function resolvePlatformUpstream(
+  upstream: LlmUpstream,
+  env: { OPENAI_API_KEY?: string; OPENCODE_GO_API_KEY?: string },
+): ResolvedPlatformUpstream {
+  if (upstream === 'opencode-go') {
+    return {
+      key: env.OPENCODE_GO_API_KEY,
+      base: OPENCODE_GO_BASE,
+      missingErr: 'opencode-go-key-missing',
+      supportsResponses: false,
+    };
   }
-  return { name: 'openai', base: OPENAI_BASE, key: env.OPENAI_API_KEY, missingErr: 'openai-key-missing' };
+  return {
+    key: env.OPENAI_API_KEY,
+    base: OPENAI_BASE,
+    missingErr: 'openai-key-missing',
+    supportsResponses: true,
+  };
 }
 
 export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
@@ -116,13 +135,25 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
           400,
         );
       }
-      const provider = pickPlatformProvider(model, c.env);
-      // mimo 系列没有 /v1/responses 端点，直接挡掉避免转发到上游 404
-      if (isResponses && provider.name === 'xiaomi') {
+      // isSupportedLlmModel 已通过 → 表里必有该条，upstream 字段决定走谁
+      const pricing = LLM_PRICING[model];
+      if (!pricing) {
+        return c.json(
+          {
+            error: 'unsupported_model',
+            message: `model "${model}" 不在平台支持列表里，请改成下列之一`,
+            supported: SUPPORTED_LLM_MODELS,
+          },
+          400,
+        );
+      }
+      const provider = resolvePlatformUpstream(pricing.upstream, c.env);
+      // OpenCode Go 目录只承诺 chat/completions；responses 直接挡掉避免转发猜 404
+      if (isResponses && !provider.supportsResponses) {
         return c.json(
           {
             error: 'unsupported_endpoint',
-            message: `model "${model}" 走 mimo 上游，不支持 /v1/responses，请用 /v1/chat/completions`,
+            message: `model "${model}" 走 OpenCode Go 上游，不支持 /v1/responses，请用 /v1/chat/completions`,
           },
           400,
         );
@@ -131,7 +162,10 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
         return c.json(
           {
             error: provider.missingErr,
-            message: `后端没配 ${provider.name === 'xiaomi' ? 'MIMO_API_KEY' : 'OPENAI_API_KEY'}（部署人员需要 wrangler secret put）`,
+            message:
+              provider.missingErr === 'opencode-go-key-missing'
+                ? '后端没配 OPENCODE_GO_API_KEY（部署人员需要 wrangler secret put）'
+                : '后端没配 OPENAI_API_KEY（部署人员需要 wrangler secret put）',
           },
           500,
         );

@@ -47,6 +47,17 @@ export const JD_FETCH_COST = 300;
 export const STT_TRANSCRIBE_RATE_PER_MIN = 100;
 
 /**
+ * TTS 合成按输入文本字符数扣 token（unicode code point 计数，显示 token / 字符）。
+ * 折算 $0.00003 / 字符，一段 300 字的面试回答点评 ≈ 900 token ≈ $0.009。
+ * 对标 OpenAI tts-1 刊例（$15 / 1M chars）打了对折——上游 Xiaomi MiMo-V2.5-TTS
+ * 目前限时免费、平台近乎零成本，恢复收费前先让用户养成习惯，届时再校准。
+ */
+export const TTS_RATE_PER_CHAR = 3;
+
+/** TTS 单次合成文本长度上限（code point），防滥用；超过直接 400。 */
+export const TTS_MAX_TEXT_CHARS = 2000;
+
+/**
  * 反馈奖励：用户给单条 AI 消息点赞 / 踩。显示 token。
  * 同一条消息只奖励一次（赞踩切换不重复发奖）。
  */
@@ -65,38 +76,51 @@ export const FEEDBACK_COMMENT_MIN_CHARS = 50;
 export const FEEDBACK_COMMENT_MAX_CHARS = 2000;
 
 /**
+ * 平台 LLM 上游标识。**查表分流**的唯一依据，routes/llm.ts 据此选 base + secret。
+ *   - openai：GPT-5.6 家族直连 api.openai.com（premium 升级档）
+ *   - opencode-go：OpenCode Go 包月订阅（https://opencode.ai/zen/go），文字主力 +
+ *     语音理解全部走它，成本锁死在订阅费内。量大了切 zen 按量付费。
+ */
+export type LlmUpstream = 'openai' | 'opencode-go';
+
+/**
  * LLM 计费表。每个 model 一项：
+ *   - upstream：走哪个上游（LLM_UPSTREAMS）
  *   - inputRate：1 上游 prompt token 折合多少显示 token
  *   - cachedInputRate：1 上游 prompt cache 命中 token 折合多少显示 token（≤ inputRate）
  *   - outputRate：1 上游 completion token 折合多少显示 token
  *
- * 数值以「1 显示 token = $1e-5」为锚点反算（Xiaomi 价用 ¥7/USD 折算）。
+ * 数值以「1 显示 token = $1e-5」为锚点反算。
  *
- * cached_tokens 由上游 `usage.prompt_tokens_details.cached_tokens` 提供，
- * 注意 OpenAI 约定下它**已计入** `prompt_tokens`，扣账时要减出新鲜部分单独算价。
+ * cached_tokens 由上游 usage 提供，注意 OpenAI 约定下它**已计入**
+ * prompt_tokens，扣账时要减出新鲜部分单独算价。
  *
  * 数据来源（review 时核对）：
- *   - gpt-5.4：https://developers.openai.com/api/docs/pricing
- *     （prompt caching 命中部分按 input 价 10%（90% off）计费，2026-05-10 校准；
- *     之前误配 50%，导致 cache 重的请求净加价 ~13.6% 高于设计 10%）
- *   - mimo-v2.5-pro / mimo-v2.5：Xiaomi Mimo 平台官方报价
- *     （上游目前未在 usage 里返回 cached_tokens，cachedInputRate 暂保守等于 inputRate）
+ *   - gpt-5.6-luna：developers.openai.com 官方刊例 $0.20 / $0.02 cached / $1.20 per 1M（2026-08 校准）
+ *   - gpt-5.6-terra：同上 $2 / $0.2 / $12
+ *   - gpt-5.6-sol：官方页未给全，按上一代旗舰价位档锚定（≈ gpt-5.4 的 $2.5/$0.25/$15），恢复使用后校准
+ *   - deepseek-v4-flash / mimo-v2.5：OpenCode Go 包月供给，边际成本≈配额摊销；
+ *     价格对齐各厂商公开 API 价位段取整，包月期内偏毛利（quota 内近乎零成本）
  *
  * 平台路径（余额 > 0）只接受表里的 model；表外 model 在 routes/llm.ts 拦截 400。
  * muirouter fallback 路径不受本表约束（model 列表由 muirouter 端管理）。
  */
-// 声明顺序 = ModelCard / 设置页的可视顺序：默认 mimo Pro 在前，
-// 推荐的"全模态 mimo（支持语音面试）"次之，最后才是 GPT 系列。
-export const LLM_PRICING: Record<string, { inputRate: number; cachedInputRate: number; outputRate: number }> = {
-  // 上游 input ¥1.4 (≈$0.20) / output ¥21 (≈$3) per 1M tokens
-  // 用户支付（×1.1） input ¥1.54 (≈$0.22) / output ¥23.1 (≈$3.30) per 1M tokens
-  'mimo-v2.5-pro': { inputRate: 0.02, cachedInputRate: 0.02, outputRate: 0.3 },
-  // 上游 input ¥0.56 (≈$0.08) / output ¥14 (≈$2) per 1M tokens
-  // 用户支付（×1.1） input ¥0.616 (≈$0.088) / output ¥15.4 (≈$2.20) per 1M tokens
-  'mimo-v2.5': { inputRate: 0.008, cachedInputRate: 0.008, outputRate: 0.2 },
-  // 上游 input $2.5 / cached $0.25 / output $15 per 1M tokens
-  // 用户支付（×1.1） input $2.75 / cached $0.275 / output $16.5 per 1M tokens
-  'gpt-5.4': { inputRate: 0.25, cachedInputRate: 0.025, outputRate: 1.5 },
+// 声明顺序 = ModelCard / 设置页的可视顺序：默认文本模型在前，
+// 语音理解专用次之，最后是 GPT-5.6 升级梯队。
+export const LLM_PRICING: Record<
+  string,
+  { upstream: LlmUpstream; inputRate: number; cachedInputRate: number; outputRate: number }
+> = {
+  // OpenCode Go 包月，DeepSeek Flash 快而便宜，工具调用强——日常对话主力
+  'deepseek-v4-flash': { upstream: 'opencode-go', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.08 },
+  // 同 id 从 Xiaomi 直连迁到 OpenCode Go（价格不变，用户无感）；语音理解 / 音频直通专用
+  'mimo-v2.5': { upstream: 'opencode-go', inputRate: 0.008, cachedInputRate: 0.008, outputRate: 0.2 },
+  // 上游 $0.20 / cached $0.02 / output $1.20 per 1M —— 重推理性价比档，默认 xhigh
+  'gpt-5.6-luna': { upstream: 'openai', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.12 },
+  // 上游 $2 / $0.2 / $12 per 1M —— balanced 升级档
+  'gpt-5.6-terra': { upstream: 'openai', inputRate: 0.2, cachedInputRate: 0.02, outputRate: 1.2 },
+  // 官方未给全，按上一代旗舰价位锚定，见上注释
+  'gpt-5.6-sol': { upstream: 'openai', inputRate: 0.25, cachedInputRate: 0.025, outputRate: 1.5 },
 };
 
 /** markup：所有 model 统一 1.1×。等于「上游成本 + 10% 加价」。 */
@@ -110,7 +134,7 @@ export function isSupportedLlmModel(model: string): boolean {
 export const SUPPORTED_LLM_MODELS = Object.keys(LLM_PRICING);
 
 /** 全平台默认模型 id。新装 / 老 store 里没设过时回退到这个；UI 也按 isDefault 标识。 */
-export const DEFAULT_LLM_MODEL = 'mimo-v2.5-pro';
+export const DEFAULT_LLM_MODEL = 'deepseek-v4-flash';
 
 /**
  * 校验 / 回退用户保存的 model id。未知（含已下架的 gpt-5.5 等）静默回退到默认，不弹窗。
@@ -122,6 +146,13 @@ export function normalizeModel(model: string | null | undefined): string {
 }
 
 /**
+ * reasoning effort 可调档位。Agent.modelSettings.providerData 按端点形状注入：
+ * responses → `reasoning: { effort }`；chat_completions → `reasoning_effort`。
+ */
+export const REASONING_EFFORTS = ['low', 'medium', 'high', 'xhigh'] as const;
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
+
+/**
  * UI 展示元数据：人类可读名 / 上游 vendor / 输入输出价（保留原币种以便用户判断）/ 简短亮点。
  * 桌面 app 设置页的 ModelCard 用，避免在组件里硬编码字符串。
  */
@@ -129,27 +160,27 @@ export const LLM_DISPLAY_META: Record<
   string,
   {
     label: string;
-    vendor: 'openai' | 'xiaomi';
+    vendor: LlmUpstream;
     inputPrice: string;
     outputPrice: string;
     hint: string;
     /** true 表示这是全平台默认，UI 加 "默认" chip，并在 store 里没值时落到它。 */
     isDefault?: boolean;
     /**
+     * 该模型是否接受 reasoning.effort 参数（设置页据此出「推理力度」选择器）。
+     * 当前只有 OpenAI GPT-5.6 家族；DeepSeek / mimo 由服务端固定策略，不暴露调节。
+     */
+    supportsReasoningEffort?: boolean;
+    /**
      * 当前 muicv 平台路径下该 model id 是否能接受图像 input。
-     * 模型本身能力 ≠ 平台路由能力——例如 mimo-v2.5 模型支持 vision，
-     * 但 muirouter → OpenRouter 这条链上 endpoint 没勾 image capability，
-     * 直接发图会被上游打回 404。详见 issue meathill/muicv#7。
-     * 等 muirouter 那边修好了，把对应 model 的这个值改回 true 即可。
+     * 模型本身能力 ≠ 平台路由能力——GPT-5.6 系走 OpenAI 原生 vision；
+     * DeepSeek Flash 主线不带图（官方另有 -vision-exp 实验变体），保守关掉避免误发图炸 400。
      */
     supportsVision: boolean;
     /**
      * 是否兼容 muicv 的 multi-turn 工具调用（agent 流程）。
-     * 当前 false 的：mimo 系列——是 thinking-mode 推理模型，多轮调 tool 时
-     * 要求把上一轮 assistant 的 reasoning_content 字段回传给 API，OpenAI Agents
-     * SDK 不知道这个私有字段会丢掉，导致第二轮 400 "Param Incorrect"。
-     * 这里 false 的模型在 ModelCard 显示警告 chip，引导用户切兼容模型；
-     * 简单单轮 chat 不调 tool 时其实还能用，只是 agent 工作流不行。
+     * thinking-mode 推理模型要求把上一轮 assistant 的 reasoning_content 字段回传，
+     * main 进程有透传层（reasoning-capture.ts）处理，当前全表 true。
      */
     supportsToolCalls: boolean;
     /**
@@ -163,32 +194,53 @@ export const LLM_DISPLAY_META: Record<
     supportsAudioInput?: boolean;
   }
 > = {
-  'mimo-v2.5-pro': {
-    label: 'MiMo v2.5 Pro',
-    vendor: 'xiaomi',
-    inputPrice: '¥1.4 / 1M',
-    outputPrice: '¥21 / 1M',
-    hint: '中文友好 · 综合质量最佳',
+  'deepseek-v4-flash': {
+    label: 'DeepSeek V4 Flash',
+    vendor: 'opencode-go',
+    inputPrice: '$0.20 / 1M',
+    outputPrice: '$0.80 / 1M',
+    hint: '默认 · 快而便宜 · agent 工具调用首选',
     isDefault: true,
     supportsVision: false,
     supportsToolCalls: true,
   },
   'mimo-v2.5': {
     label: 'MiMo v2.5',
-    vendor: 'xiaomi',
-    inputPrice: '¥0.56 / 1M',
-    outputPrice: '¥14 / 1M',
+    vendor: 'opencode-go',
+    inputPrice: '$0.80 / 1M',
+    outputPrice: '$2.00 / 1M',
     hint: '推荐 · 全模态 · 支持语音 · 可做模拟语音面试',
     supportsVision: false,
     supportsToolCalls: true,
     supportsAudioInput: true,
   },
-  'gpt-5.4': {
-    label: 'GPT-5.4',
+  'gpt-5.6-luna': {
+    label: 'GPT-5.6 Luna',
     vendor: 'openai',
-    inputPrice: '$2.5 / 1M',
+    inputPrice: '$0.20 / 1M',
+    outputPrice: '$1.20 / 1M',
+    hint: '重推理性价比档 · 默认 xhigh 力度 · 可调推理',
+    supportsReasoningEffort: true,
+    supportsVision: true,
+    supportsToolCalls: true,
+  },
+  'gpt-5.6-terra': {
+    label: 'GPT-5.6 Terra',
+    vendor: 'openai',
+    inputPrice: '$2 / 1M',
+    outputPrice: '$12 / 1M',
+    hint: 'balanced 升级档 · 重活复杂任务 · 可调推理',
+    supportsReasoningEffort: true,
+    supportsVision: true,
+    supportsToolCalls: true,
+  },
+  'gpt-5.6-sol': {
+    label: 'GPT-5.6 Sol',
+    vendor: 'openai',
+    inputPrice: '$2.50 / 1M',
     outputPrice: '$15 / 1M',
-    hint: '通用首选',
+    hint: '旗舰升级档 · 最强综合能力 · 可调推理',
+    supportsReasoningEffort: true,
     supportsVision: true,
     supportsToolCalls: true,
   },
@@ -210,6 +262,19 @@ export function modelSupportsVision(modelId: string): boolean {
  */
 export function modelSupportsAudioInput(modelId: string): boolean {
   return LLM_DISPLAY_META[modelId]?.supportsAudioInput ?? false;
+}
+
+/**
+ * 当前 model 是否接受 reasoning effort 调节。未知 id 默认 false——
+ * 不知道上游认不认这个参数时就不注入，保守不炸 400。
+ */
+export function modelSupportsReasoningEffort(modelId: string): boolean {
+  return LLM_DISPLAY_META[modelId]?.supportsReasoningEffort ?? false;
+}
+
+/** 把非法 / 旧版本档位值收敛到合法集合（读盘兜底用）。 */
+export function normalizeReasoningEffort(value: unknown): ReasoningEffort {
+  return (REASONING_EFFORTS as readonly unknown[]).includes(value) ? (value as ReasoningEffort) : 'xhigh';
 }
 
 /**
@@ -395,6 +460,7 @@ export type LedgerType =
   | 'pdf_render'
   | 'jd_fetch'
   | 'stt_transcribe'
+  | 'tts'
   | 'admin_grant'
   | 'admin_deduct'
   | 'feedback_reward';
