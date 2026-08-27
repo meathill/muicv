@@ -682,3 +682,44 @@ dashboard 或 app 点关联
   导致离线打开仍报错（electron-builder 自动 staple，不用手动）。
 - **Windows / Linux**：Linux AppImage 不需要签名；Windows SmartScreen 是软警告（用户能点
   Run anyway），Authenticode 证书要钱（OV 便宜但要养信誉，EV 贵但秒生效），暂未做。
+
+## LLM 供给切换：OpenCode Go 包月 + GPT-5.6 升级档（2026-08-27）
+
+**决策背景**：早期没用户量，按 token 付 Xiaomi/OpenAI 费用扛不住；OpenCode Go（opencode.ai 的
+$10/月订阅）提供 ~25 个开源模型的 OpenAI 兼容 REST（`https://opencode.ai/zen/go/v1`），包月内
+边际成本≈0。量大之后计划切 **zen** 按量付费——切回时只需改 `shared/pricing.ts` 各条的
+`upstream` + `api/routes/llm.ts` 的 base/key 映射，路由本身已是表驱动，没有前缀 if。
+
+**最终矩阵**：默认文本 `deepseek-v4-flash`@oc-go；语音理解 `mimo-v2.5`@oc-go（同 id 从 Xiaomi
+直连迁过来，价格不变用户无感）；升级档 `gpt-5.6-luna/terra/sol`@OpenAI（luna 是便宜档
+$0.2/$1.2 per 1M、terra $2/$12、sol 官方未给全按上代旗舰锚定待校准）。下架 gpt-5.4 /
+mimo-v2.5-pro：normalizeModel 静默回退新默认。Xiaomi completion 直连退役，MIMO_API_KEY 只剩
+TTS 在用。
+
+**OpenCode Go 关键事实 / 风险备忘**：
+- 订阅是**单人共享配额**（月上限 $60 / 5h 窗口 $12）：当多租户生产上游会被打爆出 429；
+  个人订阅条款用于商业产品也有灰度——这是**过渡方案**，量起来必须切 zen。
+- 目录只承诺 `chat/completions`；`/v1/responses` worker 侧直接 400（unsupported_endpoint）。
+  deepseek/mimo 系走 chat_completions + reasoning_content 双向透传层，逻辑复用现状。
+- Secret：`OPENCODE_GO_API_KEY`（wrangler secret put）。缺失时 API 返回
+  `{error:'opencode-go-key-missing'}`。
+
+**GPT-5.6 家族（Sol/Terra/Luna）**：OpenAI 2026 推出的三档变体，走 `/v1/responses`，
+reasoning.effort 支持 none..max 六级；平台 UI 只放 low/medium/high/xhigh（默认 xhigh）。
+effort 由 app 端 Agent.modelSettings.providerData 注入：responses 用 `reasoning:{effort}`、
+chat_completions 用平铺 `reasoning_effort`，字段名随 `configureLlmForRun` 选定的端点形态切换。
+>272K input tokens 有 2×/1.5× 加价规则，长上下文注意。
+
+**TTS（新增 /audio/tts）**：小米 MiMo-V2.5-TTS 系列**限时免费**（含 tts / voicedesign /
+voiceclone 三款），走 OpenAI 兼容 chat/completions 形状而非 /audio/speech：
+assistant 角色放待合成文本（放 user 不合成）、user 角色可选风格指令、`audio:{format:'wav',voice}`、
+非流式响应 base64 在 `choices[0].message.audio.data`。限免到期要迁移（届时校准
+TTS_RATE_PER_CHAR），账单在小米控制台可看。
+
+**语音链路全景**（别混淆）：STT 转写 = Cloudflare Workers AI Whisper（AI binding，不花钱在
+大模型侧）；对话音频直通 = mimo-v2.5@oc-go input_audio（scripts/verify-mimo-audio.ts 验过）；
+朗读/TTS = /audio/tts → 小米直连。
+
+**已知技术债**：packages/api 没有 typecheck script，手跑 `tsc --noEmit` 有 ~38 行存量报错
+（llm-usage.ts / transcribe.ts / content.ts 的 exactOptionalPropertyTypes 类问题），本次只保证
+改动文件零报错，欠账待还。
