@@ -1,10 +1,30 @@
 import { CpuIcon } from '@phosphor-icons/react';
-import { LLM_DISPLAY_META, SUPPORTED_LLM_MODELS } from '@muicv/shared';
+import {
+  type ReasoningEffort,
+  LLM_DISPLAY_META,
+  modelSupportsReasoningEffort,
+  REASONING_EFFORTS,
+  SUPPORTED_LLM_MODELS,
+} from '@muicv/shared';
 
 import { useAppStore } from '../../lib/store';
 
+const EFFORT_LABELS: Record<ReasoningEffort, string> = {
+  low: '低',
+  medium: '中',
+  high: '高',
+  xhigh: '极高',
+};
+
+const VENDOR_LABELS: Record<string, string> = {
+  openai: 'OpenAI',
+  'opencode-go': 'OpenCode Go',
+  xiaomi: 'Xiaomi',
+};
+
 export function ModelCard({ isBYOK, currentModel }: { isBYOK: boolean; currentModel: string }) {
   const patch = useAppStore((s) => s.patchConfig);
+  const effort = useAppStore((s) => s.config.llmReasoningEffort);
 
   if (isBYOK) {
     return (
@@ -17,7 +37,7 @@ export function ModelCard({ isBYOK, currentModel }: { isBYOK: boolean; currentMo
             <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-yellow-deep">模型</p>
             <h3 className="mt-1 text-[14px] font-bold text-ink">正在用你自己的 endpoint</h3>
             <p className="mt-1 text-[12px] leading-[1.6] text-mute">
-              已配置自带 OpenAI 兼容 endpoint，平台模型清单不生效。下方"用我自己的模型和额度"里改默认模型名。
+              已配置自带 OpenAI 兼容 endpoint，平台模型清单不生效。下方“用我自己的模型和额度”里改默认模型名。
             </p>
             <p className="mt-1.5 font-mono text-[12px] text-ink-soft">当前模型：{currentModel}</p>
           </div>
@@ -25,6 +45,9 @@ export function ModelCard({ isBYOK, currentModel }: { isBYOK: boolean; currentMo
       </section>
     );
   }
+
+  const canTuneEffort = modelSupportsReasoningEffort(currentModel);
+  const activeMeta = LLM_DISPLAY_META[currentModel];
 
   return (
     <section className="rounded-xl border-2 border-ink bg-cream p-5 shadow-[0_4px_0_0_var(--color-ink)]">
@@ -73,7 +96,7 @@ export function ModelCard({ isBYOK, currentModel }: { isBYOK: boolean; currentMo
                     </span>
                   )}
                   <span className="font-mono text-[12px] uppercase tracking-wider text-mute">
-                    {meta.vendor === 'openai' ? 'OpenAI' : 'Xiaomi'}
+                    {VENDOR_LABELS[meta.vendor]}
                   </span>
                   <span className="text-[12px] text-ink-soft">· {meta.hint}</span>
                 </span>
@@ -85,6 +108,36 @@ export function ModelCard({ isBYOK, currentModel }: { isBYOK: boolean; currentMo
           );
         })}
       </div>
+
+      {canTuneEffort && (
+        <div className="mt-3 rounded-lg border border-rule bg-paper px-3.5 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[13px] font-bold text-ink">推理力度</p>
+            <div className="flex gap-1">
+              {REASONING_EFFORTS.map((value) => {
+                const active = effort === value;
+                return (
+                  <button
+                    type="button"
+                    key={value}
+                    onClick={() => void patch({ llmReasoningEffort: value })}
+                    className={`rounded-md border-2 px-2.5 py-1 text-[12px] font-bold transition ${
+                      active
+                        ? 'border-ink bg-yellow text-ink shadow-[0_2px_0_0_var(--color-ink)]'
+                        : 'border-transparent bg-cream text-mute hover:text-ink'
+                    }`}
+                  >
+                    {EFFORT_LABELS[value]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="mt-1.5 text-[12px] leading-[1.6] text-mute">
+            越高想得越深，但更慢也更费 token。当前作用于 {activeMeta?.label ?? currentModel}。
+          </p>
+        </div>
+      )}
     </section>
   );
 }

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { app, safeStorage } from 'electron';
 import Store from 'electron-store';
 
-import { normalizeModel } from '@muicv/shared';
+import { normalizeModel, normalizeReasoningEffort, REASONING_EFFORTS, type ReasoningEffort } from '@muicv/shared';
 
 import { type AppConfig, DEFAULT_CONFIG, type Profile } from '../shared/types.ts';
 
@@ -53,6 +53,8 @@ type StoredShape = {
   activeProfileId: string | null;
   muicvApiBase: string;
   defaultModel: string;
+  /** reasoning effort 力度档（GPT-5.6 系生效），非法值读盘时 normalize。 */
+  llmReasoningEffort: ReasoningEffort;
   /** safeStorage 加密后的 muicv API key（mui_...） */
   muicvApiKeyCipher: string | null;
   /** 用户自带 LLM endpoint（OpenAI 兼容） */
@@ -75,6 +77,7 @@ const store = new Store<LegacyShape>({
     activeProfileId: null,
     muicvApiBase: DEFAULT_CONFIG.muicvApiBase,
     defaultModel: DEFAULT_CONFIG.defaultModel,
+    llmReasoningEffort: DEFAULT_CONFIG.llmReasoningEffort,
     muicvApiKeyCipher: null,
     customLlmBase: null,
     customLlmKeyCipher: null,
@@ -153,6 +156,7 @@ export function getConfig(): AppConfig {
     muicvApiKey: decrypt(store.get('muicvApiKeyCipher')),
     muicvApiBase: store.get('muicvApiBase'),
     defaultModel,
+    llmReasoningEffort: normalizeReasoningEffort(store.get('llmReasoningEffort')),
     customLlmBase,
     customLlmKey: decrypt(store.get('customLlmKeyCipher')),
     onboardingCompleted: store.get('onboardingCompleted'),
@@ -164,10 +168,29 @@ export function patchConfig(
   patch: Partial<
     Pick<
       AppConfig,
-      'muicvApiBase' | 'defaultModel' | 'muicvApiKey' | 'customLlmBase' | 'customLlmKey' | 'onboardingCompleted'
+      | 'muicvApiBase'
+      | 'defaultModel'
+      | 'llmReasoningEffort'
+      | 'muicvApiKey'
+      | 'customLlmBase'
+      | 'customLlmKey'
+      | 'onboardingCompleted'
     >
   >,
 ): AppConfig {
+  if ('muicvApiBase' in patch && typeof patch.muicvApiBase === 'string') {
+    store.set('muicvApiBase', patch.muicvApiBase);
+  }
+  if ('defaultModel' in patch && typeof patch.defaultModel === 'string') {
+    store.set('defaultModel', patch.defaultModel);
+  }
+  // 非法值静默忽略（normalizeReasoningEffort 兜底在读盘侧，写入侧从严）
+  if ('llmReasoningEffort' in patch) {
+    const v = patch.llmReasoningEffort;
+    if ((REASONING_EFFORTS as readonly string[]).includes(v as string)) {
+      store.set('llmReasoningEffort', v as ReasoningEffort);
+    }
+  }
   if ('muicvApiBase' in patch && typeof patch.muicvApiBase === 'string') {
     store.set('muicvApiBase', patch.muicvApiBase);
   }

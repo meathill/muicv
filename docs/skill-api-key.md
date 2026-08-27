@@ -3,7 +3,7 @@
 > 本文档是 muicv skill 体系下「联网 skill 鉴权与计费」的**单一来源**。任何调
 > `https://api.muicv.com` 的 skill 都必须遵守。修改本文档需同步所有引用 skill。
 
-最后更新：2026-05-02
+最后更新：2026-08-27
 
 ---
 
@@ -19,6 +19,13 @@
 - `muicv-render`（`POST /render`）
 - `muicv-jobs`（仅 `fetch` 子任务，`POST /jobs/fetch`；`match`/`apply` 是本地分析）
 - `muicv-sync`（`POST /resume/sync` / `GET /resume/snapshot` / `/resume/sync/history/*` 明文路径；`POST /resume/sync/blob` / `GET /resume/snapshot/blob` / `GET /resume/snapshot/blob/:id/download` / `GET /resume/sync/blob/history` / `DELETE /resume/snapshot/blob` 加密路径）
+
+可用的其他计费端点（当前无 skill 引用，skill 需要时按标准 gate 直接调）：
+
+- `POST /audio/tts`：文本转语音。Body `application/json` `{ text ≤2000 字符, voice?, style? }`
+  （voice 预置音色如 `mimo_default`；style 是"亲切一点"这类自然语言风格指令），
+  成功返回 **`audio/wav` 二进制**，直接写文件即可播放。
+  按 text 字符数 × 3 显示 token 扣账。上游 Xiaomi MiMo-V2.5-TTS（限时免费）。
 
 ---
 

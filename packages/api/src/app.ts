@@ -39,6 +39,7 @@ import {
   handleResumeSync,
 } from './routes/resume-sync.ts';
 import { handleTranscribe } from './routes/transcribe.ts';
+import { handleTts } from './routes/tts.ts';
 import { handleDeleteAllMedia, handleMediaHistory, handleUploadMedia } from './routes/upload-media.ts';
 import { handlePhotoHistory, handleUploadPhoto } from './routes/upload-photo.ts';
 import { handleWaitlist } from './routes/waitlist.ts';
@@ -97,6 +98,7 @@ app.get('/', (c) =>
       'DELETE /upload/media（删除当前用户所有云端媒体）',
       'POST /jobs/fetch',
       'POST /audio/transcribe（multipart/form-data，字段 file）',
+      'POST /audio/tts（JSON：text/voice/style，返回 audio/wav）',
       'POST /waitlist',
       'GET /me（拿当前登录用户信息）',
       'GET /skills/catalog（公开 skill 目录，app 用）',
@@ -217,6 +219,17 @@ app.post('/jobs/fetch', requireApiKey, handleJobsFetch);
  * 详见 src/routes/transcribe.ts。
  */
 app.post('/audio/transcribe', requireApiKey, handleTranscribe);
+
+/**
+ * POST /audio/tts —— 文本转语音（Xiaomi MiMo-V2.5-TTS，限时免费上游）。
+ *
+ * Body: application/json { text, voice?, style? }
+ * 响应：200 audio/wav 二进制 / 400 / 402 / 502
+ *
+ * 计费：成功才扣，按 text 字符数 × TTS_RATE_PER_CHAR。
+ * 详见 src/routes/tts.ts、src/lib/tts.ts。
+ */
+app.post('/audio/tts', requireApiKey, handleTts);
 
 /**
  * /resume/* —— 简历素材云同步（skill 用 Bearer key 调用）。

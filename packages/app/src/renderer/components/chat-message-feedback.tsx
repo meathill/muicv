@@ -1,11 +1,21 @@
-import { ChatCircleIcon, PaperPlaneTiltIcon, ThumbsDownIcon, ThumbsUpIcon, XIcon } from '@phosphor-icons/react';
-import { useState } from 'react';
+import {
+  ChatCircleIcon,
+  CircleNotchIcon,
+  PaperPlaneTiltIcon,
+  SpeakerHighIcon,
+  SquareIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+  XIcon,
+} from '@phosphor-icons/react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   FEEDBACK_COMMENT_MAX_CHARS,
   FEEDBACK_COMMENT_MIN_CHARS,
   FEEDBACK_COMMENT_REWARD,
   FEEDBACK_RATING_REWARD,
+  TTS_MAX_TEXT_CHARS,
 } from '@muicv/shared';
 
 import type { ChatMessageFeedback } from '../../shared/types.ts';
@@ -26,10 +36,13 @@ import { useAppStore } from '../lib/store';
 export function MessageFeedbackBar({
   messageId,
   conversationId,
+  text,
   feedback,
 }: {
   messageId: string;
   conversationId: string;
+  /** 本条 AI 消息的纯文本（去掉附件 footer 后），朗读用。 */
+  text: string;
   feedback?: ChatMessageFeedback | undefined;
 }) {
   const session = useAppStore((s) => s.session);
@@ -44,6 +57,17 @@ export function MessageFeedbackBar({
 
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [draft, setDraft] = useState('');
+
+  // 朗读状态机：idle → 合成中(loading) → 播放中(playing)；组件卸载 / 重合成都停掉当前音频
+  const [speech, setSpeech] = useState<'idle' | 'loading' | 'playing'>('idle');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
 
   const rating = feedback?.rating;
   const noKey = !session;
@@ -75,6 +99,43 @@ export function MessageFeedbackBar({
       }
     } finally {
       setBusy(null);
+    }
+  }
+
+  function stopSpeech(): void {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setSpeech('idle');
+  }
+
+  async function handleSpeak(): Promise<void> {
+    if (noKey || speech === 'loading') return;
+    if (speech === 'playing') {
+      stopSpeech();
+      return;
+    }
+    setError(null);
+    setSpeech('loading');
+    try {
+      // 服务端上限 TTS_MAX_TEXT_CHARS，长文客户端先截断，避免白白扣费后 400
+      const result = await window.muicv.speech.speak(text.slice(0, TTS_MAX_TEXT_CHARS));
+      if (!result.ok) {
+        setError(result.message);
+        setSpeech('idle');
+        return;
+      }
+      const audio = new Audio(`data:audio/wav;base64,${result.audioBase64}`);
+      audioRef.current = audio;
+      audio.onended = () => setSpeech('idle');
+      audio.onerror = () => {
+        setSpeech('idle');
+        setError('音频播放失败');
+      };
+      await audio.play();
+      setSpeech('playing');
+    } catch (err) {
+      setSpeech('idle');
+      setError(err instanceof Error ? err.message : '朗读失败');
     }
   }
 
@@ -135,6 +196,20 @@ export function MessageFeedbackBar({
           }}
         >
           <ChatCircleIcon size={14} weight={showCommentBox ? 'fill' : 'regular'} />
+        </RatingButton>
+        <RatingButton
+          label={speech === 'playing' ? '停止朗读' : '朗读'}
+          active={speech !== 'idle'}
+          disabled={disabled}
+          onClick={() => void handleSpeak()}
+        >
+          {speech === 'loading' ? (
+            <CircleNotchIcon size={14} className="animate-spin" />
+          ) : speech === 'playing' ? (
+            <SquareIcon size={12} weight="fill" />
+          ) : (
+            <SpeakerHighIcon size={14} />
+          )}
         </RatingButton>
 
         {floats.map((f) => (

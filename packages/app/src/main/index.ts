@@ -7,6 +7,7 @@ import { BrowserWindow, app, protocol } from 'electron';
 import { handleDeepLink, registerScheme, setMainWindowGetter } from './deep-link.ts';
 import { registerAgentConversationIpc } from './ipc/agent-conversation.ts';
 import { registerAudioPreviewIpc } from './ipc/audio-preview.ts';
+import { registerSpeechIpc } from './ipc/speech.ts';
 import { registerConfigProfileIpc } from './ipc/config-profile.ts';
 import { inWorkspace, registerFsAttachmentsIpc } from './ipc/fs-attachments.ts';
 import { registerSessionShellAppIpc } from './ipc/session-shell-app.ts';
@@ -102,6 +103,7 @@ registerSessionShellAppIpc();
 registerAgentConversationIpc();
 registerFsAttachmentsIpc();
 registerAudioPreviewIpc();
+registerSpeechIpc();
 
 // 本地 whisper.cpp 引擎插件（issue #1 M3）。进度事件用 mainWindow.webContents 推送。
 registerWhisperEngineIpc(() => mainWindow?.webContents ?? null);
