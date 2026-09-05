@@ -9,6 +9,9 @@ test('articles 集合面向多站点博客', () => {
   for (const name of ['site', 'locale', 'title', 'slug', 'status', 'summary', 'bodyMarkdown', 'publishedAt']) {
     assert.ok(fieldNames.includes(name), `缺少字段 ${name}`);
   }
+  for (const name of ['sources', 'sourcePublishedAt', 'readingMinutes']) {
+    assert.ok(fieldNames.includes(name), `缺少可选字段 ${name}`);
+  }
 });
 
 test('articles 复合唯一索引覆盖 site + locale + slug', () => {
@@ -19,10 +22,10 @@ test('articles 复合唯一索引覆盖 site + locale + slug', () => {
 });
 
 test('articles 站点与语言枚举覆盖现有项目', () => {
-  for (const site of ['muicv', 'dyqr', 'taomenu']) {
+  for (const site of ['muicv', 'dyqr', 'taomenu', 'muirouter']) {
     assert.ok((ARTICLE_SITES as readonly string[]).includes(site));
   }
-  for (const locale of ['en', 'zh-CN', 'fr', 'es', 'pt', 'th', 'vi', 'ja']) {
+  for (const locale of ['en', 'zh-CN', 'de', 'fr', 'es', 'pt', 'th', 'vi', 'ja']) {
     assert.ok((ARTICLE_LOCALES as readonly string[]).includes(locale));
   }
 });

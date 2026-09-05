@@ -5,8 +5,8 @@ import { validateSlugFormat } from './validate-slug.ts';
 
 /** 多站点共用博客：site + locale + slug 唯一。
  *  与 muicv 自己的 posts（求职博文）互不影响。 */
-export const ARTICLE_SITES = ['muicv', 'dyqr', 'taomenu'] as const;
-export const ARTICLE_LOCALES = ['en', 'zh-CN', 'fr', 'es', 'pt', 'th', 'vi', 'ja'] as const;
+export const ARTICLE_SITES = ['muicv', 'dyqr', 'taomenu', 'muirouter'] as const;
+export const ARTICLE_LOCALES = ['en', 'zh-CN', 'de', 'fr', 'es', 'pt', 'th', 'vi', 'ja'] as const;
 
 export type ArticleSite = (typeof ARTICLE_SITES)[number];
 export type ArticleLocale = (typeof ARTICLE_LOCALES)[number];
@@ -55,6 +55,16 @@ export const Articles: CollectionConfig = {
     { name: 'bodyMarkdown', type: 'textarea', required: true },
     { name: 'tags', type: 'array', fields: [{ name: 'value', type: 'text', required: true }] },
     { name: 'keywords', type: 'array', fields: [{ name: 'value', type: 'text', required: true }] },
+    {
+      name: 'sources',
+      type: 'array',
+      fields: [
+        { name: 'label', type: 'text', required: true },
+        { name: 'url', type: 'text', required: true },
+      ],
+    },
+    { name: 'sourcePublishedAt', type: 'date' },
+    { name: 'readingMinutes', type: 'number' },
     { name: 'author', type: 'text', required: true },
     { name: 'publishedAt', type: 'date', required: true },
     { name: 'seoTitle', type: 'text', required: true },

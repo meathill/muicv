@@ -15,6 +15,11 @@ const slugSchema = z
 
 const stringListSchema = z.array(z.string().trim().min(1)).default([]);
 
+const sourceSchema = z.object({
+  label: z.string().trim().min(1),
+  url: z.string().trim().min(1),
+});
+
 export const articleFieldsSchema = z.object({
   site: articleSiteSchema,
   locale: articleLocaleSchema,
@@ -25,6 +30,9 @@ export const articleFieldsSchema = z.object({
   bodyMarkdown: z.string().trim().min(1),
   tags: stringListSchema,
   keywords: stringListSchema,
+  sources: z.array(sourceSchema).default([]),
+  sourcePublishedAt: z.string().trim().min(1).optional(),
+  readingMinutes: z.number().int().positive().optional(),
   author: z.string().trim().min(1),
   publishedAt: z.string().trim().min(1),
   seoTitle: z.string().trim().min(1).max(200).optional(),
@@ -39,6 +47,9 @@ export type UpsertArticleInput = z.output<typeof upsertArticleInputSchema>;
 
 export type PayloadArrayField = Array<{ value: string }>;
 
+/** Payload articles 集合 sources 字段的文档形状（label + url）。 */
+export type PayloadSourceField = Array<{ label: string; url: string }>;
+
 /** 写入 Payload articles 集合的文档形状（REST body）。 */
 export type CmsArticlePayload = {
   site: UpsertArticleInput['site'];
@@ -51,6 +62,9 @@ export type CmsArticlePayload = {
   bodyMarkdown: string;
   tags: PayloadArrayField;
   keywords: PayloadArrayField;
+  sources: PayloadSourceField;
+  sourcePublishedAt?: string;
+  readingMinutes?: number;
   author: string;
   publishedAt: string;
   seoTitle: string;
@@ -69,6 +83,9 @@ export function normalizeUpsertArticlePayload(input: UpsertArticleInput): CmsArt
     bodyMarkdown: input.bodyMarkdown,
     tags: input.tags.map((value) => ({ value })),
     keywords: input.keywords.map((value) => ({ value })),
+    sources: input.sources.map((source) => ({ label: source.label, url: source.url })),
+    ...(input.sourcePublishedAt ? { sourcePublishedAt: input.sourcePublishedAt } : {}),
+    ...(typeof input.readingMinutes === 'number' ? { readingMinutes: input.readingMinutes } : {}),
     author: input.author,
     publishedAt: input.publishedAt,
     seoTitle: input.seoTitle ?? input.title,
