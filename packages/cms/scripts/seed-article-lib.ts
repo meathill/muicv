@@ -31,6 +31,9 @@ export type MuiApiExportArticle = {
   seoDescription?: unknown;
 };
 
+/** 解析结果保持宽松（locale 仍是 string），由主流程 upsertArticleInputSchema 校验收窄。 */
+export type MuiApiSeedArticle = Omit<UpsertArticleInput, 'locale'> & { locale: string };
+
 export type CmsArticlePayload = {
   site: SeedSite;
   locale: string;
@@ -153,7 +156,7 @@ type MuiApiExportFile = {
 /** 解析 mui-api 导出的完整 metadata 文章列表。
  *  与 dyqr 不同，mui-api 导出自带 title/summary/tags/sources 等完整字段，
  *  直接映射为 upsert 输入，非法条目跳过；最终仍由主流程的 zod schema 校验兜底。 */
-export function parseMuiApiExport(value: unknown): UpsertArticleInput[] {
+export function parseMuiApiExport(value: unknown): MuiApiSeedArticle[] {
   if (!value || typeof value !== 'object') {
     return [];
   }
@@ -162,7 +165,7 @@ export function parseMuiApiExport(value: unknown): UpsertArticleInput[] {
     return [];
   }
 
-  const result: UpsertArticleInput[] = [];
+  const result: MuiApiSeedArticle[] = [];
   for (const raw of articles) {
     if (!raw || typeof raw !== 'object') {
       continue;
@@ -173,6 +176,9 @@ export function parseMuiApiExport(value: unknown): UpsertArticleInput[] {
     const title = readString(article.title);
     const summary = readString(article.summary);
     const bodyMarkdown = readString(article.bodyMarkdown);
+    const sourcePublishedAt = readString(article.sourcePublishedAt);
+    const seoTitle = readString(article.seoTitle);
+    const seoDescription = readString(article.seoDescription);
     if (!locale || !slug || !title || !summary || !bodyMarkdown) {
       continue;
     }
@@ -189,14 +195,14 @@ export function parseMuiApiExport(value: unknown): UpsertArticleInput[] {
       tags: readStringList(article.tags),
       keywords: readStringList(article.keywords),
       sources: readSourceList(article.sources),
-      ...(readString(article.sourcePublishedAt) ? { sourcePublishedAt: readString(article.sourcePublishedAt) } : {}),
+      ...(sourcePublishedAt ? { sourcePublishedAt } : {}),
       ...(typeof article.readingMinutes === 'number' && Number.isFinite(article.readingMinutes)
         ? { readingMinutes: article.readingMinutes }
         : {}),
       author: readString(article.author) ?? 'MuiRouter',
       publishedAt: readString(article.publishedAt) ?? new Date().toISOString(),
-      ...(readString(article.seoTitle) ? { seoTitle: readString(article.seoTitle) } : {}),
-      ...(readString(article.seoDescription) ? { seoDescription: readString(article.seoDescription) } : {}),
+      ...(seoTitle ? { seoTitle } : {}),
+      ...(seoDescription ? { seoDescription } : {}),
     });
   }
   return result;
