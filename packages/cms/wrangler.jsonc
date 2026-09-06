@@ -24,7 +24,7 @@
     }
   ],
   "observability": {
-    "enabled": true
+    "enabled": false
   },
   "placement": {
     "mode": "smart"
