@@ -19,7 +19,7 @@ export function MarketingShell({
     <div className="relative min-h-screen">
       <Header locale={locale} brand={dict.brand} nav={dict.nav} altHref={altHref} />
       {children}
-      <Footer dict={dict} locale={locale} />
+      <Footer dict={dict} locale={locale} altHref={altHref} />
     </div>
   );
 }

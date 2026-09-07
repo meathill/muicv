@@ -243,7 +243,7 @@ export function AboutView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <Footer dict={dict} locale={locale} />
+      <Footer dict={dict} locale={locale} altHref={altHref} />
     </div>
   );
 }

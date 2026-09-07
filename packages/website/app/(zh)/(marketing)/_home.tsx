@@ -29,7 +29,7 @@ export async function HomePage({ locale }: { locale: Locale }) {
       <DesktopApp dict={dict} locale={locale} />
       <Install dict={dict} locale={locale} />
       <FaqAndArticles recentPosts={recentPosts} dict={dict} locale={locale} />
-      <Footer dict={dict} locale={locale} />
+      <Footer dict={dict} locale={locale} altHref={altHref} />
     </div>
   );
 }

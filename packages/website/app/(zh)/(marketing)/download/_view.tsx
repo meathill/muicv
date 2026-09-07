@@ -59,7 +59,7 @@ export async function DownloadView({ locale }: { locale: Locale }) {
         <FirstRunHelp t={t} />
       </main>
 
-      <Footer dict={dict} locale={locale} />
+      <Footer dict={dict} locale={locale} altHref={altHref} />
     </div>
   );
 }

@@ -5,8 +5,17 @@ import { type Locale, localizedHref } from '../_i18n/locale';
 import type { Dictionary } from '../_i18n/types';
 import { zh } from '../_i18n/zh';
 import { PawIcon } from '../_icons';
+import { LangSwitch } from './lang-switch';
 
-export function Footer({ dict = zh, locale = 'zh' }: { dict?: Dictionary; locale?: Locale } = {}) {
+export function Footer({
+  dict = zh,
+  locale = 'zh',
+  altHref,
+}: {
+  dict?: Dictionary;
+  locale?: Locale;
+  altHref?: string | undefined;
+} = {}) {
   const t = dict.footer;
   return (
     <footer className="bg-paper">
@@ -34,8 +43,11 @@ export function Footer({ dict = zh, locale = 'zh' }: { dict?: Dictionary; locale
         </div>
       </div>
       <div className="border-t border-rule">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-[12px] text-mute md:flex-row md:items-center md:justify-between md:px-8">
-          <span>{t.copyright}</span>
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 text-[12px] text-mute md:flex-row md:items-center md:justify-between md:px-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <span>{t.copyright}</span>
+            {altHref ? <LangSwitch locale={locale} altHref={altHref} /> : null}
+          </div>
           <div className="flex flex-wrap items-center justify-end gap-4">
             <span className="font-mono text-[12px] uppercase tracking-wider">{t.madeIn}</span>
             <a
