@@ -19,8 +19,10 @@ const fakeConfig: AppConfig = {
   muicvApiKey: 'mui_test',
   muicvApiBase: 'https://example.invalid',
   defaultModel: 'gpt-test',
+  llmReasoningEffort: 'xhigh',
   customLlmBase: null,
   customLlmKey: null,
+  onboardingCompleted: false,
 };
 
 let realFetch: typeof globalThis.fetch;

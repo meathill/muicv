@@ -692,7 +692,7 @@ $10/月订阅）提供 ~25 个开源模型的 OpenAI 兼容 REST（`https://open
 
 **最终矩阵**：默认文本 `deepseek-v4-flash`@oc-go；语音理解 `mimo-v2.5`@oc-go（同 id 从 Xiaomi
 直连迁过来，价格不变用户无感）；升级档 `gpt-5.6-luna/terra/sol`@OpenAI（luna 是便宜档
-$0.2/$1.2 per 1M、terra $2/$12、sol 官方未给全按上代旗舰锚定待校准）。下架 gpt-5.4 /
+$0.2/$1.2 per 1M、terra $2/$12、sol 官方校准 $4/$20）。下架 gpt-5.4 /
 mimo-v2.5-pro：normalizeModel 静默回退新默认。Xiaomi completion 直连退役，MIMO_API_KEY 只剩
 TTS 在用。
 

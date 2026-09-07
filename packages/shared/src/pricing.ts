@@ -94,11 +94,10 @@ export type LlmUpstream = 'openai' | 'opencode-go';
  *
  * cached_tokens 由上游 usage 提供，注意 OpenAI 约定下它**已计入**
  * prompt_tokens，扣账时要减出新鲜部分单独算价。
- *
  * 数据来源（review 时核对）：
  *   - gpt-5.6-luna：developers.openai.com 官方刊例 $0.20 / $0.02 cached / $1.20 per 1M（2026-08 校准）
  *   - gpt-5.6-terra：同上 $2 / $0.2 / $12
- *   - gpt-5.6-sol：官方页未给全，按上一代旗舰价位档锚定（≈ gpt-5.4 的 $2.5/$0.25/$15），恢复使用后校准
+ *   - gpt-5.6-sol：同上 $4 / $0.4 / $20
  *   - deepseek-v4-flash / mimo-v2.5：OpenCode Go 包月供给，边际成本≈配额摊销；
  *     价格对齐各厂商公开 API 价位段取整，包月期内偏毛利（quota 内近乎零成本）
  *
@@ -119,8 +118,8 @@ export const LLM_PRICING: Record<
   'gpt-5.6-luna': { upstream: 'openai', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.12 },
   // 上游 $2 / $0.2 / $12 per 1M —— balanced 升级档
   'gpt-5.6-terra': { upstream: 'openai', inputRate: 0.2, cachedInputRate: 0.02, outputRate: 1.2 },
-  // 官方未给全，按上一代旗舰价位锚定，见上注释
-  'gpt-5.6-sol': { upstream: 'openai', inputRate: 0.25, cachedInputRate: 0.025, outputRate: 1.5 },
+  // 上游 $4 / $0.4 / $20 per 1M —— 旗舰升级档
+  'gpt-5.6-sol': { upstream: 'openai', inputRate: 0.4, cachedInputRate: 0.04, outputRate: 2.0 },
 };
 
 /** markup：所有 model 统一 1.1×。等于「上游成本 + 10% 加价」。 */
@@ -219,7 +218,7 @@ export const LLM_DISPLAY_META: Record<
     vendor: 'openai',
     inputPrice: '$0.20 / 1M',
     outputPrice: '$1.20 / 1M',
-    hint: '重推理性价比档 · 默认 xhigh 力度 · 可调推理',
+    hint: '重推理性价比档 · 默认 xhigh 力度 · 可调思考深度',
     supportsReasoningEffort: true,
     supportsVision: true,
     supportsToolCalls: true,
@@ -229,7 +228,7 @@ export const LLM_DISPLAY_META: Record<
     vendor: 'openai',
     inputPrice: '$2 / 1M',
     outputPrice: '$12 / 1M',
-    hint: 'balanced 升级档 · 重活复杂任务 · 可调推理',
+    hint: 'balanced 升级档 · 重活复杂任务 · 可调思考深度',
     supportsReasoningEffort: true,
     supportsVision: true,
     supportsToolCalls: true,
@@ -237,9 +236,9 @@ export const LLM_DISPLAY_META: Record<
   'gpt-5.6-sol': {
     label: 'GPT-5.6 Sol',
     vendor: 'openai',
-    inputPrice: '$2.50 / 1M',
-    outputPrice: '$15 / 1M',
-    hint: '旗舰升级档 · 最强综合能力 · 可调推理',
+    inputPrice: '$4.00 / 1M',
+    outputPrice: '$20.00 / 1M',
+    hint: '旗舰升级档 · 最强综合能力 · 可调思考深度',
     supportsReasoningEffort: true,
     supportsVision: true,
     supportsToolCalls: true,

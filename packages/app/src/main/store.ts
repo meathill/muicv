@@ -5,7 +5,13 @@ import { join } from 'node:path';
 import { app, safeStorage } from 'electron';
 import Store from 'electron-store';
 
-import { normalizeModel, normalizeReasoningEffort, REASONING_EFFORTS, type ReasoningEffort } from '@muicv/shared';
+import {
+  isSupportedLlmModel,
+  normalizeModel,
+  normalizeReasoningEffort,
+  REASONING_EFFORTS,
+  type ReasoningEffort,
+} from '@muicv/shared';
 
 import { type AppConfig, DEFAULT_CONFIG, type Profile } from '../shared/types.ts';
 
@@ -84,8 +90,7 @@ const store = new Store<LegacyShape>({
     onboardingCompleted: DEFAULT_CONFIG.onboardingCompleted,
   },
   // electron-store 的 migrations 按版本号执行。projectVersion 从 package.json
-  // 读，所以我们只在版本号 >= migration key 时跑一次。这里用 0.0.2 作为引入
-  // multi-profile 的版本号。
+  // 读，所以我们只在版本号 >= migration key 时跑一次。
   migrations: {
     '0.0.2': (s) => {
       const old = s.get('workspaceDir' as keyof LegacyShape) as string | null | undefined;
@@ -104,6 +109,17 @@ const store = new Store<LegacyShape>({
       // delete 老字段，避免下次又被识别成"待迁移"
       // electron-store 的 delete 接受任意字符串
       (s as unknown as { delete: (key: string) => void }).delete('workspaceDir');
+    },
+    '0.5.3': (s) => {
+      const current = s.get('defaultModel') as string | undefined;
+      // 兼容历史老版本（如 mimo-v2.5 / mimo-v2.5-pro / 已下架 gpt-5.4 / gpt-5.5）：
+      // 若原默认模型为旧默认或已下架模型，自动迁移到新默认模型 deepseek-v4-flash
+      if (!current || current === 'mimo-v2.5' || current === 'mimo-v2.5-pro' || !isSupportedLlmModel(current)) {
+        s.set('defaultModel', DEFAULT_CONFIG.defaultModel);
+      }
+      if (!s.has('llmReasoningEffort')) {
+        s.set('llmReasoningEffort', DEFAULT_CONFIG.llmReasoningEffort);
+      }
     },
   },
 });
@@ -149,6 +165,16 @@ export function getConfig(): AppConfig {
   const customLlmBase = store.get('customLlmBase');
   const storedModel = store.get('defaultModel');
   const defaultModel = customLlmBase ? storedModel : normalizeModel(storedModel);
+  if (!customLlmBase && storedModel !== defaultModel) {
+    store.set('defaultModel', defaultModel);
+  }
+
+  const storedEffort = store.get('llmReasoningEffort');
+  const llmReasoningEffort = normalizeReasoningEffort(storedEffort);
+  if (storedEffort !== llmReasoningEffort) {
+    store.set('llmReasoningEffort', llmReasoningEffort);
+  }
+
   return {
     profiles,
     activeProfileId,
@@ -156,7 +182,7 @@ export function getConfig(): AppConfig {
     muicvApiKey: decrypt(store.get('muicvApiKeyCipher')),
     muicvApiBase: store.get('muicvApiBase'),
     defaultModel,
-    llmReasoningEffort: normalizeReasoningEffort(store.get('llmReasoningEffort')),
+    llmReasoningEffort,
     customLlmBase,
     customLlmKey: decrypt(store.get('customLlmKeyCipher')),
     onboardingCompleted: store.get('onboardingCompleted'),

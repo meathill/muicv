@@ -178,6 +178,12 @@ describe('Pricing', () => {
       assert.equal(cost, Math.ceil(260 * LLM_RATIO * TOKEN_PRECISION));
     });
 
+    it('gpt-5.6-sol：官方 $4 / $20 per 1M 校准计费', () => {
+      // 100 × 0.4 + 100 × 2.0 = 40 + 200 = 240 显示 token
+      const cost = computeLlmCharge('gpt-5.6-sol', 100, 100);
+      assert.equal(cost, Math.ceil(240 * LLM_RATIO * TOKEN_PRECISION));
+    });
+
     it('mimo-v2.5：极廉价输入精度被保留（μ 级别 ceil）', () => {
       // 1 input × 0.008 = 0.008 显示 token
       // ceil(0.008 × 1.1 × 10_000) = ceil(88) = 88 μ

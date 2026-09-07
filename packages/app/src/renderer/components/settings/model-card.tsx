@@ -112,7 +112,7 @@ export function ModelCard({ isBYOK, currentModel }: { isBYOK: boolean; currentMo
       {canTuneEffort && (
         <div className="mt-3 rounded-lg border border-rule bg-paper px-3.5 py-3">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[13px] font-bold text-ink">推理力度</p>
+            <p className="text-[13px] font-bold text-ink">思考深度</p>
             <div className="flex gap-1">
               {REASONING_EFFORTS.map((value) => {
                 const active = effort === value;
@@ -134,7 +134,7 @@ export function ModelCard({ isBYOK, currentModel }: { isBYOK: boolean; currentMo
             </div>
           </div>
           <p className="mt-1.5 text-[12px] leading-[1.6] text-mute">
-            越高想得越深，但更慢也更费 token。当前作用于 {activeMeta?.label ?? currentModel}。
+            思考深度越高想得越深，但更慢也更费 token。当前作用于 {activeMeta?.label ?? currentModel}。
           </p>
         </div>
       )}

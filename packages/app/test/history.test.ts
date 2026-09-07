@@ -19,11 +19,13 @@ test('estimateTokens 大致随长度上升', () => {
 
 test('getModelBudget mimo 系列走 1M context（800k 预算）', () => {
   assert.equal(getModelBudget('mimo-v2.5'), 800_000);
-  assert.equal(getModelBudget('mimo-v2.5-pro'), 800_000);
 });
 
-test('getModelBudget GPT 与未知模型走 256K context（204800 预算）', () => {
-  assert.equal(getModelBudget('gpt-5.4'), 204_800);
+test('getModelBudget DeepSeek、GPT-5.6 与未知模型走 256K context（204800 预算）', () => {
+  assert.equal(getModelBudget('deepseek-v4-flash'), 204_800);
+  assert.equal(getModelBudget('gpt-5.6-luna'), 204_800);
+  assert.equal(getModelBudget('gpt-5.6-terra'), 204_800);
+  assert.equal(getModelBudget('gpt-5.6-sol'), 204_800);
   assert.equal(getModelBudget('foo'), 204_800);
 });
 
