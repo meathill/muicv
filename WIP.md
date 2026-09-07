@@ -8,6 +8,19 @@
 > 用户 API Key / Skill 目录 + Payload CMS / 腾讯校招内容落地 / Issue 11 首页移动端
 > LCP）的决策和约束已沉淀进 [DEV_NOTE.md](./DEV_NOTE.md)，不再保留勾选列表。
 
+### 插队任务：全仓依赖升级至最新版本（2026-09-07）
+
+目标：将根目录及 7 个子包（api / app / cms / cron / shared / ui / website）的所有外部依赖全部升级到 npm 最新版本（latest），消除 pnpm 10 告警，并通过全仓单测、类型检查和各子包构建验证。
+
+- [x] 迁移 `onlyBuiltDependencies` 到 `pnpm-workspace.yaml`，修复 pnpm 10 告警
+- [x] 关闭 packages/api 和 packages/website 中的 Cloudflare Worker `observability`（enabled: false）
+- [x] 对齐 dyqr#47：在 packages/website 与 packages/cms 的 open-next.config.ts 中将 `enableCacheInterception` 设为 `false`，并在卡片等 Link 上补充 `prefetch={false}` 防御
+- [x] 更新根目录及各子包 `package.json` 依赖版本
+- [x] 运行 `pnpm install` 更新 lockfile
+- [x] 运行 `pnpm format` 格式化代码与配置
+- [x] 运行 `pnpm -r test` 确保全包单测全部通过（365/365 pass）
+- [x] 运行各包 `typecheck` / `build` 确保编译构建无误（app / website / cms / api / opennext 全部通过）
+
 ### 插队任务：LLM 供给切换 OpenCode Go + TTS 端点（2026-08-27）
 
 目标：早期降成本——文字主力切 OpenCode Go 包月，GPT-5.6 升级档留 OpenAI；顺手建

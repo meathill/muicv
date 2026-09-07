@@ -73,7 +73,7 @@
     "STRIPE_PRICE_MAX_YEARLY": "price_1TRwczEpkXm2vxXTxoxuOYjq"
   },
   "observability": {
-    "enabled": true
+    "enabled": false
   },
   "placement": {
     "mode": "smart"

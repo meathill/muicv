@@ -162,7 +162,9 @@ export default async function EnTemplatesIndexPage({ searchParams }: { searchPar
                   </div>
 
                   <h2 className="mt-4 text-[20px] font-extrabold text-ink group-hover:text-yellow-deep">
-                    <Link href={`/en/templates/${template.slug}`}>{template.name.en}</Link>
+                    <Link href={`/en/templates/${template.slug}`} prefetch={false}>
+                      {template.name.en}
+                    </Link>
                   </h2>
                   <p className="mt-1 text-[13px] font-bold text-ink-soft">{template.role.en}</p>
 
@@ -195,6 +197,7 @@ export default async function EnTemplatesIndexPage({ searchParams }: { searchPar
                 <div className="mt-6 flex items-center gap-3 pt-4 border-t border-rule">
                   <Link
                     href={`/en/templates/${template.slug}`}
+                    prefetch={false}
                     className="press inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-yellow py-2.5 text-[14px] font-bold text-ink"
                   >
                     View Template & Live Preview

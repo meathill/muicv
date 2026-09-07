@@ -36,7 +36,24 @@ export function Footer({ dict = zh, locale = 'zh' }: { dict?: Dictionary; locale
       <div className="border-t border-rule">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-[12px] text-mute md:flex-row md:items-center md:justify-between md:px-8">
           <span>{t.copyright}</span>
-          <span className="font-mono text-[12px] uppercase tracking-wider">{t.madeIn}</span>
+          <div className="flex flex-wrap items-center justify-end gap-4">
+            <span className="font-mono text-[12px] uppercase tracking-wider">{t.madeIn}</span>
+            <a
+              href="https://firstlook.tools"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex shrink-0"
+              aria-label="Featured on First Look"
+            >
+              {/* biome-ignore lint/performance/noImgElement: First Look 官方 badge 是外部 HTML 图片片段。 */}
+              <img
+                src="https://firstlook.tools/badge/badge_light.svg"
+                alt="Featured on First Look"
+                width={200}
+                height={54}
+              />
+            </a>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,2 +1,10 @@
 packages:
   - packages/*
+
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - workerd
+  - electron
+  - electron-builder
+  - "@parcel/watcher"

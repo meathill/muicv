@@ -17,16 +17,16 @@
     "db:console": "wrangler d1 execute muicv --remote --command"
   },
   "dependencies": {
-    "@cloudflare/puppeteer": "^1.1.0",
+    "@cloudflare/puppeteer": "^1.4.0",
     "@mozilla/readability": "^0.6.0",
     "@muicv/shared": "workspace:*",
-    "hono": "^4.12.30",
+    "hono": "^4.13.7",
     "turndown": "^7.2.4"
   },
   "devDependencies": {
-    "@types/node": "^22.19.19",
+    "@types/node": "^26.4.1",
     "@types/turndown": "^5.0.6",
-    "typescript": "^5.7.3",
-    "wrangler": "^4.110.0"
+    "typescript": "^7.0.2",
+    "wrangler": "^4.129.0"
   }
 }

@@ -18,25 +18,25 @@
     "@muicv/shared": "workspace:*",
     "@muicv/ui": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
-    "better-auth": "^1.6.23",
+    "better-auth": "^1.7.3",
     "drizzle-orm": "^0.45.2",
     "gray-matter": "^4.0.3",
-    "marked": "^18.0.6",
-    "next": "^16.2.10",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "stripe": "^22.3.1"
+    "marked": "^18.0.11",
+    "next": "^16.3.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "stripe": "^22.6.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.1",
-    "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "^22.19.19",
-    "@types/react": "19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "autoprefixer": "^10.5.2",
-    "postcss": "^8.5.18",
-    "tailwindcss": "^4.3.2",
-    "typescript": "^5.7.3",
-    "wrangler": "^4.110.0"
+    "@opennextjs/cloudflare": "^1.20.6",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.4.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "autoprefixer": "^10.5.5",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.129.0"
   }
 }

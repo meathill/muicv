@@ -19,7 +19,7 @@ export function ContentCard({
     <article className="rounded-xl border-2 border-ink bg-cream p-5 shadow-[0_4px_0_0_var(--color-ink-line)] transition-transform hover:-translate-y-1">
       <p className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-yellow-deep">{eyebrow}</p>
       <h2 className="mt-2 text-[20px] font-extrabold leading-[1.25] text-ink">
-        <Link href={href} className="hover:text-yellow-deep">
+        <Link href={href} prefetch={false} className="hover:text-yellow-deep">
           {title}
         </Link>
       </h2>
@@ -33,6 +33,7 @@ export function ContentCard({
       </div>
       <Link
         href={href}
+        prefetch={false}
         className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-yellow-deep hover:text-ink"
       >
         查看详情

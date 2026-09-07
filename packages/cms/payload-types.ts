@@ -211,8 +211,8 @@ export interface Post {
  */
 export interface Article {
   id: number;
-  site: 'muicv' | 'dyqr' | 'taomenu';
-  locale: 'en' | 'zh-CN' | 'fr' | 'es' | 'pt' | 'th' | 'vi' | 'ja';
+  site: 'muicv' | 'dyqr' | 'taomenu' | 'muirouter';
+  locale: 'en' | 'zh-CN' | 'de' | 'fr' | 'es' | 'pt' | 'th' | 'vi' | 'ja';
   title: string;
   slug: string;
   status: 'draft' | 'published';
@@ -230,6 +230,15 @@ export interface Article {
         id?: string | null;
       }[]
     | null;
+  sources?:
+    | {
+        label: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  sourcePublishedAt?: string | null;
+  readingMinutes?: number | null;
   author: string;
   publishedAt: string;
   seoTitle: string;
@@ -488,6 +497,15 @@ export interface ArticlesSelect<T extends boolean = true> {
         value?: T;
         id?: T;
       };
+  sources?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        id?: T;
+      };
+  sourcePublishedAt?: T;
+  readingMinutes?: T;
   author?: T;
   publishedAt?: T;
   seoTitle?: T;

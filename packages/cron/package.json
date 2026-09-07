@@ -11,6 +11,6 @@
     "@muicv/shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.19.19"
+    "@types/node": "^26.4.1"
   }
 }

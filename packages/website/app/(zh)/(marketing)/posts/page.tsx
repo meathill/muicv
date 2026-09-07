@@ -65,6 +65,7 @@ export default async function PostsIndexPage() {
               <Link
                 key={section}
                 href={meta.path}
+                prefetch={false}
                 className="rounded-xl border-2 border-rule bg-cream p-5 hover:border-ink"
               >
                 <p className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-yellow-deep">

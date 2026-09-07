@@ -164,7 +164,9 @@ export default async function TemplatesIndexPage({ searchParams }: { searchParam
 
                   {/* 标题与角色 */}
                   <h2 className="mt-4 text-[20px] font-extrabold text-ink group-hover:text-yellow-deep">
-                    <Link href={`/templates/${template.slug}`}>{template.name.zh}</Link>
+                    <Link href={`/templates/${template.slug}`} prefetch={false}>
+                      {template.name.zh}
+                    </Link>
                   </h2>
                   <p className="mt-1 text-[13px] font-bold text-ink-soft">{template.role.zh}</p>
 
@@ -201,6 +203,7 @@ export default async function TemplatesIndexPage({ searchParams }: { searchParam
                 <div className="mt-6 flex items-center gap-3 pt-4 border-t border-rule">
                   <Link
                     href={`/templates/${template.slug}`}
+                    prefetch={false}
                     className="press inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-yellow py-2.5 text-[14px] font-bold text-ink"
                   >
                     查看完整模板 & 双语预览

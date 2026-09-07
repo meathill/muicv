@@ -38,7 +38,7 @@ export async function getStripe(): Promise<Stripe> {
     throw new Error('STRIPE_SECRET_KEY 未配置（wrangler secret put STRIPE_SECRET_KEY）');
   }
   cached = new Stripe(env.STRIPE_SECRET_KEY, {
-    apiVersion: '2026-06-24.dahlia',
+    apiVersion: '2026-08-26.dahlia',
     httpClient: Stripe.createFetchHttpClient(),
   });
   return cached;
