@@ -703,6 +703,7 @@ TTS 在用。
   deepseek/mimo 系走 chat_completions + reasoning_content 双向透传层，逻辑复用现状。
 - Secret：`OPENCODE_GO_API_KEY`（wrangler secret put）。缺失时 API 返回
   `{error:'opencode-go-key-missing'}`。
+- 必须携带 `x-opencode-session`（缺失时报 400 "Request is missing x-opencode-session and cannot be routed efficiently"）：用于后端节点会话亲和与 prompt cache 路由。app 与 api 两端均已注入稳定的会话 ID 及定制 `User-Agent`。
 
 **GPT-5.6 家族（Sol/Terra/Luna）**：OpenAI 2026 推出的三档变体，走 `/v1/responses`，
 reasoning.effort 支持 none..max 六级；平台 UI 只放 low/medium/high/xhigh（默认 xhigh）。

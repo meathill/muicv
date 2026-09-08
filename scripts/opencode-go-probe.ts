@@ -28,7 +28,12 @@ async function main() {
     console.error('缺 OPENCODE_GO_API_KEY 环境变量。例：OPENCODE_GO_API_KEY=xxx node scripts/opencode-go-probe.ts');
     process.exit(2);
   }
-  const headers = { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` };
+  const headers = {
+    'content-type': 'application/json',
+    authorization: `Bearer ${apiKey}`,
+    'x-opencode-session': 'muicv-probe-session',
+    'user-agent': 'muicv-probe/1.0',
+  };
   let criticalFailure = false;
 
   // ── 1. models 列表 ──────────────────────────────────────────────

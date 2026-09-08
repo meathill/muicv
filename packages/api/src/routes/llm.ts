@@ -258,6 +258,20 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
   }
   upstreamHeaders.set('Authorization', `Bearer ${upstreamKey}`);
 
+  // OpenCode Go 要求：
+  // 1. 发送稳定的 x-opencode-session header 用于会话亲和与 prompt cache 路由，缺失会返回 400
+  // 2. 自定义非通用客户端 User-Agent
+  if (upstreamBase === OPENCODE_GO_BASE) {
+    const clientSession =
+      upstreamHeaders.get('x-opencode-session') || c.req.header('x-session-id') || c.req.header('x-conversation-id');
+    const sessionId = clientSession || `muicv-${userId}`;
+    upstreamHeaders.set('x-opencode-session', sessionId);
+    const ua = upstreamHeaders.get('user-agent');
+    if (!ua || ua.includes('node-fetch') || ua.includes('OpenAI/')) {
+      upstreamHeaders.set('User-Agent', 'muicv-api/1.0');
+    }
+  }
+
   // 发起 fetch
   let upstreamRes: Response;
   try {

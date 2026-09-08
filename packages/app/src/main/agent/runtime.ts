@@ -19,7 +19,7 @@ import { buildApiTools } from './api-tools.ts';
 import { buildAgentInput, getModelBudget } from './history.ts';
 import { configureLlmForRun, currentOpenAIAPI } from './llm-config.ts';
 import { readAudioAsBase64, readImageAsDataUrl } from './multimodal.ts';
-import { resetReasoningState, setReasoningDeltaListener } from './reasoning-capture.ts';
+import { resetReasoningState, setReasoningDeltaListener, setRunSessionId } from './reasoning-capture.ts';
 import { buildSystemPrompt } from './skills.ts';
 import {
   AGENT_MAX_TURNS,
@@ -67,6 +67,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   }
   // 清掉上一轮 run 残留的 reasoning 队列，避免序号错位注入本轮 assistant
   resetReasoningState();
+  setRunSessionId(convId);
   // 把推理过程实时转发给 renderer，让 UI 展示真正的"思考中"内容而不是静态提示
   // 仅 thinking-mode 模型实际会触发，普通模型 stream 里没 reasoning_content 字段
   setReasoningDeltaListener((delta) => send({ type: 'reasoning-delta', delta }));
@@ -282,6 +283,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     clearInterval(watchdog);
     activeRuns.delete(channelId);
     setReasoningDeltaListener(null);
+    setRunSessionId(null);
   }
 
   /** 把本轮 user msg + 累积的 assistant msg 追加到 conversation 文件。 */

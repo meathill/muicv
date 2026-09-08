@@ -31,6 +31,7 @@ let reasoningQueue: ReasoningCapture[] = [];
  * 可能串台，但当前架构用户不会同时跑两个 agent。
  */
 let reasoningDeltaListener: ((delta: string) => void) | null = null;
+let currentSessionId: string | null = null;
 
 /** runAgent 调用前清队列，避免上一轮 run 的 reasoning 错位注入本轮 assistant。 */
 export function resetReasoningState(): void {
@@ -39,6 +40,11 @@ export function resetReasoningState(): void {
 
 export function setReasoningDeltaListener(fn: ((delta: string) => void) | null): void {
   reasoningDeltaListener = fn;
+}
+
+/** 注入当前 run 的会话 ID（由 runtime 在 runAgent 启动时配置），供 OpenCode Go 会话亲和与请求路由使用。 */
+export function setRunSessionId(sessionId: string | null): void {
+  currentSessionId = sessionId;
 }
 
 /**
@@ -55,10 +61,11 @@ export function isThinkingModeModel(modelId: unknown): modelId is string {
 }
 
 /**
- * OpenAI SDK 自定义 fetch wrapper，承担两件事：
+ * OpenAI SDK 自定义 fetch wrapper，承担三件事：
  *   1. non-ok 响应时打印完整 body + 请求摘要（mimo / muirouter 经常返回 400
  *      "Param Incorrect" 之类语义稀薄的错误，没这层日志根本看不出哪个 param 不对）
  *   2. thinking-mode reasoning_content 双向透传（见本文件顶部注释）
+ *   3. 会话 header（x-opencode-session）与客户端 User-Agent 注入
  *
  * 注意：req body 可能含敏感内容（用户对话原文），日志只截 1.5KB 摘要。
  */
@@ -66,6 +73,20 @@ export async function loggingFetch(
   input: Parameters<typeof fetch>[0],
   init?: Parameters<typeof fetch>[1],
 ): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  if (currentSessionId) {
+    if (!headers.has('x-opencode-session')) headers.set('x-opencode-session', currentSessionId);
+    if (!headers.has('x-session-id')) headers.set('x-session-id', currentSessionId);
+  }
+  const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  if (urlStr.includes('opencode.ai') && !headers.has('x-opencode-session')) {
+    headers.set('x-opencode-session', currentSessionId || 'muicv-app-session');
+  }
+  const ua = headers.get('user-agent');
+  if (!ua || ua.includes('node-fetch') || ua.includes('OpenAI/')) {
+    headers.set('user-agent', 'muicv-app/1.0');
+  }
+
   // Request 侧：队列非空 → 从队尾对齐注入到 body.messages 末尾 N 条 assistant
   // body.messages 里 assistant 分两类：
   //   - 历史完成态：从持久化 ChatMessage[] 经 history.toItem 重建，无 tool_calls，不要求 reasoning
@@ -73,7 +94,7 @@ export async function loggingFetch(
   // 队列长度 = 本轮已完成的 turn 数 = 末尾 N 条新 assistant。从队尾对齐：
   //   reasoningQueue[0] → 倒数第 queue.length 条 assistant
   //   reasoningQueue[i] → 倒数第 (queue.length - i) 条 assistant
-  let mutatedInit = init;
+  let mutatedInit: RequestInit = { ...(init ?? {}), headers };
   if (init?.body && typeof init.body === 'string' && reasoningQueue.length > 0) {
     try {
       const body = JSON.parse(init.body);
@@ -96,7 +117,7 @@ export async function loggingFetch(
           }
         }
         if (injected > 0) {
-          mutatedInit = { ...init, body: JSON.stringify(body) };
+          mutatedInit = { ...mutatedInit, body: JSON.stringify(body) };
         }
       }
     } catch {
