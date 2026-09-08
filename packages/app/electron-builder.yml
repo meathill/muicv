@@ -85,6 +85,7 @@ nsis:
 
 # ============ Linux ============
 linux:
+  executableName: muicv
   artifactName: "MuiCV-${version}-${arch}.${ext}"
   category: Office
   target:
