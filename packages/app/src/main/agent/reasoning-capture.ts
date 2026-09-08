@@ -24,6 +24,7 @@
 
 type ReasoningCapture = { model: string; content: string };
 let reasoningQueue: ReasoningCapture[] = [];
+let activeTapPromise: Promise<void> | null = null;
 
 /**
  * 实时 reasoning_content delta 监听器。runAgent 启动时设置（转发到 send），
@@ -36,6 +37,7 @@ let currentSessionId: string | null = null;
 /** runAgent 调用前清队列，避免上一轮 run 的 reasoning 错位注入本轮 assistant。 */
 export function resetReasoningState(): void {
   reasoningQueue = [];
+  activeTapPromise = null;
 }
 
 export function setReasoningDeltaListener(fn: ((delta: string) => void) | null): void {
@@ -87,15 +89,20 @@ export async function loggingFetch(
     headers.set('user-agent', 'muicv-app/1.0');
   }
 
-  // Request 侧：队列非空 → 从队尾对齐注入到 body.messages 末尾 N 条 assistant
-  // body.messages 里 assistant 分两类：
-  //   - 历史完成态：从持久化 ChatMessage[] 经 history.toItem 重建，无 tool_calls，不要求 reasoning
-  //   - 本轮新生成：SDK 在 run() 内部按 turn 累计，有 tool_calls，强制要求 reasoning
-  // 队列长度 = 本轮已完成的 turn 数 = 末尾 N 条新 assistant。从队尾对齐：
-  //   reasoningQueue[0] → 倒数第 queue.length 条 assistant
-  //   reasoningQueue[i] → 倒数第 (queue.length - i) 条 assistant
+  // 若上一轮流的后台 tap 尚未消费完毕，先等待结束，确保 reasoningQueue 就绪无竞态
+  if (activeTapPromise) {
+    try {
+      await activeTapPromise;
+    } catch {
+      /* 忽略 tap 内部已处理的异常 */
+    }
+  }
+
+  // Request 侧：为 thinking-mode 模型确保所有 assistant 消息都带 reasoning_content
+  // DeepSeek / OpenCode Go 在 thinking mode 下，要求每一条 assistant message（尤其是带 tool_calls 的）
+  // 必须把 reasoning_content 字段传回，否则返回 400 "The reasoning_content in the thinking mode must be passed back to the API."
   let mutatedInit: RequestInit = { ...(init ?? {}), headers };
-  if (init?.body && typeof init.body === 'string' && reasoningQueue.length > 0) {
+  if (init?.body && typeof init.body === 'string') {
     try {
       const body = JSON.parse(init.body);
       if (isThinkingModeModel(body.model) && Array.isArray(body.messages)) {
@@ -104,21 +111,32 @@ export async function loggingFetch(
           const msg = body.messages[i];
           if (msg && typeof msg === 'object' && msg.role === 'assistant') assistantIndices.push(i);
         }
-        const offset = assistantIndices.length - reasoningQueue.length;
-        let injected = 0;
-        if (offset >= 0) {
-          for (let i = 0; i < reasoningQueue.length; i++) {
-            const slot = reasoningQueue[i];
-            if (!slot || slot.model !== body.model) continue;
-            const target = assistantIndices[offset + i];
-            if (target == null) continue;
-            (body.messages[target] as Record<string, unknown>).reasoning_content = slot.content;
-            injected++;
+
+        const offset = Math.max(0, assistantIndices.length - reasoningQueue.length);
+        const queueStart = Math.max(0, reasoningQueue.length - assistantIndices.length);
+
+        for (let i = 0; i < assistantIndices.length; i++) {
+          const target = assistantIndices[i];
+          if (target === undefined) continue;
+          const assistantMsg = body.messages[target] as Record<string, unknown> | undefined;
+          if (!assistantMsg) continue;
+
+          if (i >= offset) {
+            const queueIdx = queueStart + (i - offset);
+            const slot = reasoningQueue[queueIdx];
+            if (slot && typeof slot.content === 'string') {
+              assistantMsg.reasoning_content = slot.content;
+              continue;
+            }
+          }
+
+          // 兜底：若该 assistant 未被队列匹配或缺失，补上空字符串，防止上游 400 校验失败
+          if (assistantMsg.reasoning_content === undefined) {
+            assistantMsg.reasoning_content = '';
           }
         }
-        if (injected > 0) {
-          mutatedInit = { ...mutatedInit, body: JSON.stringify(body) };
-        }
+
+        mutatedInit = { ...mutatedInit, body: JSON.stringify(body) };
       }
     } catch {
       /* 非 JSON body 不动 */
@@ -137,21 +155,38 @@ export async function loggingFetch(
     );
   }
 
-  // Response 侧：thinking-mode streaming 响应 → tee 一份流到后台 tap 抓
-  // delta.reasoning_content。仅对 isThinkingModeModel 触发，避免给 GPT 这类
-  // 没 reasoning_content 字段的模型做无用的 tee + JSON.parse。
+  // Response 侧：thinking-mode 响应处理
   const reqModel = extractModelFromRequestBody(mutatedInit?.body);
   const isStream = res.ok && !!res.body && (res.headers.get('content-type') ?? '').includes('text/event-stream');
   if (isStream && isThinkingModeModel(reqModel)) {
     const [streamForSDK, streamForUs] = res.body!.tee();
-    tapReasoningStream(streamForUs, reqModel).catch((err) => {
-      console.warn('[reasoning tap] failed:', err);
-    });
+    activeTapPromise = tapReasoningStream(streamForUs, reqModel)
+      .catch((err) => {
+        console.warn('[reasoning tap] failed:', err);
+      })
+      .finally(() => {
+        activeTapPromise = null;
+      });
     return new Response(streamForSDK, {
       status: res.status,
       statusText: res.statusText,
       headers: res.headers,
     });
+  }
+
+  // 非 stream 响应：若为 thinking-mode，读 choices[0].message.reasoning_content 并推入队列
+  if (res.ok && isThinkingModeModel(reqModel)) {
+    try {
+      const cloned = res.clone();
+      const json = (await cloned.json()) as {
+        choices?: Array<{ message?: Record<string, unknown> }>;
+      };
+      const msg = json.choices?.[0]?.message;
+      const rc = msg?.reasoning_content ?? msg?.reasoning;
+      reasoningQueue.push({ model: reqModel, content: typeof rc === 'string' ? rc : '' });
+    } catch {
+      /* 非 JSON 忽略 */
+    }
   }
 
   return res;
@@ -170,9 +205,6 @@ function extractModelFromRequestBody(body: unknown): string | null {
 /**
  * 后台读 SSE stream，按 OpenAI streaming 格式逐 chunk 解析，累计
  * `choices[0].delta.reasoning_content`，整段存到 pendingReasoning。
- *
- * SDK 在同一 run 内严格串行（等本轮 stream 完 + tool 跑完才发下一轮），
- * 所以 tap 一定在下一轮 request 前完成，缓存写入有 happens-before 保证。
  */
 async function tapReasoningStream(stream: ReadableStream<Uint8Array>, model: string): Promise<void> {
   const reader = stream.getReader();
@@ -184,6 +216,8 @@ async function tapReasoningStream(stream: ReadableStream<Uint8Array>, model: str
       const { value, done } = await reader.read();
       if (done) break;
       buf += decoder.decode(value, { stream: true });
+      // 标准化换行符，避免 \r\n\r\n 导致 indexOf('\n\n') 找不到事件边界
+      buf = buf.replace(/\r\n/g, '\n');
       let idx: number;
       while ((idx = buf.indexOf('\n\n')) !== -1) {
         const event = buf.slice(0, idx);
@@ -193,8 +227,14 @@ async function tapReasoningStream(stream: ReadableStream<Uint8Array>, model: str
           const payload = line.slice(5).trim();
           if (!payload || payload === '[DONE]') continue;
           try {
-            const json = JSON.parse(payload) as { choices?: Array<{ delta?: Record<string, unknown> }> };
-            const rc = json.choices?.[0]?.delta?.reasoning_content;
+            const json = JSON.parse(payload) as {
+              choices?: Array<{
+                delta?: Record<string, unknown>;
+                message?: Record<string, unknown>;
+              }>;
+            };
+            const delta = json.choices?.[0]?.delta;
+            const rc = delta?.reasoning_content ?? delta?.reasoning;
             if (typeof rc === 'string' && rc.length > 0) {
               acc += rc;
               reasoningDeltaListener?.(rc);
@@ -205,7 +245,27 @@ async function tapReasoningStream(stream: ReadableStream<Uint8Array>, model: str
         }
       }
     }
-    if (acc) reasoningQueue.push({ model, content: acc });
+    // 处理末尾剩余未以双换行结尾的 buffer
+    if (buf) {
+      for (const line of buf.split('\n')) {
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const json = JSON.parse(payload) as { choices?: Array<{ delta?: Record<string, unknown> }> };
+          const delta = json.choices?.[0]?.delta;
+          const rc = delta?.reasoning_content ?? delta?.reasoning;
+          if (typeof rc === 'string' && rc.length > 0) {
+            acc += rc;
+            reasoningDeltaListener?.(rc);
+          }
+        } catch {
+          /* 忽略 */
+        }
+      }
+    }
+    // 即使 acc 为空也入队，确保与 turn 轮次对齐
+    reasoningQueue.push({ model, content: acc });
   } finally {
     reader.releaseLock();
   }

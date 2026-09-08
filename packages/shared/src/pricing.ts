@@ -112,6 +112,13 @@ export const LLM_PRICING: Record<
 > = {
   // OpenCode Go 包月，DeepSeek Flash 快而便宜，工具调用强——日常对话主力
   'deepseek-v4-flash': { upstream: 'opencode-go', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.08 },
+  // OpenCode Go 图像理解变体，在有图片上传时自动分流使用，支持视觉输入
+  'deepseek-v4-flash-vision-exp': {
+    upstream: 'opencode-go',
+    inputRate: 0.02,
+    cachedInputRate: 0.002,
+    outputRate: 0.08,
+  },
   // 同 id 从 Xiaomi 直连迁到 OpenCode Go（价格不变，用户无感）；语音理解 / 音频直通专用
   'mimo-v2.5': { upstream: 'opencode-go', inputRate: 0.008, cachedInputRate: 0.008, outputRate: 0.2 },
   // 上游 $0.20 / cached $0.02 / output $1.20 per 1M —— 重推理性价比档，默认 xhigh
@@ -222,6 +229,15 @@ export const LLM_DISPLAY_META: Record<
     hint: '默认 · 快而便宜 · agent 工具调用首选',
     isDefault: true,
     supportsVision: false,
+    supportsToolCalls: true,
+  },
+  'deepseek-v4-flash-vision-exp': {
+    label: 'DeepSeek V4 Flash Vision',
+    vendor: 'opencode-go',
+    inputPrice: '$0.20 / 1M',
+    outputPrice: '$0.80 / 1M',
+    hint: '图像理解 · 视觉实验版 · 支持图片与图表解析',
+    supportsVision: true,
     supportsToolCalls: true,
   },
   'mimo-v2.5': {

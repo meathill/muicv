@@ -1,6 +1,6 @@
 {
   "name": "@muicv/app",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "private": true,
   "type": "module",
   "description": "Mui简历桌面端：electron + React，让不用 AI agent 的求职者也能跑完整简历工作流。",

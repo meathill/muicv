@@ -52,9 +52,10 @@ describe('Pricing', () => {
   });
 
   describe('LLM_PRICING table', () => {
-    it('包含 5 个支持的 model（声明顺序 = UI 展示顺序，默认在前）', () => {
+    it('包含 6 个支持的 model（声明顺序 = UI 展示顺序，默认在前）', () => {
       assert.deepEqual(SUPPORTED_LLM_MODELS, [
         'deepseek-v4-flash',
+        'deepseek-v4-flash-vision-exp',
         'mimo-v2.5',
         'gpt-5.6-luna',
         'gpt-5.6-terra',
@@ -64,6 +65,7 @@ describe('Pricing', () => {
 
     it('upstream 归属：文本主力与语音理解走 OpenCode Go，GPT 升级档走 OpenAI', () => {
       assert.equal(LLM_PRICING['deepseek-v4-flash'].upstream, 'opencode-go');
+      assert.equal(LLM_PRICING['deepseek-v4-flash-vision-exp'].upstream, 'opencode-go');
       assert.equal(LLM_PRICING['mimo-v2.5'].upstream, 'opencode-go');
       for (const id of ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol']) {
         assert.equal(LLM_PRICING[id].upstream, 'openai');
@@ -136,10 +138,11 @@ describe('Pricing', () => {
       assert.equal(modelSupportsAudioInput('unknown-model'), false);
     });
 
-    it('modelSupportsVision：GPT-5.6 系原生 vision；DeepSeek / mimo 保守关闭避免误发图炸 400', () => {
+    it('modelSupportsVision：GPT-5.6 系与 deepseek-v4-flash-vision-exp 原生 vision；主线 flash / mimo 关闭', () => {
       assert.equal(modelSupportsVision('gpt-5.6-luna'), true);
       assert.equal(modelSupportsVision('gpt-5.6-terra'), true);
       assert.equal(modelSupportsVision('gpt-5.6-sol'), true);
+      assert.equal(modelSupportsVision('deepseek-v4-flash-vision-exp'), true);
       assert.equal(modelSupportsVision('deepseek-v4-flash'), false);
       assert.equal(modelSupportsVision('mimo-v2.5'), false);
       assert.equal(modelSupportsVision('unknown-model'), false);

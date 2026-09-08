@@ -68,8 +68,9 @@ export function useAgentDispatch(callbacks: DispatchCallbacks): AgentDispatchApi
       onError(null);
       onNeedsAiSetup(false);
 
+      const hasImage = attachments.some((a) => a.kind === 'image');
       const footer = formatAttachmentsFooter(attachments, {
-        supportsVision: modelSupportsVision(defaultModel),
+        supportsVision: modelSupportsVision(defaultModel) || hasImage,
         supportsAudioInput: modelSupportsAudioInput(defaultModel),
       });
       const userContent = text ? `${text}${footer}` : footer.replace(/^\n\n/, '');

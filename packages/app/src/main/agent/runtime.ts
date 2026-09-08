@@ -60,7 +60,15 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     return;
   }
   const workspaceDir = config.workspaceDir;
-  if (!configureLlmForRun(config)) {
+  // 检查本轮或历史中是否有图片附件
+  const hasImage = messages.some((m) => m.attachments?.some((a) => a.kind === 'image'));
+  let effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
+  // 如果用户上传了图片，且当前模型不支持 vision，自动分流到 deepseek-v4-flash-vision-exp 处理
+  if (hasImage && !modelSupportsVision(effectiveModel)) {
+    effectiveModel = 'deepseek-v4-flash-vision-exp';
+  }
+
+  if (!configureLlmForRun(config, effectiveModel)) {
     send({ type: 'error', message: 'NOT_LOGGED_IN' });
     send({ type: 'finish', reason: 'error' });
     return;
@@ -90,7 +98,6 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   // responses 端要 `reasoning: { effort }`，chat_completions 端是平铺的
   // `reasoning_effort`，字段名由本 run 选定的端点形态决定。
   const apiChoice = currentOpenAIAPI();
-  const effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
   const agentModelSettings = modelSupportsReasoningEffort(effectiveModel)
     ? {
         providerData:
@@ -274,7 +281,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
         : isMaxTurnsError(rawMsg)
           ? `本次任务的 agent 工具调用超过 ${AGENT_MAX_TURNS} 轮，已自动停止。建议把任务拆小一点，或检查是否有某个工具在反复失败重试。`
           : isReasoningContentError(error, rawMsg)
-            ? `当前模型「${effectiveModel}」是带 thinking mode 的推理模型，多轮工具调用时要求回传 reasoning_content 字段，与 OpenAI Agents SDK 不兼容。请到设置切换到 GPT 系列（如 gpt-5.6-luna）。`
+            ? `当前模型「${effectiveModel}」是带 thinking mode 的推理模型，多轮工具调用时未成功同步 reasoning_content。建议重试，或到设置切换到 GPT 系列（如 gpt-5.6-luna）。`
             : rawMsg;
       send({ type: 'error', message: msg });
       send({ type: 'finish', reason: 'error' });

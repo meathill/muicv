@@ -102,6 +102,15 @@ export function useChatAttachments(
     let list = Array.from(files);
     if (list.length === 0) return;
 
+    // 单批次内按 name + size 粗粒度去重，防止误传完全重复的文件
+    const seen = new Set<string>();
+    list = list.filter((f) => {
+      const key = `${f.name}:${f.size}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
     if (!acceptImage) {
       const blocked = list.filter(isImageFile);
       if (blocked.length > 0) {
@@ -133,7 +142,10 @@ export function useChatAttachments(
               bytes,
             });
             if (result.ok) {
-              setPendingAttachments((prev) => [...prev, result.ref]);
+              setPendingAttachments((prev) => {
+                if (prev.some((a) => a.path === result.ref.path)) return prev;
+                return [...prev, result.ref];
+              });
             } else {
               pushAttachmentError(`${file.name}：${result.message}`);
             }

@@ -677,6 +677,33 @@ test('POST /llm/v1/chat/completions model=deepseek-v4-flash → 上游 OpenCode 
   }
 });
 
+test('POST /llm/v1/chat/completions model=deepseek-v4-flash-vision-exp → 上游 OpenCode Go + GO key', async () => {
+  const captures: FetchCapture[] = [];
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4-flash-vision-exp'));
+  try {
+    const res = await app.request(
+      '/llm/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...AUTH },
+        body: JSON.stringify({
+          model: 'deepseek-v4-flash-vision-exp',
+          messages: [{ role: 'user', content: 'describe image' }],
+        }),
+      },
+      mockEnv({ authenticated: true, walletMicro: 100_000_000, opencodeGoKey: 'sk-go-test' }),
+      ctx,
+    );
+    assert.equal(res.status, 200);
+    assert.equal(captures.length, 1);
+    assert.equal(captures[0]?.url, 'https://opencode.ai/zen/go/v1/chat/completions');
+    const headers = new Headers(captures[0]?.init?.headers as HeadersInit);
+    assert.equal(headers.get('authorization'), 'Bearer sk-go-test');
+  } finally {
+    restore();
+  }
+});
+
 test('POST /llm/v1/chat/completions 透传客户端携带的 x-opencode-session', async () => {
   const captures: FetchCapture[] = [];
   const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4-flash'));

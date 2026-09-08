@@ -76,9 +76,9 @@ function ensureConfigured(config: AppConfig): boolean {
  * 在每次 runAgent 起点都跑一次（不可缓存）——同一个 muicv key 可能在不同 run 之间
  * 切换 model（用户去设置改），endpoint 必须跟着 model 变。
  */
-export function selectOpenAIAPI(config: AppConfig): 'chat_completions' | 'responses' {
+export function selectOpenAIAPI(config: AppConfig, overrideModel?: string): 'chat_completions' | 'responses' {
   if (config.customLlmBase && config.customLlmKey) return 'chat_completions';
-  const effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
+  const effectiveModel = overrideModel ?? resolveModelAlias(config.defaultModel) ?? config.defaultModel;
   if (isThinkingModeModel(effectiveModel)) return 'chat_completions';
   return 'responses';
 }
@@ -87,9 +87,9 @@ export function selectOpenAIAPI(config: AppConfig): 'chat_completions' | 'respon
  * runAgent 起点统一调一次：装好 OpenAI client + endpoint。
  * 返回 false 表示用户没配 muicv key 也没配自带 LLM，本轮 run 无法启动。
  */
-export function configureLlmForRun(config: AppConfig): boolean {
+export function configureLlmForRun(config: AppConfig, overrideModel?: string): boolean {
   if (!ensureConfigured(config)) return false;
-  configuredAPI = selectOpenAIAPI(config);
+  configuredAPI = selectOpenAIAPI(config, overrideModel);
   setOpenAIAPI(configuredAPI);
   return true;
 }
