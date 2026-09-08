@@ -11,6 +11,7 @@ import {
   normalizeReasoningEffort,
   REASONING_EFFORTS,
   type ReasoningEffort,
+  resolveModelAlias,
 } from '@muicv/shared';
 
 import { type AppConfig, DEFAULT_CONFIG, type Profile } from '../shared/types.ts';
@@ -160,12 +161,16 @@ function normalizeProfile(p: Profile): Profile {
 export function getConfig(): AppConfig {
   const profiles = (store.get('profiles') as Profile[]).map(normalizeProfile);
   const activeProfileId = store.get('activeProfileId');
-  // 自带 endpoint 时模型 id 由用户控制（任何字符串都合法），不强制白名单；
-  // 走 muicv 平台时把已下架的旧 id（如 gpt-5.5）静默回退到默认，不打扰用户。
+  // 自带 endpoint 且配有 key 时为自定义模式；
+  // 无论是平台还是自定义，历史别名（如 mimo-v2.5-pro / gpt-5.4 / gpt-5.5）都自动升级收敛，避免 400 unsupported_model；
+  // 平台模式下未登记的未知 id 进一步静默回退到默认，不打扰用户。
   const customLlmBase = store.get('customLlmBase');
+  const customLlmKey = decrypt(store.get('customLlmKeyCipher'));
+  const isCustomLlm = Boolean(customLlmBase && customLlmKey);
   const storedModel = store.get('defaultModel');
-  const defaultModel = customLlmBase ? storedModel : normalizeModel(storedModel);
-  if (!customLlmBase && storedModel !== defaultModel) {
+  const aliasedModel = resolveModelAlias(storedModel) ?? storedModel;
+  const defaultModel = isCustomLlm ? aliasedModel : normalizeModel(aliasedModel);
+  if (storedModel !== defaultModel) {
     store.set('defaultModel', defaultModel);
   }
 
@@ -184,7 +189,7 @@ export function getConfig(): AppConfig {
     defaultModel,
     llmReasoningEffort,
     customLlmBase,
-    customLlmKey: decrypt(store.get('customLlmKeyCipher')),
+    customLlmKey,
     onboardingCompleted: store.get('onboardingCompleted'),
   };
 }
@@ -208,7 +213,9 @@ export function patchConfig(
     store.set('muicvApiBase', patch.muicvApiBase);
   }
   if ('defaultModel' in patch && typeof patch.defaultModel === 'string') {
-    store.set('defaultModel', patch.defaultModel);
+    const raw = patch.defaultModel.trim();
+    const resolved = resolveModelAlias(raw) ?? raw;
+    store.set('defaultModel', resolved);
   }
   // 非法值静默忽略（normalizeReasoningEffort 兜底在读盘侧，写入侧从严）
   if ('llmReasoningEffort' in patch) {
@@ -216,12 +223,6 @@ export function patchConfig(
     if ((REASONING_EFFORTS as readonly string[]).includes(v as string)) {
       store.set('llmReasoningEffort', v as ReasoningEffort);
     }
-  }
-  if ('muicvApiBase' in patch && typeof patch.muicvApiBase === 'string') {
-    store.set('muicvApiBase', patch.muicvApiBase);
-  }
-  if ('defaultModel' in patch && typeof patch.defaultModel === 'string') {
-    store.set('defaultModel', patch.defaultModel);
   }
   if ('muicvApiKey' in patch) store.set('muicvApiKeyCipher', encrypt(patch.muicvApiKey ?? null));
   if ('customLlmBase' in patch) {

@@ -4,7 +4,12 @@ import { Agent, run } from '@openai/agents';
 
 import { randomUUID } from 'node:crypto';
 
-import { modelSupportsAudioInput, modelSupportsReasoningEffort, modelSupportsVision } from '@muicv/shared';
+import {
+  modelSupportsAudioInput,
+  modelSupportsReasoningEffort,
+  modelSupportsVision,
+  resolveModelAlias,
+} from '@muicv/shared';
 
 import type { AgentChunk, AppConfig, ChatMessage, ConversationType, ToolCallRecord } from '../../shared/types.ts';
 import { getConversation, saveConversation } from '../conversations.ts';
@@ -84,7 +89,8 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   // responses 端要 `reasoning: { effort }`，chat_completions 端是平铺的
   // `reasoning_effort`，字段名由本 run 选定的端点形态决定。
   const apiChoice = currentOpenAIAPI();
-  const agentModelSettings = modelSupportsReasoningEffort(config.defaultModel)
+  const effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
+  const agentModelSettings = modelSupportsReasoningEffort(effectiveModel)
     ? {
         providerData:
           apiChoice === 'responses'
@@ -96,7 +102,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   const agent = new Agent({
     name: 'Mui简历',
     instructions: buildSystemPrompt(type),
-    model: config.defaultModel,
+    model: effectiveModel,
     tools,
     ...(agentModelSettings ? { modelSettings: agentModelSettings } : {}),
   });
@@ -128,11 +134,11 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   // 图片有第二种用途（upload_photo agent tool 上传证件照到 R2），不需要 vision。
   // 仅在 model 支持 vision 时把图 base64 进 input_image；不支持就跳过 imageReader，
   // 让 footer 的"调 upload_photo"提示引导 agent 走 R2 上传路径。
-  const supportsVision = modelSupportsVision(config.defaultModel);
+  const supportsVision = modelSupportsVision(effectiveModel);
   // Audio 直通：mimo-v2.5（全模态版）原生听音频，把 wav 以 Xiaomi 规范的
   // wav 裸 base64 灌进 Agents SDK audio content block，跳过 Whisper STT。
   // 其它 model 维持现状（chatbox 麦克风走 recordAndTranscribe → 转写文本）。
-  const supportsAudio = modelSupportsAudioInput(config.defaultModel);
+  const supportsAudio = modelSupportsAudioInput(effectiveModel);
 
   // 把历史按 SDK 原生 AgentInputItem[] 组装，并按 token budget 做滑动窗口裁剪。
   // 历史里所有 user message 的图都重新 base64 进 input_image content block——
@@ -143,7 +149,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     droppedCount,
     estimatedTokens,
   } = await buildAgentInput(messages, {
-    budgetTokens: getModelBudget(config.defaultModel),
+    budgetTokens: getModelBudget(effectiveModel),
     ...(supportsVision ? { imageReader: (ref) => readImageAsDataUrl(workspaceDir, ref) } : {}),
     ...(supportsAudio ? { audioReader: (ref) => readAudioAsBase64(workspaceDir, ref) } : {}),
   });
@@ -163,7 +169,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   // 空转看门狗：stream open 后 N 秒内没收到任何 event（mimo / 第三方代理偶发
   // silent hang），主动 abort 并报错，避免 UI 永远卡在"思考中"。任何 event 到达
   // 就 reset 计时。timeout 长度按 model 类型决定，见 stream-helpers.ts。
-  const STREAM_IDLE_TIMEOUT_MS = streamIdleTimeoutMsForModel(config.defaultModel);
+  const STREAM_IDLE_TIMEOUT_MS = streamIdleTimeoutMsForModel(effectiveModel);
   let lastEventAt = Date.now();
   let timedOut = false;
   const watchdog = setInterval(() => {
@@ -176,7 +182,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
 
   try {
     console.log(
-      `[agent runtime] starting run with model=${config.defaultModel}, items=${input.length}, est=${estimatedTokens}t`,
+      `[agent runtime] starting run with model=${effectiveModel}, items=${input.length}, est=${estimatedTokens}t`,
     );
     const stream = await run(agent, input, {
       stream: true,
@@ -249,7 +255,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     } else if (timedOut) {
       send({
         type: 'error',
-        message: `模型 ${config.defaultModel} 超过 ${STREAM_IDLE_TIMEOUT_MS / 1000}s 无响应，已中断。可能 endpoint 卡住或不支持本轮输入。看 electron-vite 终端日志查具体原因。`,
+        message: `模型 ${effectiveModel} 超过 ${STREAM_IDLE_TIMEOUT_MS / 1000}s 无响应，已中断。可能 endpoint 卡住或不支持本轮输入。看 electron-vite 终端日志查具体原因。`,
       });
       send({ type: 'finish', reason: 'error' });
     } else {
@@ -267,7 +273,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
         : isMaxTurnsError(rawMsg)
           ? `本次任务的 agent 工具调用超过 ${AGENT_MAX_TURNS} 轮，已自动停止。建议把任务拆小一点，或检查是否有某个工具在反复失败重试。`
           : isReasoningContentError(error, rawMsg)
-            ? `当前模型「${config.defaultModel}」是带 thinking mode 的推理模型，多轮工具调用时要求回传 reasoning_content 字段，与 OpenAI Agents SDK 不兼容。请到设置切换到 GPT 系列（如 gpt-5.6-luna）。`
+            ? `当前模型「${effectiveModel}」是带 thinking mode 的推理模型，多轮工具调用时要求回传 reasoning_content 字段，与 OpenAI Agents SDK 不兼容。请到设置切换到 GPT 系列（如 gpt-5.6-luna）。`
             : rawMsg;
       send({ type: 'error', message: msg });
       send({ type: 'finish', reason: 'error' });

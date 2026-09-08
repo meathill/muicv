@@ -7,6 +7,7 @@ import {
   LLM_PRICING,
   type LlmUpstream,
   MuirouterOauthError,
+  resolveModelAlias,
   SUPPORTED_LLM_MODELS,
 } from '@muicv/shared';
 
@@ -36,7 +37,8 @@ import type { AppEnv } from '../middleware/api-key.ts';
  *   4. **都没有**：余额 = 0 且没绑 muirouter → 402 insufficient_balance。
  *
  * 平台路径（1+2）只接受 LLM_PRICING 表里的 model 且按表里 upstream 字段选上游；
- * 表外 model（含已下架的 gpt-5.4 / mimo-v2.5-pro）→ 400 unsupported_model。
+ * 历史下架模型（如 mimo-v2.5-pro / gpt-5.4 / gpt-5.5）自动经 resolveModelAlias 兼容映射；
+ * 其他表外 model（如老的 gpt-4o-mini）→ 400 unsupported_model。
  * Xiaomi（token-plan-cn）completion 直连已退役——小米侧现在只剩 TTS（lib/tts.ts）。
  *
  * Path 映射：/llm/v1/{chat/completions|responses} → <upstream>/v1/...。
@@ -106,6 +108,13 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
     bodyText = await c.req.text();
     try {
       parsedBody = JSON.parse(bodyText);
+      if (parsedBody && typeof parsedBody.model === 'string') {
+        const aliased = resolveModelAlias(parsedBody.model);
+        if (aliased && aliased !== parsedBody.model) {
+          parsedBody.model = aliased;
+          bodyText = JSON.stringify(parsedBody);
+        }
+      }
       isStreaming = parsedBody?.stream === true;
       // include_usage 只在 chat_completions 有意义；responses 默认就在 response.completed 事件带 usage
       if (isChatCompletions && parsedBody?.stream_options?.include_usage === true) {

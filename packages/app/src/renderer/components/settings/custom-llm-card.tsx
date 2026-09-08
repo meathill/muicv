@@ -1,5 +1,5 @@
 import { CheckIcon } from '@phosphor-icons/react';
-import { DEFAULT_LLM_MODEL, SUPPORTED_LLM_MODELS } from '@muicv/shared';
+import { DEFAULT_LLM_MODEL, resolveModelAlias, SUPPORTED_LLM_MODELS } from '@muicv/shared';
 import { useEffect, useState } from 'react';
 
 import { useAppStore } from '../../lib/store';
@@ -24,12 +24,15 @@ export function CustomLlmCard() {
   const customConfigured = !!(cfg.customLlmBase && cfg.customLlmKey);
 
   async function onSave() {
+    const rawModel = defaultModel.trim();
+    const resolvedModel = resolveModelAlias(rawModel) || DEFAULT_LLM_MODEL;
     await patch({
-      defaultModel: defaultModel.trim() || DEFAULT_LLM_MODEL,
+      defaultModel: resolvedModel,
       customLlmBase: customLlmBase.trim() || null,
       customLlmKey: customLlmKey.trim() || null,
       muicvApiBase: muicvApiBase.trim() || 'https://api.muicv.com',
     });
+    setDefaultModel(resolvedModel);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   }

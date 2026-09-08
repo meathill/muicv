@@ -1,6 +1,8 @@
 import { setDefaultOpenAIClient, setDefaultOpenAIKey, setOpenAIAPI } from '@openai/agents';
 import OpenAI from 'openai';
 
+import { resolveModelAlias } from '@muicv/shared';
+
 import type { AppConfig } from '../../shared/types.ts';
 import { isThinkingModeModel, loggingFetch } from './reasoning-capture.ts';
 
@@ -74,9 +76,10 @@ function ensureConfigured(config: AppConfig): boolean {
  * 在每次 runAgent 起点都跑一次（不可缓存）——同一个 muicv key 可能在不同 run 之间
  * 切换 model（用户去设置改），endpoint 必须跟着 model 变。
  */
-function selectOpenAIAPI(config: AppConfig): 'chat_completions' | 'responses' {
+export function selectOpenAIAPI(config: AppConfig): 'chat_completions' | 'responses' {
   if (config.customLlmBase && config.customLlmKey) return 'chat_completions';
-  if (isThinkingModeModel(config.defaultModel)) return 'chat_completions';
+  const effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
+  if (isThinkingModeModel(effectiveModel)) return 'chat_completions';
   return 'responses';
 }
 

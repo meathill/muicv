@@ -747,6 +747,54 @@ test('POST /llm/v1/chat/completions model=gpt-4o-mini（表外）→ 400 unsuppo
   assert.ok(!body.supported.includes('mimo-v2.5-pro'));
 });
 
+test('POST /llm/v1/chat/completions model=mimo-v2.5-pro（兼容映射）→ 上游 OpenCode Go model=deepseek-v4-flash', async () => {
+  const captures: FetchCapture[] = [];
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4-flash'));
+  try {
+    const res = await app.request(
+      '/llm/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...AUTH },
+        body: JSON.stringify({ model: 'mimo-v2.5-pro', messages: [{ role: 'user', content: 'hi' }] }),
+      },
+      mockEnv({ authenticated: true, walletMicro: 100_000_000, opencodeGoKey: 'sk-go-test' }),
+      ctx,
+    );
+    assert.equal(res.status, 200);
+    assert.equal(captures.length, 1);
+    assert.equal(captures[0]?.url, 'https://opencode.ai/zen/go/v1/chat/completions');
+    const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
+    assert.equal(forwardedBody.model, 'deepseek-v4-flash');
+  } finally {
+    restore();
+  }
+});
+
+test('POST /llm/v1/chat/completions model=gpt-5.4（兼容映射）→ 上游 OpenAI model=gpt-5.6-sol', async () => {
+  const captures: FetchCapture[] = [];
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('gpt-5.6-sol'));
+  try {
+    const res = await app.request(
+      '/llm/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...AUTH },
+        body: JSON.stringify({ model: 'gpt-5.4', messages: [{ role: 'user', content: 'hi' }] }),
+      },
+      mockEnv({ authenticated: true, walletMicro: 100_000_000, openaiKey: 'sk-openai-test' }),
+      ctx,
+    );
+    assert.equal(res.status, 200);
+    assert.equal(captures.length, 1);
+    assert.equal(captures[0]?.url, 'https://api.openai.com/v1/chat/completions');
+    const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
+    assert.equal(forwardedBody.model, 'gpt-5.6-sol');
+  } finally {
+    restore();
+  }
+});
+
 test('POST /llm/v1/chat/completions model=deepseek-v4-flash 但缺 OPENCODE_GO_API_KEY → 500 opencode-go-key-missing', async () => {
   const res = await app.request(
     '/llm/v1/chat/completions',
@@ -830,6 +878,30 @@ test('POST /llm/v1/responses model=gpt-5.6-luna → 上游 OpenAI /v1/responses'
     assert.equal(captures[0]?.url, 'https://api.openai.com/v1/responses');
     const headers = new Headers(captures[0]?.init?.headers as HeadersInit);
     assert.equal(headers.get('authorization'), 'Bearer sk-openai-test');
+  } finally {
+    restore();
+  }
+});
+
+test('POST /llm/v1/responses model=gpt-5.4（兼容映射）→ 上游 OpenAI /v1/responses model=gpt-5.6-sol', async () => {
+  const captures: FetchCapture[] = [];
+  const restore = withMockedFetch(captures, makeResponsesJsonResponse('gpt-5.6-sol'));
+  try {
+    const res = await app.request(
+      '/llm/v1/responses',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...AUTH },
+        body: JSON.stringify({ model: 'gpt-5.4', input: 'hi' }),
+      },
+      mockEnv({ authenticated: true, walletMicro: 100_000_000, openaiKey: 'sk-openai-test' }),
+      ctx,
+    );
+    assert.equal(res.status, 200);
+    assert.equal(captures.length, 1);
+    assert.equal(captures[0]?.url, 'https://api.openai.com/v1/responses');
+    const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
+    assert.equal(forwardedBody.model, 'gpt-5.6-sol');
   } finally {
     restore();
   }

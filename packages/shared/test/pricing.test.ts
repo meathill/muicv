@@ -9,6 +9,7 @@ import {
   insufficientBalanceError,
   isSupportedLlmModel,
   LLM_DISPLAY_META,
+  LLM_MODEL_ALIASES,
   LLM_PRICING,
   LLM_RATIO,
   microToDisplay,
@@ -18,6 +19,7 @@ import {
   modelSupportsVision,
   normalizeModel,
   normalizeReasoningEffort,
+  resolveModelAlias,
   SUPPORTED_LLM_MODELS,
   TOKEN_PRECISION,
   TTS_MAX_TEXT_CHARS,
@@ -84,10 +86,21 @@ describe('Pricing', () => {
       assert.equal(isSupportedLlmModel('deepseek-v4-flash'), true);
       assert.equal(isSupportedLlmModel('mimo-v2.5'), true);
       assert.equal(isSupportedLlmModel('gpt-5.6-luna'), true);
-      assert.equal(isSupportedLlmModel('mimo-v2.5-pro'), false); // 已下架
-      assert.equal(isSupportedLlmModel('gpt-5.4'), false); // 已下架
+      assert.equal(isSupportedLlmModel('mimo-v2.5-pro'), false); // 已下架，通过 alias 兼容
+      assert.equal(isSupportedLlmModel('gpt-5.4'), false); // 已下架，通过 alias 兼容
       assert.equal(isSupportedLlmModel('gpt-4o-mini'), false);
       assert.equal(isSupportedLlmModel(''), false);
+    });
+
+    it('resolveModelAlias：已下架别名映射到目标兼容模型，其他模型原样返回', () => {
+      assert.equal(resolveModelAlias('mimo-v2.5-pro'), 'deepseek-v4-flash');
+      assert.equal(resolveModelAlias('gpt-5.4'), 'gpt-5.6-sol');
+      assert.equal(resolveModelAlias('gpt-5.5'), 'gpt-5.6-sol');
+      assert.equal(resolveModelAlias('deepseek-v4-flash'), 'deepseek-v4-flash');
+      assert.equal(resolveModelAlias('gpt-5.6-luna'), 'gpt-5.6-luna');
+      assert.equal(resolveModelAlias('unknown-model'), 'unknown-model');
+      assert.equal(resolveModelAlias(null), null);
+      assert.equal(resolveModelAlias(undefined), undefined);
     });
 
     it('DEFAULT_LLM_MODEL 必须落在 SUPPORTED_LLM_MODELS 里', () => {
@@ -98,10 +111,10 @@ describe('Pricing', () => {
       assert.equal(DEFAULT_LLM_MODEL, 'deepseek-v4-flash');
     });
 
-    it('normalizeModel：已下架的旧 id（gpt-5.5 / gpt-5.4 / mimo-v2.5-pro）静默回退到默认', () => {
-      for (const legacy of ['gpt-5.5', 'gpt-5.4', 'mimo-v2.5-pro']) {
-        assert.equal(normalizeModel(legacy), DEFAULT_LLM_MODEL, `${legacy} 应回退到 ${DEFAULT_LLM_MODEL}`);
-      }
+    it('normalizeModel：别名模型映射到对应兼容模型，未知模型静默回退到默认', () => {
+      assert.equal(normalizeModel('mimo-v2.5-pro'), 'deepseek-v4-flash');
+      assert.equal(normalizeModel('gpt-5.4'), 'gpt-5.6-sol');
+      assert.equal(normalizeModel('gpt-5.5'), 'gpt-5.6-sol');
       assert.equal(normalizeModel('foo'), DEFAULT_LLM_MODEL);
       assert.equal(normalizeModel(null), DEFAULT_LLM_MODEL);
       assert.equal(normalizeModel(undefined), DEFAULT_LLM_MODEL);

@@ -125,6 +125,26 @@ export const LLM_PRICING: Record<
 /** markup：所有 model 统一 1.1×。等于「上游成本 + 10% 加价」。 */
 export const LLM_RATIO = 1.1;
 
+/**
+ * 历史/别名模型兼容映射。当客户端或老配置请求别名模型时，自动重定向到兼容的目标模型。
+ * 例如：
+ *   - mimo-v2.5-pro 下架后兼容重定向到 deepseek-v4-flash
+ *   - gpt-5.4 / gpt-5.5 升级重定向到同档位的 gpt-5.6-sol
+ */
+export const LLM_MODEL_ALIASES: Record<string, string> = {
+  'mimo-v2.5-pro': 'deepseek-v4-flash',
+  'gpt-5.4': 'gpt-5.6-sol',
+  'gpt-5.5': 'gpt-5.6-sol',
+};
+
+/** 解析别名。若有兼容别名则返回目标模型名，否则返回原始字符串。 */
+export function resolveModelAlias(model: string | null | undefined): string | null | undefined {
+  if (typeof model === 'string' && Object.hasOwn(LLM_MODEL_ALIASES, model)) {
+    return LLM_MODEL_ALIASES[model];
+  }
+  return model;
+}
+
 export function isSupportedLlmModel(model: string): boolean {
   return Object.hasOwn(LLM_PRICING, model);
 }
@@ -136,12 +156,13 @@ export const SUPPORTED_LLM_MODELS = Object.keys(LLM_PRICING);
 export const DEFAULT_LLM_MODEL = 'deepseek-v4-flash';
 
 /**
- * 校验 / 回退用户保存的 model id。未知（含已下架的 gpt-5.5 等）静默回退到默认，不弹窗。
+ * 校验 / 回退用户保存的 model id。优先解析兼容别名，未知静默回退到默认，不弹窗。
  * 桌面 app settings 读盘后、发起 LLM 请求前都该过一遍这个函数，避免老用户被旧 id 卡住。
  */
 export function normalizeModel(model: string | null | undefined): string {
-  if (!model || !Object.hasOwn(LLM_PRICING, model)) return DEFAULT_LLM_MODEL;
-  return model;
+  const resolved = resolveModelAlias(model);
+  if (!resolved || !Object.hasOwn(LLM_PRICING, resolved)) return DEFAULT_LLM_MODEL;
+  return resolved;
 }
 
 /**
