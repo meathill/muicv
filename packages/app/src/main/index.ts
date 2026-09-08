@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -64,6 +65,10 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 function createWindow() {
+  const preloadJs = join(__dirname, '../preload/index.js');
+  const preloadMjs = join(__dirname, '../preload/index.mjs');
+  const preloadPath = existsSync(preloadJs) ? preloadJs : preloadMjs;
+
   mainWindow = new BrowserWindow({
     width: 1180,
     height: 760,
@@ -73,7 +78,7 @@ function createWindow() {
     backgroundColor: '#fdfaf2',
     ...(isDev ? { icon: devIconPath } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
