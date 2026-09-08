@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 
 import type { UpdaterStatus } from '../../shared/types.ts';
 import { useAppStore } from '../lib/store';
+import { toast } from '../lib/toast';
+import { formatUpdaterError } from '../lib/updater-utils';
 import { CorgiMascot } from './corgi-mascot';
 import { Avatar } from './settings/bits';
 import { CustomLlmCard } from './settings/custom-llm-card';
@@ -325,11 +327,18 @@ function SettingsUpdateButton({
     try {
       const next = await window.muicv.updater.checkNow();
       setStatus(next);
+      if (next.phase === 'error') {
+        toast.warning(formatUpdaterError(next.message), '软件更新');
+      } else if (next.phase === 'idle') {
+        toast.info('当前已是最新版本', '软件更新');
+      }
     } catch (err) {
       setManualCheckActive(false);
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.warning(formatUpdaterError(msg), '软件更新');
       setStatus({
         phase: 'error',
-        message: err instanceof Error ? err.message : String(err),
+        message: msg,
       });
     }
   }

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { AppShell } from './components/app-shell';
 import { AppSkeleton } from './components/app-skeleton';
 import { LoginView } from './components/login-view';
+import { ToastContainer } from './components/toast-container';
 import { bootstrap, useAppStore } from './lib/store';
 
 export function App() {
@@ -14,7 +15,12 @@ export function App() {
   }, []);
 
   if (bootstrapping) {
-    return <AppSkeleton />;
+    return (
+      <>
+        <AppSkeleton />
+        <ToastContainer />
+      </>
+    );
   }
 
   if (view === 'login') {
@@ -22,9 +28,15 @@ export function App() {
     return (
       <div className="flex h-screen flex-col bg-cream">
         <LoginView />
+        <ToastContainer />
       </div>
     );
   }
 
-  return <AppShell />;
+  return (
+    <>
+      <AppShell />
+      <ToastContainer />
+    </>
+  );
 }

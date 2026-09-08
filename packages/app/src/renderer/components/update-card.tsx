@@ -1,7 +1,9 @@
-import { ArrowCircleUpIcon, ArrowsClockwiseIcon, DownloadSimpleIcon, WarningIcon } from '@phosphor-icons/react';
+import { ArrowCircleUpIcon, ArrowsClockwiseIcon, DownloadSimpleIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 import { useAppStore } from '../lib/store';
+import { toast } from '../lib/toast';
+import { formatUpdaterError } from '../lib/updater-utils';
 
 /**
  * 左下侧栏的「软件更新」卡片：
@@ -11,7 +13,7 @@ import { useAppStore } from '../lib/store';
  *   - checking：「正在检查更新…」+ 旋转图标
  *   - downloading：「下载新版本 vX.Y.Z」+ 进度条 + transferred/total
  *   - ready：高亮「v X.Y.Z 已就绪」+「立即重启」+「稍后」（折叠为缩略一行）
- *   - error：「更新失败」+「重试」按钮（再调 checkNow）
+ *   - error：轻量人话提示（8秒自动淡出，可手动关闭），同时伴随全局 Toast 提醒
  */
 export function UpdateCard() {
   const status = useAppStore((s) => s.updaterStatus);
@@ -19,11 +21,20 @@ export function UpdateCard() {
   const [readyDismissed, setReadyDismissed] = useState(false);
 
   // 重新进入 ready 状态时自动展开（用户先稍后、又下了一次新版本的场景）。
-  // 不监听 status.version：electron-updater 一定会先回 checking/downloading
-  // 再 ready，phase 反弹就够触发这条 effect。
   useEffect(() => {
     if (status.phase === 'ready') setReadyDismissed(false);
   }, [status.phase]);
+
+  // 发生错误时触发 Toast 提醒，并在 8 秒后自动收敛回 idle，避免在侧边栏常驻占用空间
+  useEffect(() => {
+    if (status.phase === 'error') {
+      toast.warning(formatUpdaterError(status.message), '软件更新');
+      const timer = setTimeout(() => {
+        setStatus({ phase: 'idle' });
+      }, 8_000);
+      return () => clearTimeout(timer);
+    }
+  }, [status.phase, status.message, setStatus]);
 
   if (status.skipped || status.phase === 'idle') return null;
 
@@ -116,22 +127,43 @@ export function UpdateCard() {
           </div>
         );
 
-      case 'error':
+      case 'error': {
+        const friendlyMsg = formatUpdaterError(status.message);
         return (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-start gap-1.5 text-[12px] text-ink-soft">
-              <WarningIcon size={12} className="mt-0.5 shrink-0" />
-              <span className="break-words">更新失败：{status.message ?? '未知错误'}</span>
+          <div className="flex flex-col gap-1.5 rounded-md border border-rule-strong bg-cream/70 p-2">
+            <div className="flex items-start justify-between gap-1.5">
+              <div className="flex items-start gap-1.5 text-[12px] text-ink-soft min-w-0">
+                <WarningIcon size={13} weight="fill" className="mt-0.5 shrink-0 text-warning" />
+                <span className="break-words font-medium">{friendlyMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStatus({ phase: 'idle' })}
+                className="shrink-0 text-mute hover:text-ink p-0.5"
+                title="忽略"
+              >
+                <XIcon size={12} weight="bold" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => void handleCheck()}
-              className="self-start rounded-md border-2 border-rule-strong bg-cream px-2 py-0.5 text-[12px] font-medium text-ink hover:bg-fluff"
-            >
-              重试
-            </button>
+            <div className="flex items-center gap-2 mt-0.5">
+              <button
+                type="button"
+                onClick={() => void handleCheck()}
+                className="rounded border border-rule-strong bg-cream px-2 py-0.5 text-[11px] font-medium text-ink hover:bg-fluff"
+              >
+                重试
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus({ phase: 'idle' })}
+                className="text-[11px] text-mute hover:text-ink"
+              >
+                忽略
+              </button>
+            </div>
           </div>
         );
+      }
 
       default:
         return null;
