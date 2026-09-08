@@ -15,13 +15,16 @@ const { autoUpdater } = electronUpdater;
  *
  * 三个 IPC：getStatus / checkNow / quitAndInstall。dev mode（!app.isPackaged）整体
  * 跳过——electron-updater 在未打包时会报「找不到 dev-app-update.yml」，比起放配置
- * 文件还不如直接不调用。
- *
- * 启动后由 [index.ts](./index.ts) 在 app.whenReady 里延迟 10s 触发首次检查。
+ * 启动后由 [index.ts](./index.ts) 在 app.whenReady 里延迟 10s 触发首次检查，
+ * 并在打包环境下启动每 4 小时的后台定时轮询。
  */
+
+/** 自动更新后台轮询间隔：4 小时检查一次。 */
+export const UPDATE_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
 let currentStatus: UpdaterStatus = { phase: 'idle' };
 let getMainWindowRef: (() => BrowserWindow | null) | null = null;
+let periodicCheckTimer: NodeJS.Timeout | null = null;
 
 function broadcast(next: UpdaterStatus): void {
   currentStatus = next;
@@ -123,10 +126,24 @@ export function setupUpdater(getMainWindow: () => BrowserWindow | null): void {
     // isForceRunAfter=true：安装完自动重启 app，符合「立即重启」按钮语义。
     autoUpdater.quitAndInstall(false, true);
   });
+
+  // 应用退出前清理定时器
+  app.on('before-quit', () => {
+    stopPeriodicCheck();
+  });
+}
+
+/** 停止后台定时检查轮询。 */
+export function stopPeriodicCheck(): void {
+  if (periodicCheckTimer) {
+    clearInterval(periodicCheckTimer);
+    periodicCheckTimer = null;
+  }
 }
 
 /**
- * 由 index.ts 在 createWindow 后、延迟 10 秒触发的首次自动检查。
+ * 由 index.ts 在 createWindow 后、延迟 10 秒触发首次自动检查，
+ * 并在打包环境下启动每 4 小时的后台定时轮询。
  * 不抛错——错误会通过 'error' 事件流到 renderer。
  */
 export function triggerInitialCheck(): void {
@@ -134,4 +151,15 @@ export function triggerInitialCheck(): void {
   void autoUpdater.checkForUpdates().catch(() => {
     // 'error' 事件会触发 broadcast，这里不需要再处理
   });
+
+  if (!periodicCheckTimer) {
+    periodicCheckTimer = setInterval(() => {
+      // 若当前正在下载或准备就绪，跳过轮询避免打断当前状态
+      if (currentStatus.phase === 'downloading' || currentStatus.phase === 'ready') return;
+      void autoUpdater.checkForUpdates().catch(() => {
+        // 'error' 事件会触发 broadcast，这里不需要再处理
+      });
+    }, UPDATE_CHECK_INTERVAL_MS);
+    periodicCheckTimer.unref();
+  }
 }
