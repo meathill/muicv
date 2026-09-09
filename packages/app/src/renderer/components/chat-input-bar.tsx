@@ -12,8 +12,12 @@ import { modelSupportsAudioInput } from '@muicv/shared';
 
 import type { AttachmentRef } from '../../shared/types.ts';
 import { useAppStore } from '../lib/store';
-import type { ChatAttachmentsApi } from '../lib/use-chat-attachments';
-import { ATTACHMENT_ACCEPT, MAX_ATTACHMENTS_PER_SEND } from '../lib/use-chat-attachments';
+import {
+  ATTACHMENT_ACCEPT,
+  type ChatAttachmentsApi,
+  MAX_ATTACHMENTS_PER_SEND,
+  MAX_IMAGES_PER_SEND,
+} from '../lib/use-chat-attachments';
 import { useChatInputPaste } from '../lib/use-chat-input-paste';
 import { useChatInputRecorder } from '../lib/use-chat-input-recorder';
 import { useRecorder } from '../lib/use-recorder';
@@ -284,7 +288,7 @@ export function ChatInputBar({
               type="button"
               onClick={attachments.onPickFiles}
               disabled={busy || attachments.pendingAttachments.length >= MAX_ATTACHMENTS_PER_SEND}
-              title={`上传附件（PDF / DOCX / Markdown / 文本 / 图像；也可以直接拖入或粘贴。单文件 ≤ 20MB，单次最多 ${MAX_ATTACHMENTS_PER_SEND} 个）`}
+              title={`上传附件（PDF / DOCX / Markdown / 文本 / 图像；也可以直接拖入或粘贴。单文件 ≤ 20MB，单次最多 ${MAX_ATTACHMENTS_PER_SEND} 个，图片最多 ${MAX_IMAGES_PER_SEND} 张）`}
               className="press-ink inline-flex shrink-0 items-center justify-center rounded-lg border-2 border-rule-strong bg-cream p-2 text-ink transition hover:border-ink disabled:cursor-not-allowed disabled:opacity-60"
               aria-label="上传附件"
             >

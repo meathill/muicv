@@ -60,10 +60,11 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     return;
   }
   const workspaceDir = config.workspaceDir;
-  // 检查本轮或历史中是否有图片附件
-  const hasImage = messages.some((m) => m.attachments?.some((a) => a.kind === 'image'));
+  // 检查当前发送的最新消息（当前窗口）中是否有图片附件（历史图片略过不传，避免溢出且节省 token）
+  const lastUserMsg = messages[messages.length - 1];
+  const hasImage = lastUserMsg?.role === 'user' && Boolean(lastUserMsg.attachments?.some((a) => a.kind === 'image'));
   let effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
-  // 如果用户上传了图片，且当前模型不支持 vision，自动分流到 deepseek-v4-flash-vision-exp 处理
+  // 如果当前轮上传了图片，且当前模型不支持 vision，自动分流到 deepseek-v4-flash-vision-exp 处理
   if (hasImage && !modelSupportsVision(effectiveModel)) {
     effectiveModel = 'deepseek-v4-flash-vision-exp';
   }
@@ -149,8 +150,8 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   const supportsAudio = modelSupportsAudioInput(effectiveModel);
 
   // 把历史按 SDK 原生 AgentInputItem[] 组装，并按 token budget 做滑动窗口裁剪。
-  // 历史里所有 user message 的图都重新 base64 进 input_image content block——
-  // Claude Code 模式：每轮带全部历史图，靠底层 LLM 的 prompt cache 抵成本。
+  // 仅在当前发送的最新一条 user message 内联图片（最多 4 张），
+  // 历史聊天记录中的图片略过（不传 base64，保留文本占位），既避免突破上游 4 张限制，又省下大量 token。
   // 见 history.ts 的 buildAgentInput 注释。
   const {
     items: input,

@@ -89,3 +89,93 @@ export function formatAttachmentsFooter(
   });
   return `\n\n---\n[附件]\n${lines.join('\n')}`;
 }
+
+export const MAX_ATTACHMENTS_PER_SEND = 5;
+export const MAX_IMAGES_PER_SEND = 4;
+
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
+export function isImageFile(file: { name: string; type?: string }): boolean {
+  if (file.type && file.type.startsWith('image/')) return true;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  return IMAGE_EXTS.has(ext);
+}
+
+export type FileUploadFilterResult = {
+  accepted: File[];
+  errors: string[];
+};
+
+export function filterFilesForUpload(
+  files: File[],
+  options: {
+    pendingAttachments: AttachmentRef[];
+    acceptImage?: boolean;
+    maxAttachments?: number;
+    maxImages?: number;
+  },
+): FileUploadFilterResult {
+  const {
+    pendingAttachments,
+    acceptImage = true,
+    maxAttachments = MAX_ATTACHMENTS_PER_SEND,
+    maxImages = MAX_IMAGES_PER_SEND,
+  } = options;
+  const errors: string[] = [];
+
+  // 单批次内按 name + size 粗粒度去重
+  const seen = new Set<string>();
+  let list = files.filter((f) => {
+    const key = `${f.name}:${f.size}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (!acceptImage) {
+    const blocked = list.filter(isImageFile);
+    if (blocked.length > 0) {
+      errors.push(`当前模型不支持图片（${blocked.map((f) => f.name).join('、')}），请切到支持 vision 的模型`);
+    }
+    list = list.filter((f) => !isImageFile(f));
+  }
+
+  // 严格限制图片数量：最多 maxImages 张图片
+  const pendingImageCount = pendingAttachments.filter((a) => a.kind === 'image').length;
+  let imageRemaining = Math.max(0, maxImages - pendingImageCount);
+  const filtered: File[] = [];
+  let excessImageCount = 0;
+
+  for (const file of list) {
+    if (isImageFile(file)) {
+      if (imageRemaining > 0) {
+        filtered.push(file);
+        imageRemaining--;
+      } else {
+        excessImageCount++;
+      }
+    } else {
+      filtered.push(file);
+    }
+  }
+
+  if (excessImageCount > 0) {
+    errors.push(`单次最多上传 ${maxImages} 张图片，多余的 ${excessImageCount} 张已略过`);
+  }
+
+  list = filtered;
+
+  const remaining = maxAttachments - pendingAttachments.length;
+  if (remaining <= 0) {
+    if (list.length > 0) {
+      errors.push(`一次最多 ${maxAttachments} 个附件，先发一轮再传`);
+    }
+    return { accepted: [], errors };
+  }
+
+  const accepted = list.slice(0, remaining);
+  if (list.length > remaining) {
+    errors.push(`一次最多 ${maxAttachments} 个附件，多余的 ${list.length - remaining} 个跳过`);
+  }
+
+  return { accepted, errors };
+}

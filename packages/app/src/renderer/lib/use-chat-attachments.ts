@@ -1,8 +1,15 @@
 import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from 'react';
 
 import type { AttachmentRef, Profile } from '../../shared/types.ts';
-import { cryptoRandomId } from '../components/chat-utils';
 import { hasFiles } from '../components/chat-attachment-chip';
+import {
+  cryptoRandomId,
+  filterFilesForUpload,
+  MAX_ATTACHMENTS_PER_SEND,
+  MAX_IMAGES_PER_SEND,
+} from '../components/chat-utils.ts';
+
+export { MAX_ATTACHMENTS_PER_SEND, MAX_IMAGES_PER_SEND };
 
 export const ATTACHMENT_ACCEPT = [
   // 文本类
@@ -26,36 +33,7 @@ export const ATTACHMENT_ACCEPT = [
   'image/webp',
   'image/gif',
 ].join(',');
-export const MAX_ATTACHMENTS_PER_SEND = 5;
 const ATTACHMENT_ERROR_TTL_MS = 4000;
-
-export type ChatAttachmentsApi = {
-  pendingAttachments: AttachmentRef[];
-  attachmentErrors: Array<{ id: string; message: string }>;
-  isDragging: boolean;
-  uploadingCount: number;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  handleFiles: (files: FileList | File[]) => Promise<void>;
-  /** 直接推一个已经落盘的 ref 进 pending 列表（不重复上传）。给麦克风音频直通用。 */
-  addAttachment: (ref: AttachmentRef) => void;
-  /** 给外部冒泡错误（mic-denied / 录音失败等）用，复用同一份 TTL 自清队列。 */
-  pushAttachmentError: (message: string) => void;
-  removeAttachment: (path: string) => void;
-  clearAfterSend: () => void;
-  onPickFiles: () => void;
-  onFileInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onDragEnter: (e: DragEvent<HTMLDivElement>) => void;
-  onDragOver: (e: DragEvent<HTMLDivElement>) => void;
-  onDragLeave: (e: DragEvent<HTMLDivElement>) => void;
-  onDrop: (e: DragEvent<HTMLDivElement>) => void;
-};
-
-const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
-function isImageFile(file: File): boolean {
-  if (file.type.startsWith('image/')) return true;
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-  return IMAGE_EXTS.has(ext);
-}
 
 /**
  * 中栏附件托盘的状态机：上传 / drag-drop / 错误冒泡 / 切换上下文重置。
@@ -99,36 +77,16 @@ export function useChatAttachments(
       pushAttachmentError('先选中一份职业档案再上传');
       return;
     }
-    let list = Array.from(files);
-    if (list.length === 0) return;
-
-    // 单批次内按 name + size 粗粒度去重，防止误传完全重复的文件
-    const seen = new Set<string>();
-    list = list.filter((f) => {
-      const key = `${f.name}:${f.size}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+    const { accepted, errors } = filterFilesForUpload(Array.from(files), {
+      pendingAttachments,
+      acceptImage,
+      maxAttachments: MAX_ATTACHMENTS_PER_SEND,
+      maxImages: MAX_IMAGES_PER_SEND,
     });
-
-    if (!acceptImage) {
-      const blocked = list.filter(isImageFile);
-      if (blocked.length > 0) {
-        pushAttachmentError(`当前模型不支持图片（${blocked.map((f) => f.name).join('、')}），请切到支持 vision 的模型`);
-      }
-      list = list.filter((f) => !isImageFile(f));
-      if (list.length === 0) return;
+    for (const msg of errors) {
+      pushAttachmentError(msg);
     }
-
-    const remaining = MAX_ATTACHMENTS_PER_SEND - pendingAttachments.length;
-    if (remaining <= 0) {
-      pushAttachmentError(`一次最多 ${MAX_ATTACHMENTS_PER_SEND} 个附件，先发一轮再传`);
-      return;
-    }
-    const accepted = list.slice(0, remaining);
-    if (list.length > remaining) {
-      pushAttachmentError(`一次最多 ${MAX_ATTACHMENTS_PER_SEND} 个附件，多余的 ${list.length - remaining} 个跳过`);
-    }
+    if (accepted.length === 0) return;
 
     setUploadingCount((n) => n + accepted.length);
     try {
@@ -209,6 +167,13 @@ export function useChatAttachments(
     setPendingAttachments((prev) => {
       // 同路径去重，避免连续触发同一次录音 IPC 时残留两条
       if (prev.some((a) => a.path === ref.path)) return prev;
+      if (ref.kind === 'image') {
+        const imageCount = prev.filter((a) => a.kind === 'image').length;
+        if (imageCount >= MAX_IMAGES_PER_SEND) {
+          pushAttachmentError(`单次最多上传 ${MAX_IMAGES_PER_SEND} 张图片`);
+          return prev;
+        }
+      }
       return [...prev, ref];
     });
   }

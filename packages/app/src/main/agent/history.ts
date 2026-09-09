@@ -119,13 +119,17 @@ export type BuildAgentInputResult = {
  *   - 中间被切断时在保留段最前面插一条 user 提示「（已省略 N 条更早的对话）」，
  *     让模型知道历史不完整。
  *
- * 当 `imageReader` 注入时，**所有保留的 user message 上的 image 附件**会被
- * 读成 data URL 拼进 content（input_text + input_image array）。不传 reader
- * 时退化为纯文本——给老的纯文本测试 / 不需要 vision 的场景用。
+ * 图像多模态策略：
+ *   - 仅对【最新一条 user message】（当前窗口）内联图片 data URL（最多 MAX_PROMPT_IMAGES = 4 张）；
+ *   - 历史 user message 中的图片略过（不传 base64 数据），保留纯文本占位（footer 里的文件名）；
+ *   - 这样既严格满足 DeepSeek 等上游模型「单次 prompt 最多 4 张图」的硬限制，
+ *     又避免了多轮对话中重复传输巨量 base64 造成的延迟和 token 爆炸。
  *
  * 不还原 tool_call / tool_result 链：assistant.toolCalls 字段在送 LLM 时
  * 被忽略，跟 MVP 字符串拼接版本行为一致。
  */
+export const MAX_PROMPT_IMAGES = 4;
+
 export async function buildAgentInput(
   messages: ChatMessage[],
   opts?: { budgetTokens?: number; imageReader?: ImageReader; audioReader?: AudioReader },
@@ -141,8 +145,9 @@ export async function buildAgentInput(
   let isFirst = true;
 
   for (const m of reversed) {
-    const cost =
-      estimateTokens(m.content ?? '') + countImages(m) * IMAGE_TOKEN_BUDGET + countAudios(m) * AUDIO_TOKEN_BUDGET;
+    // 仅最后一条 user message（当前窗口）计算图片 token；历史 user 消息不传图片 base64
+    const imgCount = isFirst ? Math.min(MAX_PROMPT_IMAGES, countImages(m)) : 0;
+    const cost = estimateTokens(m.content ?? '') + imgCount * IMAGE_TOKEN_BUDGET + countAudios(m) * AUDIO_TOKEN_BUDGET;
     if (isFirst) {
       // 最后一条（reverse 后的第一条）不论多大都保留
       kept.push(m);
@@ -157,7 +162,13 @@ export async function buildAgentInput(
 
   kept.reverse();
   const droppedCount = messages.length - kept.length;
-  const items: AgentInputItem[] = await Promise.all(kept.map((m) => toItem(m, opts?.imageReader, opts?.audioReader)));
+  // 仅最后一条 user 消息内联图片，历史消息图片略过
+  const items: AgentInputItem[] = await Promise.all(
+    kept.map((m, idx) => {
+      const isLatestUser = idx === kept.length - 1 && m.role === 'user';
+      return toItem(m, isLatestUser ? opts?.imageReader : undefined, opts?.audioReader);
+    }),
+  );
 
   if (droppedCount > 0) {
     const ellipsisText = `（已省略 ${droppedCount} 条更早的对话）`;
@@ -192,7 +203,7 @@ async function toItem(msg: ChatMessage, imageReader?: ImageReader, audioReader?:
   }
   // user / tool（持久化里不该出现 tool，兜底当 user 处理避免崩）
   const attachments = msg.attachments ?? [];
-  const images = imageReader ? attachments.filter((a) => a.kind === 'image') : [];
+  const images = imageReader ? attachments.filter((a) => a.kind === 'image').slice(0, MAX_PROMPT_IMAGES) : [];
   const audios = audioReader ? attachments.filter((a) => a.kind === 'audio') : [];
   if (images.length === 0 && audios.length === 0) {
     return { role: 'user', content: text };

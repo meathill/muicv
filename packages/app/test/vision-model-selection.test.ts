@@ -22,7 +22,7 @@ test('modelSupportsVision: deepseek-v4-flash-vision-exp 支持 vision，而 deep
   assert.equal(modelSupportsVision('gpt-5.6-luna'), true);
 });
 
-test('有图片时自动切换到 deepseek-v4-flash-vision-exp', () => {
+test('当前轮有图片时自动切换到 deepseek-v4-flash-vision-exp', () => {
   const messagesWithImage: ChatMessage[] = [
     {
       id: '1',
@@ -33,7 +33,8 @@ test('有图片时自动切换到 deepseek-v4-flash-vision-exp', () => {
     },
   ];
 
-  const hasImage = messagesWithImage.some((m) => m.attachments?.some((a) => a.kind === 'image'));
+  const lastUserMsg = messagesWithImage[messagesWithImage.length - 1];
+  const hasImage = lastUserMsg?.role === 'user' && Boolean(lastUserMsg.attachments?.some((a) => a.kind === 'image'));
   let effectiveModel = resolveModelAlias(baseConfig.defaultModel) ?? baseConfig.defaultModel;
   if (hasImage && !modelSupportsVision(effectiveModel)) {
     effectiveModel = 'deepseek-v4-flash-vision-exp';
@@ -41,6 +42,40 @@ test('有图片时自动切换到 deepseek-v4-flash-vision-exp', () => {
 
   assert.equal(effectiveModel, 'deepseek-v4-flash-vision-exp');
   assert.equal(modelSupportsVision(effectiveModel), true);
+});
+
+test('历史有图片但当前轮是纯文本时，保持默认 deepseek-v4-flash 模型（省 token 并保持思考能力）', () => {
+  const historyWithImages: ChatMessage[] = [
+    {
+      id: '1',
+      role: 'user',
+      content: '看第一张图',
+      createdAt: Date.now() - 2000,
+      attachments: [{ kind: 'image', path: 'inbox/pic.png', name: 'pic.png', size: 100, mimeType: 'image/png' }],
+    },
+    {
+      id: '2',
+      role: 'assistant',
+      content: '我已经看过了，发现如下问题...',
+      createdAt: Date.now() - 1000,
+    },
+    {
+      id: '3',
+      role: 'user',
+      content: '请把第二项修改成三年经验',
+      createdAt: Date.now(),
+    },
+  ];
+
+  const lastUserMsg = historyWithImages[historyWithImages.length - 1];
+  const hasImage = lastUserMsg?.role === 'user' && Boolean(lastUserMsg.attachments?.some((a) => a.kind === 'image'));
+  let effectiveModel = resolveModelAlias(baseConfig.defaultModel) ?? baseConfig.defaultModel;
+  if (hasImage && !modelSupportsVision(effectiveModel)) {
+    effectiveModel = 'deepseek-v4-flash-vision-exp';
+  }
+
+  // 保持默认 deepseek-v4-flash，不切换为 vision 模型
+  assert.equal(effectiveModel, 'deepseek-v4-flash');
 });
 
 test('有图片但当前模型已支持 vision 时保持原模型（如 gpt-5.6-luna）', () => {
@@ -55,7 +90,8 @@ test('有图片但当前模型已支持 vision 时保持原模型（如 gpt-5.6-
     },
   ];
 
-  const hasImage = messagesWithImage.some((m) => m.attachments?.some((a) => a.kind === 'image'));
+  const lastUserMsg = messagesWithImage[messagesWithImage.length - 1];
+  const hasImage = lastUserMsg?.role === 'user' && Boolean(lastUserMsg.attachments?.some((a) => a.kind === 'image'));
   let effectiveModel = resolveModelAlias(gptConfig.defaultModel) ?? gptConfig.defaultModel;
   if (hasImage && !modelSupportsVision(effectiveModel)) {
     effectiveModel = 'deepseek-v4-flash-vision-exp';
@@ -74,7 +110,8 @@ test('无图片时保持 deepseek-v4-flash 默认模型', () => {
     },
   ];
 
-  const hasImage = messagesWithoutImage.some((m) => m.attachments?.some((a) => a.kind === 'image'));
+  const lastUserMsg = messagesWithoutImage[messagesWithoutImage.length - 1];
+  const hasImage = lastUserMsg?.role === 'user' && Boolean(lastUserMsg.attachments?.some((a) => a.kind === 'image'));
   let effectiveModel = resolveModelAlias(baseConfig.defaultModel) ?? baseConfig.defaultModel;
   if (hasImage && !modelSupportsVision(effectiveModel)) {
     effectiveModel = 'deepseek-v4-flash-vision-exp';

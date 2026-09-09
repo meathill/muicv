@@ -79,7 +79,7 @@ test('buildAgentInput 注入 imageReader → 最后一条 user 的图拼成 inpu
   assert.match(u.content[1]?.image ?? '', /^data:image\/png;base64,FAKE_/);
 });
 
-test('buildAgentInput 历史里每一条带图 user 都内联（Claude Code 模式）', async () => {
+test('buildAgentInput 仅最新一条 user 消息内联图，历史 user 消息略过图（防超 4 张限制并省 token）', async () => {
   const r = await buildAgentInput(
     [
       msg('user', '看 JD', [imageRef({ path: 'inbox/jd.jpg', mimeType: 'image/jpeg' })]),
@@ -89,14 +89,36 @@ test('buildAgentInput 历史里每一条带图 user 都内联（Claude Code 模�
     { imageReader: fakeReader() },
   );
   assert.equal(r.items.length, 3);
-  // 第 1 条 user：图被内联
-  const turn1 = r.items[0] as { content: Array<{ type: string; image?: string }> };
-  assert.ok(Array.isArray(turn1.content));
-  assert.match(turn1.content[1]?.image ?? '', /jd\.jpg/);
-  // 第 3 条 user：图也被内联
+  // 第 1 条 user（历史）：图片略过不传 base64，保留纯文本
+  const turn1 = r.items[0] as { content: string };
+  assert.equal(typeof turn1.content, 'string');
+  assert.equal(turn1.content, '看 JD');
+  // 第 3 条 user（当前最新）：图片正常内联
   const turn3 = r.items[2] as { content: Array<{ type: string; image?: string }> };
   assert.ok(Array.isArray(turn3.content));
   assert.match(turn3.content[1]?.image ?? '', /sample\.png/);
+});
+
+test('buildAgentInput 超过 4 张图片时强制截断为最多 4 张（单 prompt 硬上限）', async () => {
+  const r = await buildAgentInput(
+    [
+      msg('user', '传了 6 张图', [
+        imageRef({ path: 'inbox/1.png' }),
+        imageRef({ path: 'inbox/2.png' }),
+        imageRef({ path: 'inbox/3.png' }),
+        imageRef({ path: 'inbox/4.png' }),
+        imageRef({ path: 'inbox/5.png' }),
+        imageRef({ path: 'inbox/6.png' }),
+      ]),
+    ],
+    { imageReader: fakeReader() },
+  );
+  const u = r.items[0] as { content: Array<{ type: string }> };
+  assert.ok(Array.isArray(u.content));
+  // 1 个 input_text + 4 个 input_image = 5
+  assert.equal(u.content.length, 5);
+  const imageBlocks = u.content.filter((b) => b.type === 'input_image');
+  assert.equal(imageBlocks.length, 4);
 });
 
 test('buildAgentInput 多张图 → 全部拼到同一条 user content', async () => {
