@@ -1,7 +1,8 @@
 import {
+  ArrowRightIcon,
   DownloadSimpleIcon,
   MicrophoneIcon,
-  PaperclipIcon,
+  PlusIcon,
   SpinnerGapIcon,
   StopIcon,
   TrashIcon,
@@ -26,6 +27,8 @@ import { AttachmentPreviewDialog } from './attachment-preview-dialog';
 import { AttachmentChip } from './chat-attachment-chip';
 import { RecordingBar } from './recording-bar';
 import { SlashCommandMenu } from './slash-command-menu.tsx';
+import { ChatModelSelector } from './chat-model-selector';
+import { isChatSubmitHotkey } from './chat-utils.ts';
 
 type Props = {
   /** profile.id + ':' + conversation.id；切换上下文时变更，触发草稿清空。 */
@@ -108,9 +111,13 @@ export function ChatInputBar({
     return () => unsub();
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 仅 contextKey 触发清空
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 仅 contextKey / initialDraft 触发
   useEffect(() => {
-    setInput(initialDraft ?? '');
+    const next = initialDraft ?? '';
+    setInput(next);
+    if (next) {
+      pendingCursorRef.current = next.length;
+    }
     setPreviewAttachment(null);
     recorderState.resetOnContextChange();
   }, [contextKey, initialDraft]);
@@ -145,7 +152,7 @@ export function ChatInputBar({
     const lhRaw = cs.lineHeight;
     const lh = lhRaw === 'normal' ? fontSize * 1.4 : Number.parseFloat(lhRaw) || fontSize * 1.4;
     const py = (Number.parseFloat(cs.paddingTop) || 0) + (Number.parseFloat(cs.paddingBottom) || 0);
-    const minHeight = lh * 2 + py;
+    const minHeight = lh * 2.5 + py;
     const maxHeight = lh * 10 + py;
     const target = Math.max(minHeight, Math.min(ta.scrollHeight, maxHeight));
     ta.style.height = `${target}px`;
@@ -268,40 +275,18 @@ export function ChatInputBar({
         {recorder.phase === 'idle' ? (
           <div
             ref={inputContainerRef}
-            className="flex items-end gap-2 rounded-xl border-2 border-rule-strong bg-cream p-2 transition focus-within:border-ink"
+            className="flex flex-col rounded-2xl border-2 border-rule-strong bg-cream p-3 transition focus-within:border-ink shadow-sm focus-within:shadow-md"
           >
-            <button
-              type="button"
-              onClick={() => void recorderState.handleMicClick()}
-              disabled={busy || recording}
-              title={recording ? '录音 / 转写中…' : '语音输入（最长 3 分钟）'}
-              className="press-ink inline-flex shrink-0 items-center justify-center rounded-lg border-2 border-rule-strong bg-cream p-2 text-ink transition hover:border-ink disabled:cursor-not-allowed disabled:opacity-60"
-              aria-label="语音输入"
-            >
-              {recording ? (
-                <SpinnerGapIcon size={18} weight="bold" className="animate-spin" />
-              ) : (
-                <MicrophoneIcon size={18} weight="regular" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={attachments.onPickFiles}
-              disabled={busy || attachments.pendingAttachments.length >= MAX_ATTACHMENTS_PER_SEND}
-              title={`上传附件（PDF / DOCX / Markdown / 文本 / 图像；也可以直接拖入或粘贴。单文件 ≤ 20MB，单次最多 ${MAX_ATTACHMENTS_PER_SEND} 个，图片最多 ${MAX_IMAGES_PER_SEND} 张）`}
-              className="press-ink inline-flex shrink-0 items-center justify-center rounded-lg border-2 border-rule-strong bg-cream p-2 text-ink transition hover:border-ink disabled:cursor-not-allowed disabled:opacity-60"
-              aria-label="上传附件"
-            >
-              <PaperclipIcon size={18} weight="regular" />
-            </button>
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (slash.handleKeyDown(e)) return;
-                if (e.nativeEvent.isComposing) return;
-                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleSendClick();
+                if (isChatSubmitHotkey(e)) {
+                  e.preventDefault();
+                  handleSendClick();
+                }
               }}
               onPaste={handlePaste}
               onContextMenu={(e) => {
@@ -312,27 +297,61 @@ export function ChatInputBar({
               placeholder={placeholder}
               disabled={busy}
               rows={2}
-              className="flex-1 resize-none rounded-lg bg-transparent px-3 py-2 text-[14px] leading-[1.5] text-ink placeholder:text-mute focus:outline-none disabled:opacity-60"
+              className="w-full resize-none bg-transparent px-1 py-1 text-[14px] leading-relaxed text-ink placeholder:text-mute focus:outline-none disabled:opacity-60"
             />
-            {busy ? (
-              <button
-                type="button"
-                onClick={onAbort}
-                className="press-ink inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 border-ink bg-cream px-3.5 py-2 text-[14px] font-bold text-ink"
-              >
-                <span>停</span>
-                <StopIcon size={12} weight="fill" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSendClick}
-                disabled={!canSend}
-                className="press shrink-0 rounded-lg bg-yellow px-3.5 py-2 text-[14px] font-bold text-ink disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                发送 ⌘↵
-              </button>
-            )}
+            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-rule/30 mt-1">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={attachments.onPickFiles}
+                  disabled={busy || attachments.pendingAttachments.length >= MAX_ATTACHMENTS_PER_SEND}
+                  title={`上传附件（PDF / DOCX / Markdown / 文本 / 图像；也可拖入或粘贴。单次最多 ${MAX_ATTACHMENTS_PER_SEND} 个）`}
+                  className="inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-ink-soft transition hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  aria-label="上传附件"
+                >
+                  <PlusIcon size={18} weight="bold" />
+                </button>
+                <ChatModelSelector onOpenSettings={onOpenSettings} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => void recorderState.handleMicClick()}
+                  disabled={busy || recording}
+                  title={recording ? '录音 / 转写中…' : '语音输入（最长 3 分钟）'}
+                  className="inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-ink-soft transition hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  aria-label="语音输入"
+                >
+                  {recording ? (
+                    <SpinnerGapIcon size={18} weight="bold" className="animate-spin text-tongue" />
+                  ) : (
+                    <MicrophoneIcon size={18} weight="regular" />
+                  )}
+                </button>
+                {busy ? (
+                  <button
+                    type="button"
+                    onClick={onAbort}
+                    title="停止生成"
+                    className="press-ink inline-flex shrink-0 items-center justify-center h-8 w-8 rounded-full bg-ink text-cream transition hover:bg-ink-soft shadow-xs cursor-pointer"
+                    aria-label="停止"
+                  >
+                    <StopIcon size={14} weight="fill" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSendClick}
+                    disabled={!canSend}
+                    title={canSend ? '发送 (Enter)' : '输入内容后发送'}
+                    className="press inline-flex shrink-0 items-center justify-center h-8 w-8 rounded-full bg-yellow text-ink transition hover:bg-yellow-warm shadow-xs disabled:bg-rule/40 disabled:text-mute/50 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
+                    aria-label="发送"
+                  >
+                    <ArrowRightIcon size={16} weight="bold" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         ) : (
           <RecordingBar

@@ -11,6 +11,8 @@ import {
 
 export { MAX_ATTACHMENTS_PER_SEND, MAX_IMAGES_PER_SEND };
 
+export type ChatAttachmentsApi = ReturnType<typeof useChatAttachments>;
+
 export const ATTACHMENT_ACCEPT = [
   // 文本类
   '.pdf',
@@ -44,11 +46,7 @@ const ATTACHMENT_ERROR_TTL_MS = 4000;
  * `acceptImage`：当前模型是否支持图像。设为 false 时图片在 handleFiles 入口
  * 就被挡掉（带友好错误条），避免在 main 进程拼好 input_image 才被上游打 404。
  */
-export function useChatAttachments(
-  activeProfile: Profile | null,
-  conversationId: string | null,
-  acceptImage = true,
-): ChatAttachmentsApi {
+export function useChatAttachments(activeProfile: Profile | null, conversationId: string | null, acceptImage = true) {
   const [pendingAttachments, setPendingAttachments] = useState<AttachmentRef[]>([]);
   const [attachmentErrors, setAttachmentErrors] = useState<Array<{ id: string; message: string }>>([]);
   const [isDragging, setIsDragging] = useState(false);
