@@ -632,6 +632,11 @@ export type CreatePreviewResult =
     }
   | PreviewApiFailure;
 
+export type QuestionAnswerPayload = {
+  answer: string | string[];
+  customText?: string | undefined;
+};
+
 export type RendererApi = {
   config: {
     get(): Promise<AppConfig>;
@@ -732,6 +737,8 @@ export type RendererApi = {
     }): Promise<{ channelId: string }>;
     /** 中断当前 chat。 */
     abort(channelId: string): Promise<void>;
+    /** 提交向用户提问的回答。 */
+    answerQuestion(toolCallId: string, answer: QuestionAnswerPayload): Promise<boolean>;
   };
   conversation: {
     /** 列出当前 profile 下所有对话（不含 messages，按 updatedAt 倒序）。 */
@@ -740,6 +747,14 @@ export type RendererApi = {
     get(profileId: string, convId: string): Promise<Conversation | null>;
     /** 新建。type 决定默认 title 和 system prompt focus。 */
     create(opts: { profileId: string; type: ConversationType; title?: string }): Promise<Conversation>;
+    /** 从某条 AI 发言分叉新对话，保留该节点之前的所有历史。 */
+    fork(profileId: string, convId: string, messageId: string, title?: string): Promise<Conversation>;
+    /** 回滚到某条用户发言，截断后续消息，返回该条消息文本供重新编辑。 */
+    rollback(
+      profileId: string,
+      convId: string,
+      messageId: string,
+    ): Promise<{ conversation: Conversation; rolledBackContent: string; attachments?: AttachmentRef[] | undefined }>;
     rename(profileId: string, convId: string, title: string): Promise<void>;
     remove(profileId: string, convId: string): Promise<void>;
     /**

@@ -257,6 +257,19 @@ body {
 }
 
 /* Dark-mode contrast guards——见 packages/website/app/globals.css 的说明 */
+.bg-yellow ::selection,
+.bg-yellow::selection {
+  background-color: #3a2e23;
+  color: #fdfaf2;
+}
+:root[data-theme="dark"] .bg-yellow ::selection,
+:root[data-theme="dark"] .bg-yellow::selection,
+.dark .bg-yellow ::selection,
+.dark .bg-yellow::selection {
+  background-color: #1a1410;
+  color: #fdfaf2;
+}
+
 :root[data-theme="dark"] .bg-yellow,
 :root[data-theme="dark"] .bg-corgi,
 .dark .bg-yellow,

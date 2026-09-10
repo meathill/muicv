@@ -95,12 +95,22 @@ const api: RendererApi = {
   agent: {
     chat: (opts) => ipcRenderer.invoke('agent:chat', opts) as Promise<{ channelId: string }>,
     abort: (channelId: string) => ipcRenderer.invoke('agent:abort', channelId) as Promise<void>,
+    answerQuestion: (toolCallId, answer) =>
+      ipcRenderer.invoke('agent:answerQuestion', toolCallId, answer) as Promise<boolean>,
   },
   conversation: {
     list: (profileId) => ipcRenderer.invoke('conversation:list', profileId) as Promise<ConversationSummary[]>,
     get: (profileId, convId) =>
       ipcRenderer.invoke('conversation:get', profileId, convId) as Promise<Conversation | null>,
     create: (opts) => ipcRenderer.invoke('conversation:create', opts) as Promise<Conversation>,
+    fork: (profileId, convId, messageId, title) =>
+      ipcRenderer.invoke('conversation:fork', profileId, convId, messageId, title) as Promise<Conversation>,
+    rollback: (profileId, convId, messageId) =>
+      ipcRenderer.invoke('conversation:rollback', profileId, convId, messageId) as Promise<{
+        conversation: Conversation;
+        rolledBackContent: string;
+        attachments?: import('../shared/types.ts').AttachmentRef[];
+      }>,
     rename: (profileId, convId, title) =>
       ipcRenderer.invoke('conversation:rename', profileId, convId, title) as Promise<void>,
     remove: (profileId, convId) => ipcRenderer.invoke('conversation:remove', profileId, convId) as Promise<void>,

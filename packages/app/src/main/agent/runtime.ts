@@ -30,6 +30,7 @@ import {
   streamIdleTimeoutMsForModel,
 } from './stream-helpers.ts';
 import { type ArtifactEmitter, buildFileTools } from './tools.ts';
+import { buildQuestionTools, cancelPendingQuestions } from './question-tools.ts';
 
 const activeRuns = new Map<string, AbortController>();
 
@@ -88,11 +89,17 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     send({ type: 'artifact', ...a });
   };
 
+  let isWaitingForQuestion = false;
+
   const tools = [
     ...buildFileTools(config.workspaceDir, emitArtifact),
     ...buildApiTools(config, emitArtifact),
     ...buildSyncTools(config),
     ...buildSttTools(config, sender),
+    ...buildQuestionTools((waiting) => {
+      isWaitingForQuestion = waiting;
+      if (!waiting) lastEventAt = Date.now();
+    }),
   ];
   // Reasoning effort 注入：仅对支持调节的模型（GPT-5.6 家族）生效。
   // OpenAI Agents SDK 的 modelSettings.providerData 会原样并进请求体——
@@ -182,6 +189,10 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   let lastEventAt = Date.now();
   let timedOut = false;
   const watchdog = setInterval(() => {
+    if (isWaitingForQuestion) {
+      lastEventAt = Date.now();
+      return;
+    }
     if (Date.now() - lastEventAt > STREAM_IDLE_TIMEOUT_MS) {
       timedOut = true;
       console.warn(`[agent runtime] stream silent > ${STREAM_IDLE_TIMEOUT_MS}ms, aborting`);
@@ -290,6 +301,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   } finally {
     clearInterval(watchdog);
     activeRuns.delete(channelId);
+    cancelPendingQuestions('run ended');
     setReasoningDeltaListener(null);
     setRunSessionId(null);
   }
@@ -318,6 +330,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
 }
 
 export function abortRun(channelId: string): void {
+  cancelPendingQuestions('user aborted');
   const ctrl = activeRuns.get(channelId);
   if (ctrl) ctrl.abort();
 }

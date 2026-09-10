@@ -1,6 +1,7 @@
 import {
   ChatCircleIcon,
   CircleNotchIcon,
+  GitForkIcon,
   PaperPlaneTiltIcon,
   SpeakerHighIcon,
   SquareIcon,
@@ -38,12 +39,14 @@ export function MessageFeedbackBar({
   conversationId,
   text,
   feedback,
+  onFork,
 }: {
   messageId: string;
   conversationId: string;
   /** 本条 AI 消息的纯文本（去掉附件 footer 后），朗读用。 */
   text: string;
   feedback?: ChatMessageFeedback | undefined;
+  onFork?: (() => void) | undefined;
 }) {
   const session = useAppStore((s) => s.session);
   const patchMessageFeedback = useAppStore((s) => s.patchMessageFeedback);
@@ -211,6 +214,12 @@ export function MessageFeedbackBar({
             <SpeakerHighIcon size={14} />
           )}
         </RatingButton>
+
+        {onFork && (
+          <RatingButton label="分叉此对话" active={false} disabled={disabled} onClick={onFork}>
+            <GitForkIcon size={14} />
+          </RatingButton>
+        )}
 
         {floats.map((f) => (
           <span key={f.id} className="feedback-float">

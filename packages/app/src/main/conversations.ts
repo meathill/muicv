@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { stripAttachmentFooter } from '@muicv/shared';
+
 import {
   CONVERSATION_TYPE_META,
   type ChatMessageFeedback,
@@ -157,4 +159,70 @@ export async function deleteConversation(profileId: string, convId: string): Pro
   } catch {
     // 文件不存在也无所谓
   }
+}
+
+/**
+ * 从某条 AI 发言（或指定 messageId）处分叉生成一个新对话。
+ * 复制截至该消息的所有历史，保留上下文，开启新的分支探索。
+ */
+export async function forkConversation(
+  profileId: string,
+  convId: string,
+  messageId: string,
+  newTitle?: string,
+): Promise<Conversation> {
+  const conv = await getConversation(profileId, convId);
+  if (!conv) throw new Error('conversation-not-found');
+
+  const idx = conv.messages.findIndex((m) => m.id === messageId);
+  if (idx === -1) throw new Error('message-not-found');
+
+  const slicedMessages = conv.messages.slice(0, idx + 1);
+  const now = Date.now();
+  const forkedConv: Conversation = {
+    id: randomUUID(),
+    profileId,
+    type: conv.type,
+    title: newTitle?.trim() || `${conv.title} (分支)`,
+    createdAt: now,
+    updatedAt: now,
+    messages: JSON.parse(JSON.stringify(slicedMessages)),
+  };
+
+  await saveConversation(forkedConv);
+  return forkedConv;
+}
+
+/**
+ * 回滚到某条用户发言：截断该消息及其之后的所有对话，
+ * 返回该消息原文本（剥离附件 footer）与附件列表供重新填入输入框编辑。
+ */
+export async function rollbackConversation(
+  profileId: string,
+  convId: string,
+  messageId: string,
+): Promise<{
+  conversation: Conversation;
+  rolledBackContent: string;
+  attachments?: import('../shared/types.ts').AttachmentRef[];
+}> {
+  const conv = await getConversation(profileId, convId);
+  if (!conv) throw new Error('conversation-not-found');
+
+  const idx = conv.messages.findIndex((m) => m.id === messageId);
+  if (idx === -1) throw new Error('message-not-found');
+
+  const targetMsg = conv.messages[idx];
+  if (!targetMsg) throw new Error('message-not-found');
+
+  conv.messages = conv.messages.slice(0, idx);
+  await saveConversation(conv);
+
+  const rolledBackContent = stripAttachmentFooter(targetMsg.content);
+
+  return {
+    conversation: conv,
+    rolledBackContent,
+    attachments: targetMsg.attachments ?? [],
+  };
 }

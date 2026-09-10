@@ -70,6 +70,13 @@ type AppStore = {
   switchConversation: (convId: string) => Promise<void>;
   /** 新建对话；自动切到这个新对话。 */
   createConversation: (type: ConversationType, title?: string) => Promise<Conversation>;
+  /** 从某条 AI 发言处分叉新会话，自动切到新会话。 */
+  forkConversation: (messageId: string, title?: string) => Promise<Conversation>;
+  /** 回滚到某条用户发言，截断后续记录，返回被回滚的内容与附件。 */
+  rollbackConversation: (messageId: string) => Promise<{
+    rolledBackContent: string;
+    attachments?: import('../../shared/types.ts').AttachmentRef[] | undefined;
+  }>;
   renameConversation: (convId: string, title: string) => Promise<void>;
   removeConversation: (convId: string) => Promise<void>;
 
@@ -340,6 +347,33 @@ export const useAppStore = create<AppStore>((set, get) => ({
       view: 'chat',
     }));
     return conv;
+  },
+  forkConversation: async (messageId, title) => {
+    const profileId = get().activeProfile?.id;
+    const convId = get().activeConversation?.id;
+    if (!profileId || !convId) throw new Error('no-active-conversation');
+    const forked = await window.muicv.conversation.fork(profileId, convId, messageId, title);
+    set((st) => ({
+      conversations: [toSummary(forked), ...st.conversations],
+      activeConversation: forked,
+      view: 'chat',
+    }));
+    return forked;
+  },
+  rollbackConversation: async (messageId) => {
+    const profileId = get().activeProfile?.id;
+    const convId = get().activeConversation?.id;
+    if (!profileId || !convId) throw new Error('no-active-conversation');
+    const { conversation, rolledBackContent, attachments } = await window.muicv.conversation.rollback(
+      profileId,
+      convId,
+      messageId,
+    );
+    set((st) => ({
+      conversations: st.conversations.map((c) => (c.id === convId ? toSummary(conversation) : c)),
+      activeConversation: conversation,
+    }));
+    return { rolledBackContent, attachments };
   },
   renameConversation: async (convId, title) => {
     const profileId = get().activeProfile?.id;

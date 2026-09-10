@@ -1,3 +1,4 @@
+export * from './attachments.ts';
 export * from './domain/resume-json.ts';
 export * from './domain/template-resume.ts';
 export * from './domain/sample-templates.ts';

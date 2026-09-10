@@ -1,29 +1,27 @@
-import { BrainIcon, CheckIcon, FileTextIcon, GearIcon, HourglassIcon } from '@phosphor-icons/react';
+import {
+  ArrowCounterClockwiseIcon,
+  BrainIcon,
+  CheckIcon,
+  FileTextIcon,
+  GearIcon,
+  HourglassIcon,
+} from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 
 import type { ArtifactRef, AttachmentRef, ChatMessageFeedback, ToolCallRecord } from '../../shared/types.ts';
 import { ArtifactCard } from './artifact-card';
 import { AttachmentChip } from './chat-attachment-chip';
 import { MessageFeedbackBar } from './chat-message-feedback';
+import { ChatQuestionCard } from './chat-question-card';
+import { stripAttachmentFooter } from './chat-utils';
+import { ConfirmDialog } from './confirm-dialog';
+import { ForkConversationDialog } from './fork-conversation-dialog';
 import { MarkdownView } from './markdown-view';
-
-/**
- * formatAttachmentsFooter 在每条带附件的 user message content 末尾追加
- * `\n\n---\n[附件]\n...`，agent 端拿到后能 read_file。
- *
- * 但 UI 层显示这一段是冗余 + 难看：用户已经能从下方的 AttachmentChip 看到
- * 文件名 + 预览，再读一遍灰色路径毫无意义。这里按 marker 把 footer 砍掉，
- * 持久化数据本身不动——agent 那边的 input 仍然带 footer。
- */
-const ATTACHMENT_FOOTER_MARKER = '\n\n---\n[附件]\n';
-function stripAttachmentFooter(content: string): string {
-  const idx = content.indexOf(ATTACHMENT_FOOTER_MARKER);
-  return idx === -1 ? content : content.slice(0, idx);
-}
 
 export function MessageBubble({
   messageId,
   conversationId,
+  conversationTitle,
   role,
   content,
   reasoning,
@@ -34,9 +32,12 @@ export function MessageBubble({
   onOpenArtifact,
   onPreviewAttachment,
   onPathClick,
+  onFork,
+  onRollback,
 }: {
   messageId: string;
   conversationId: string;
+  conversationTitle?: string | undefined;
   role: string;
   content: string;
   reasoning?: string | undefined;
@@ -47,16 +48,29 @@ export function MessageBubble({
   onOpenArtifact: (a: ArtifactRef) => void;
   onPreviewAttachment?: (a: AttachmentRef) => void;
   onPathClick?: (path: string) => void;
+  onFork?: ((messageId: string, title: string) => void) | undefined;
+  onRollback?: ((messageId: string) => void) | undefined;
 }) {
+  const [showForkDialog, setShowForkDialog] = useState(false);
+  const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
+
   const isUser = role === 'user';
   const displayContent = isUser ? stripAttachmentFooter(content) : content;
+
   // 工件按 source 分两类：read = 过程参考资料（折叠到操作组里）/ write = 最终产物（显眼卡片）
   const readRefs = artifacts?.filter((a) => a.source === 'read') ?? [];
   const writeRefs = artifacts?.filter((a) => a.source === 'write') ?? [];
-  const hasOps = (toolCalls?.length ?? 0) > 0 || readRefs.length > 0;
+
+  // 工具调用分离：普通工具收进 OpsGroup，ask_question 单独作为交互卡片突出展示
+  const questionCalls = toolCalls?.filter((c) => c.name === 'ask_question') ?? [];
+  const regularToolCalls = toolCalls?.filter((c) => c.name !== 'ask_question') ?? [];
+
+  const hasOps = regularToolCalls.length > 0 || readRefs.length > 0;
+  const hasQuestions = questionCalls.length > 0;
   const hasAttachments = (attachments?.length ?? 0) > 0;
   const hasReasoning = !!reasoning && reasoning.length > 0;
-  const empty = !displayContent && !hasOps && !hasAttachments && writeRefs.length === 0 && !hasReasoning;
+  const empty =
+    !displayContent && !hasOps && !hasQuestions && !hasAttachments && writeRefs.length === 0 && !hasReasoning;
   // 流式中（content 还在累加 / inflight tool）不显示反馈条；
   // 等流式完成、有实际文本后再让用户评价。
   const showFeedback = !isUser && !empty && content.length > 0;
@@ -66,10 +80,12 @@ export function MessageBubble({
       <div className={`flex max-w-[85%] flex-col ${isUser ? 'items-end' : 'items-start'}`}>
         <div
           className={`w-full select-text space-y-2 rounded-xl px-4 py-3 text-[14px] leading-relaxed ${
-            isUser ? 'border-2 border-ink bg-yellow text-ink' : 'border-2 border-rule bg-paper text-ink-soft'
+            isUser
+              ? 'border-2 border-ink bg-yellow text-ink selection:bg-ink selection:text-cream dark:selection:bg-[#1a1410] dark:selection:text-[#fdfaf2]'
+              : 'border-2 border-rule bg-paper text-ink-soft'
           }`}
         >
-          {!isUser && hasOps && <OpsGroup toolCalls={toolCalls ?? []} reads={readRefs} />}
+          {!isUser && hasOps && <OpsGroup toolCalls={regularToolCalls} reads={readRefs} />}
 
           {!isUser && reasoning && reasoning.length > 0 && (
             <ReasoningBlock text={reasoning} streaming={!displayContent} />
@@ -81,6 +97,14 @@ export function MessageBubble({
             ) : (
               <MarkdownView source={displayContent} className="text-ink-soft" onPathClick={onPathClick} />
             ))}
+
+          {hasQuestions && (
+            <div className="space-y-2 pt-1">
+              {questionCalls.map((q) => (
+                <ChatQuestionCard key={q.id} call={q} />
+              ))}
+            </div>
+          )}
 
           {hasAttachments && (
             <div className="flex flex-wrap gap-1.5 pt-1">
@@ -117,8 +141,52 @@ export function MessageBubble({
               conversationId={conversationId}
               text={displayContent}
               feedback={feedback}
+              onFork={onFork ? () => setShowForkDialog(true) : undefined}
             />
           </div>
+        )}
+
+        {isUser && onRollback && (
+          <div className="mt-1 flex items-center justify-end px-1 opacity-75 hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              title="回滚到此发言并重新编辑"
+              aria-label="回滚到此发言并重新编辑"
+              onClick={() => setShowRollbackConfirm(true)}
+              className="press inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold text-mute hover:bg-rule/40 hover:text-ink"
+            >
+              <ArrowCounterClockwiseIcon size={12} weight="bold" />
+              <span>回滚重新编辑</span>
+            </button>
+          </div>
+        )}
+
+        {showForkDialog && (
+          <ForkConversationDialog
+            open={showForkDialog}
+            defaultTitle={conversationTitle ? `${conversationTitle} (分支)` : '分支对话'}
+            onConfirm={(title) => {
+              setShowForkDialog(false);
+              onFork?.(messageId, title);
+            }}
+            onCancel={() => setShowForkDialog(false)}
+          />
+        )}
+
+        {showRollbackConfirm && (
+          <ConfirmDialog
+            open={showRollbackConfirm}
+            title="确认回滚到此发言？"
+            description="此操作将回到该对话阶段，截断此发言及其之后的所有消息，并将当时的内容与附件填回输入框供你修改后重新发送。"
+            confirmLabel="回滚并编辑"
+            cancelLabel="取消"
+            destructive
+            onConfirm={() => {
+              setShowRollbackConfirm(false);
+              onRollback?.(messageId);
+            }}
+            onCancel={() => setShowRollbackConfirm(false)}
+          />
         )}
       </div>
     </div>

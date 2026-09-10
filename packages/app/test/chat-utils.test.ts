@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import {
   classifyError,
   cryptoRandomId,
+  isChatSubmitHotkey,
   resolveWorkspacePath,
   safeParseJson,
+  stripAttachmentFooter,
 } from '../src/renderer/components/chat-utils.ts';
 
 test('classifyError 空字符串 / NOT_LOGGED_IN → plain', () => {
@@ -91,4 +93,45 @@ test('resolveWorkspacePath workspace 为 null 时原样返回', () => {
 
 test('resolveWorkspacePath 空路径直接返回', () => {
   assert.equal(resolveWorkspacePath('/Users/me/work', ''), '');
+});
+
+test('isChatSubmitHotkey: 回车（Enter）发送', () => {
+  assert.equal(isChatSubmitHotkey({ key: 'Enter' }), true);
+  assert.equal(isChatSubmitHotkey({ key: 'Enter', shiftKey: false }), true);
+});
+
+test('isChatSubmitHotkey: Shift + Enter 换行（不发送）', () => {
+  assert.equal(isChatSubmitHotkey({ key: 'Enter', shiftKey: true }), false);
+});
+
+test('isChatSubmitHotkey: IME 中文输入合成中（isComposing / keyCode 229）不发送', () => {
+  assert.equal(isChatSubmitHotkey({ key: 'Enter', isComposing: true }), false);
+  assert.equal(isChatSubmitHotkey({ key: 'Enter', keyCode: 229 }), false);
+  assert.equal(isChatSubmitHotkey({ key: 'Enter', isComposing: true, keyCode: 229 }), false);
+});
+
+test('isChatSubmitHotkey: 其它按键不发送', () => {
+  assert.equal(isChatSubmitHotkey({ key: 'a' }), false);
+  assert.equal(isChatSubmitHotkey({ key: 'Tab' }), false);
+  assert.equal(isChatSubmitHotkey({ key: 'Escape' }), false);
+});
+
+test('stripAttachmentFooter: 无附件 footer 时原样返回', () => {
+  assert.equal(stripAttachmentFooter('hello world'), 'hello world');
+  assert.equal(stripAttachmentFooter(''), '');
+});
+
+test('stripAttachmentFooter: 剥除末尾附件段', () => {
+  const raw = '请帮我优化这份简历\n\n---\n[附件]\n- inbox/2026-resume.pdf（PDF）';
+  assert.equal(stripAttachmentFooter(raw), '请帮我优化这份简历');
+});
+
+test('stripAttachmentFooter: 纯附件消息（content 直接以 --- 开头）也要剥干净', () => {
+  // 生成端「只发附件不打字」时去掉了前导 \n\n，这里必须同样命中
+  const raw = '---\n[附件]\n- inbox/2026-resume.pdf（PDF）';
+  assert.equal(stripAttachmentFooter(raw), '');
+});
+
+test('stripAttachmentFooter: footer 之后的 trailing 换行一并清掉', () => {
+  assert.equal(stripAttachmentFooter('你好\n\n---\n[附件]\n- a.png（图像）\n'), '你好');
 });

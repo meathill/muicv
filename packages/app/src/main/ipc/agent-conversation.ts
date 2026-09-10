@@ -1,13 +1,16 @@
 import { ipcMain } from 'electron';
 
-import type { ChatMessage, ChatMessageFeedback, ConversationType } from '../../shared/types.ts';
+import type { ChatMessage, ChatMessageFeedback, ConversationType, QuestionAnswerPayload } from '../../shared/types.ts';
+import { answerQuestion } from '../agent/question-tools.ts';
 import { abortRun, runAgent } from '../agent/runtime.ts';
 import {
   createConversation,
   deleteConversation,
+  forkConversation,
   getConversation,
   listConversations,
   renameConversation,
+  rollbackConversation,
   setMessageFeedback,
 } from '../conversations.ts';
 import { type CommentArgs, commentFeedback, type RateArgs, rateFeedback } from '../feedback.ts';
@@ -47,12 +50,21 @@ export function registerAgentConversationIpc(): void {
   ipcMain.handle('agent:abort', async (_event, channelId: string) => {
     abortRun(channelId);
   });
+  ipcMain.handle('agent:answerQuestion', async (_event, toolCallId: string, payload: QuestionAnswerPayload) => {
+    return answerQuestion(toolCallId, payload);
+  });
 
   // -------- conversation --------
   ipcMain.handle('conversation:list', (_e, profileId: string) => listConversations(profileId));
   ipcMain.handle('conversation:get', (_e, profileId: string, convId: string) => getConversation(profileId, convId));
   ipcMain.handle('conversation:create', (_e, opts: { profileId: string; type: ConversationType; title?: string }) =>
     createConversation(opts),
+  );
+  ipcMain.handle('conversation:fork', (_e, profileId: string, convId: string, messageId: string, title?: string) =>
+    forkConversation(profileId, convId, messageId, title),
+  );
+  ipcMain.handle('conversation:rollback', (_e, profileId: string, convId: string, messageId: string) =>
+    rollbackConversation(profileId, convId, messageId),
   );
   ipcMain.handle('conversation:rename', (_e, profileId: string, convId: string, title: string) =>
     renameConversation(profileId, convId, title),

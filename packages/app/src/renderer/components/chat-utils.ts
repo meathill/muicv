@@ -1,3 +1,5 @@
+import { ATTACHMENT_FOOTER_HEADER } from '@muicv/shared';
+
 import type { AttachmentKind, AttachmentRef } from '../../shared/types.ts';
 
 /**
@@ -87,7 +89,7 @@ export function formatAttachmentsFooter(
     }
     return r.textPath ? `${head}，已提取文本：${r.textPath}）` : `${head}）`;
   });
-  return `\n\n---\n[附件]\n${lines.join('\n')}`;
+  return `\n\n${ATTACHMENT_FOOTER_HEADER}${lines.join('\n')}`;
 }
 
 export const MAX_ATTACHMENTS_PER_SEND = 5;
@@ -179,3 +181,25 @@ export function filterFilesForUpload(
 
   return { accepted, errors };
 }
+
+/**
+ * 判断输入框按键是否触发提交消息：
+ * - 回车（Enter）无 Shift 发送
+ * - Shift + Enter 换行（不发送）
+ * - IME 中文输入法合成阶段（isComposing / keyCode 229）不发送
+ */
+export function isChatSubmitHotkey(e: {
+  key: string;
+  shiftKey?: boolean;
+  isComposing?: boolean;
+  keyCode?: number;
+}): boolean {
+  if (e.isComposing || e.keyCode === 229) return false;
+  return e.key === 'Enter' && !e.shiftKey;
+}
+
+/**
+ * 附件 footer 的常量与剥离逻辑已下沉到 @muicv/shared（main 进程的回滚也要用同一份格式，
+ * 见 rollbackConversation）。这里 re-export 保持 renderer 既有的 import 路径不变。
+ */
+export { ATTACHMENT_FOOTER_HEADER, stripAttachmentFooter } from '@muicv/shared';

@@ -33,12 +33,21 @@ export function ChatView() {
   const activeConversation = useAppStore((s) => s.activeConversation);
   const onboardingDraft = useAppStore((s) => s.onboardingDraft);
   const clearOnboardingDraft = useAppStore((s) => s.clearOnboardingDraft);
+  const forkConversation = useAppStore((s) => s.forkConversation);
+  const rollbackConversation = useAppStore((s) => s.rollbackConversation);
   const setView = useAppStore((s) => s.setView);
   const openRightPanel = useAppStore((s) => s.openRightPanel);
 
+  const [draft, setDraft] = useState<string | null>(onboardingDraft);
   const [error, setError] = useState<string | null>(null);
   const [needsAiSetup, setNeedsAiSetup] = useState(false);
   const [historyPreview, setHistoryPreview] = useState<AttachmentRef | null>(null);
+
+  useEffect(() => {
+    if (onboardingDraft != null) {
+      setDraft(onboardingDraft);
+    }
+  }, [onboardingDraft]);
 
   // 图片永远接收：vision 模型走 input_image 直接看图；非 vision 模型走 upload_photo
   // tool 链路（用户拖证件照 → AI 上传到 R2 → 写回 .resume.json）。不再在入口拦图。
@@ -90,8 +99,31 @@ export function ChatView() {
 
   async function handleSend(text: string): Promise<void> {
     clearOnboardingDraft();
+    setDraft(null);
     await dispatch.send(text, attachments.pendingAttachments);
     attachments.clearAfterSend();
+  }
+
+  async function handleFork(messageId: string, title?: string): Promise<void> {
+    try {
+      await forkConversation(messageId, title);
+    } catch (err) {
+      setError(`分叉对话失败: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  async function handleRollback(messageId: string): Promise<void> {
+    try {
+      const result = await rollbackConversation(messageId);
+      setDraft(result.rolledBackContent);
+      if (result.attachments && result.attachments.length > 0) {
+        for (const a of result.attachments) {
+          attachments.addAttachment(a);
+        }
+      }
+    } catch (err) {
+      setError(`回滚失败: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   return (
@@ -127,6 +159,7 @@ export function ChatView() {
                 key={m.id}
                 messageId={m.id}
                 conversationId={activeConversation.id}
+                conversationTitle={activeConversation.title}
                 role={m.role}
                 content={m.content}
                 reasoning={m.reasoning}
@@ -139,6 +172,8 @@ export function ChatView() {
                 }
                 onPreviewAttachment={setHistoryPreview}
                 onPathClick={(p) => openRightPanel(resolveWorkspacePath(activeProfile?.dir ?? null, p))}
+                onFork={handleFork}
+                onRollback={handleRollback}
               />
             ))
           )}
@@ -151,7 +186,7 @@ export function ChatView() {
       <ChatInputBar
         contextKey={`${activeProfile.id}:${activeConversation.id}`}
         placeholder={meta.placeholder}
-        initialDraft={onboardingDraft}
+        initialDraft={draft}
         busy={dispatch.busy}
         errorMessage={error}
         attachments={attachments}
