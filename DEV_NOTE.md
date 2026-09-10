@@ -389,6 +389,54 @@
   `dev 重启 / 主进程崩 / 网络 stream 中段挂` 等场景：哪怕 stream 一个字符都没回，
   用户刚敲的这条至少不会丢；`flushConversation` 末尾再 push 时按 id 去重不会重复。
 
+## Agent 交互提问 `ask_question`（2026-09）
+
+让 agent 在需要用户决策时挂起等待前端回答，而不是在正文里写"请回复 1 或 2"。
+
+- **工具定义**：[question-tools.ts](packages/app/src/main/agent/question-tools.ts) 用
+  `@openai/agents` 的 `tool()` 定义唯一的 `ask_question(question, options?, multiSelect?)`，
+  `execute` 返回一个**永不自动 resolve 的 Promise**，把 `resolve/reject` 存进模块级
+  `pendingQuestions` Map + `pendingOrder` 队列，等 IPC 唤醒。
+- **唤醒 / 取消**：`answerQuestion(toolCallId, payload)` 由 `agent:answerQuestion` IPC 调用，
+  把答案格式化成人话（「用户选择了：A、B。用户补充说明：…」）后 resolve，作为 tool output
+  回到 agent。run 结束（`finally`）和用户中止（`abortRun`）都调 `cancelPendingQuestions(reason)`。
+- **watchdog 抑制**：等待期间 `isWaitingForQuestion = true`，runtime 的空转看门狗不判超时
+  （用户思考多久都不算"上游卡住"）。
+- **UI**：`chat-question-card.tsx` 从消息的 `toolCalls` 里按 `name === 'ask_question'` 取出
+  渲染成交互卡片（气泡里其余工具仍收进 OpsGroup）。
+  - 卡片只在**当前有活跃 run**（`store.activeChannel !== null`）时可提交。中断 / 重新打开后
+    的历史里，未回答的提问仍留在落盘记录（abort 路径也会 `flushConversation`），但主进程已无
+    pending——此时渲染"提问已失效"而不是让用户白点。
+  - `answerQuestion` 返回 `false` 表示没匹配到 pending，卡片据此报错并恢复可提交，不把状态机
+    押在 `tool-output` 事件必达上（提交成功另有本地 `submitted` 态）。
+  - 回答提交后，run 继续流式产出，`tool-output` 事件最终让 `call.output` 落地，卡片切"已回答"。
+- **已知边界**：`pendingQuestions` 是模块级全局、未按 channel 隔离；`answerQuestion` 的
+  callId 兜底取最早入队项。当前架构用户不会同时跑两个 agent run，够用。将来要支持并发
+  多窗口，必须把队列改成 per-channel（reasoning-capture 的模块级单 slot 有同样假设）。
+
+## 对话分叉 / 回滚重新编辑（2026-09）
+
+- **分叉** `forkConversation(profileId, convId, messageId, newTitle?)`：
+  [conversations.ts](packages/app/src/main/conversations.ts) 找到 messageId 下标，
+  `slice(0, idx+1)` 深拷贝截至该消息的历史，`randomUUID()` 建新会话，默认标题 `${title} (分支)`。
+  UI 入口是 AI 消息反馈条上的「分叉此对话」→ `fork-conversation-dialog.tsx` 让用户改标题。
+- **回滚** `rollbackConversation(profileId, convId, messageId)`：截断该条用户消息**及其之后**
+  的全部记录，返回被截掉的原文本（已剥离附件 footer）与附件列表，renderer 填回输入框供改后重发。
+- 分叉 / 回滚都只动该 conversation 的 JSON 文件，不动别的会话。
+
+## 输入栏交互约定（2026-09）
+
+- **发送键**：Enter 直接发送、Shift+Enter 换行、IME 合成中（`isComposing` / `keyCode 229`）不发送。
+  判定集中在 `chat-utils.ts` 的 `isChatSubmitHotkey(e)`，组件不再各自写一套。
+- **内联模型选择器** `chat-model-selector.tsx`（输入栏左下角）：读 `@muicv/shared` 的
+  `SUPPORTED_LLM_MODELS` / `LLM_DISPLAY_META` / `REASONING_EFFORTS`，支持切模型与思考深度。
+  **与设置页的 `ModelCard` 并存**：输入栏是快捷入口，设置页是完整体验，两者读同一份常量表，
+  不重复维护数据。BYOK（自带 endpoint）时列表置灰，提示平台清单不生效。
+- **附件 footer 格式统一**：`---\n[附件]\n` 的常量与 `stripAttachmentFooter()` 已下沉到
+  [shared/src/attachments.ts](packages/shared/src/attachments.ts)，renderer（生成 + 剥离）和
+  main（回滚剥离）共用一份。此前三处各写一遍字面量，「只发附件不打字」的消息（生成端去掉
+  前导 `\n\n`）剥离会漏掉，已修并补回归用例。`chat-utils.ts` re-export 保持既有 import 路径。
+
 ## API Key / 鉴权（packages/api）
 
 - `mui_xxx` 是桌面 app + skill 的统一凭据。在 web dashboard 创建/撤销，
@@ -704,6 +752,12 @@ TTS 在用。
 - Secret：`OPENCODE_GO_API_KEY`（wrangler secret put）。缺失时 API 返回
   `{error:'opencode-go-key-missing'}`。
 - 必须携带 `x-opencode-session`（缺失时报 400 "Request is missing x-opencode-session and cannot be routed efficiently"）：用于后端节点会话亲和与 prompt cache 路由。app 与 api 两端均已注入稳定的会话 ID 及定制 `User-Agent`。
+- **落表前必须实探 model id**（2026-09 踩坑）：上游目录里的 id 是唯一真值，不能凭版本号推断。
+  曾把默认模型改成 `deepseek-v4.1-flash`——该 id 在 OpenCode Go 上**不存在**，导致默认路径
+  请求上游失败。这类不存在的 id 不需要专门加别名兜底：`normalizeModel` 对表外 id 会静默
+  回落到 `DEFAULT_LLM_MODEL`，写盘的老配置读出来就自愈了。
+  `scripts/opencode-go-probe.ts` 会拉真实 model 清单校验，新增 / 改默认模型前先跑它
+  （需 `OPENCODE_GO_API_KEY`），别再跳过。
 
 **GPT-5.6 家族（Sol/Terra/Luna）**：OpenAI 2026 推出的三档变体，走 `/v1/responses`，
 reasoning.effort 支持 none..max 六级；平台 UI 只放 low/medium/high/xhigh（默认 xhigh）。
