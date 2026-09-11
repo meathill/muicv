@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
 
 import { CorgiMascot } from '@/components/corgi-mascot';
-
-import { getDictionary, type Locale, localizedHref } from '../_i18n/dict';
 import { EXTRA_LOCALE_BUNDLES, type ExtraLocale } from '../_i18n/bundles';
+import { getDictionary, type Locale, localizedHref } from '../_i18n/dict';
 import { ArrowUpRight, Highlight, PawIcon } from '../_icons';
 import { AccountLink } from '../_sections/account-link';
 import { Footer } from '../_sections/footer';

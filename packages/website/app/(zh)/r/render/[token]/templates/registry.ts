@@ -1,6 +1,5 @@
-import type { ComponentType, ReactNode } from 'react';
-
 import { isTemplateId, type TemplateId, type TemplateLang, type TemplateResumeData } from '@muicv/shared';
+import type { ComponentType, ReactNode } from 'react';
 
 import type { ParsedResume } from '@/lib/render/parse-resume';
 

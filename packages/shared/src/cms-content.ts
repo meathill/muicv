@@ -1,16 +1,16 @@
+import { type ContentLocale, isContentLocale } from './content-locales.ts';
 import {
   type ChangelogItem,
   type ContentPost,
   type ContentStatus,
+  getPostBySlug,
+  getPublishedPosts,
   type PostSection,
   type SkillAppAvailability,
   type SkillCatalogItem,
   type SkillDistributionMode,
   type SkillPublisherType,
-  getPostBySlug,
-  getPublishedPosts,
 } from './content-registry.ts';
-import { isContentLocale, type ContentLocale } from './content-locales.ts';
 
 const DEFAULT_CMS_BASE_URL = 'https://cms.muicv.com';
 const FETCH_LIMIT = '100';

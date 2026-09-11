@@ -1,9 +1,7 @@
 import { pickLang, type TemplateLang, type TemplateResumeData } from '@muicv/shared';
-
+import type { TemplateSlots } from './registry';
 import { TemplatePage } from './template-helpers';
 import styles from './templates.module.css';
-
-import type { TemplateSlots } from './registry';
 
 export type T3Props = {
   resume: TemplateResumeData;

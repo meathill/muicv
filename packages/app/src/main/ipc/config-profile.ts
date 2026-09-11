@@ -1,10 +1,8 @@
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-
-import { type BrowserWindow, dialog, ipcMain, shell } from 'electron';
-
 import { isTemplateId } from '@muicv/shared';
+import { type BrowserWindow, dialog, ipcMain, shell } from 'electron';
 
 import type { AppConfig, Profile } from '../../shared/types.ts';
 import {

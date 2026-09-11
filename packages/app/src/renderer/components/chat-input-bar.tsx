@@ -1,3 +1,4 @@
+import { modelSupportsAudioInput } from '@muicv/shared';
 import {
   ArrowRightIcon,
   DownloadSimpleIcon,
@@ -8,8 +9,6 @@ import {
   TrashIcon,
 } from '@phosphor-icons/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-
-import { modelSupportsAudioInput } from '@muicv/shared';
 
 import type { AttachmentRef } from '../../shared/types.ts';
 import { useAppStore } from '../lib/store';
@@ -25,10 +24,10 @@ import { useRecorder } from '../lib/use-recorder';
 import { useSlashCommand } from '../lib/use-slash-command.ts';
 import { AttachmentPreviewDialog } from './attachment-preview-dialog';
 import { AttachmentChip } from './chat-attachment-chip';
-import { RecordingBar } from './recording-bar';
-import { SlashCommandMenu } from './slash-command-menu.tsx';
 import { ChatModelSelector } from './chat-model-selector';
 import { isChatSubmitHotkey } from './chat-utils.ts';
+import { RecordingBar } from './recording-bar';
+import { SlashCommandMenu } from './slash-command-menu.tsx';
 
 type Props = {
   /** profile.id + ':' + conversation.id；切换上下文时变更，触发草稿清空。 */

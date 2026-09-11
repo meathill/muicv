@@ -97,7 +97,7 @@ export function EmptyConversation({ type }: { type: ConversationType }) {
       <p className="mt-2 max-w-md text-[14px] leading-[1.7] text-ink-soft">{meta.tagline}</p>
       <p className="mt-4 max-w-md text-[12px] text-mute">下面输入框直接说就行 —— 例：</p>
       <p className="mt-1 max-w-md text-[12px] text-ink-soft">
-        "{meta.placeholder.replace(/^比如：/, '').replace(/^\「|\」$/g, '')}"
+        "{meta.placeholder.replace(/^比如：/, '').replace(/^「|」$/g, '')}"
       </p>
       {type === 'core' && (
         <p className="mt-4 max-w-md text-[12px] leading-[1.6] text-mute">

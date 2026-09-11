@@ -1,14 +1,13 @@
 import { Popover } from '@base-ui/react/popover';
-import { CaretDownIcon, CheckIcon, CpuIcon, GearIcon } from '@phosphor-icons/react';
-import { useState } from 'react';
-
 import {
-  type ReasoningEffort,
   LLM_DISPLAY_META,
   normalizeModel,
   REASONING_EFFORTS,
+  type ReasoningEffort,
   SUPPORTED_LLM_MODELS,
 } from '@muicv/shared';
+import { CaretDownIcon, CheckIcon, CpuIcon, GearIcon } from '@phosphor-icons/react';
+import { useState } from 'react';
 
 import { useAppStore } from '../lib/store';
 

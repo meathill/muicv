@@ -1,15 +1,15 @@
 // 7 个 SKILL.md 用 ?raw 直接 inline 进 bundle（@skills alias → ../../skills）
 // 这样运行时不需要 fs 找文件，dev / 打包都自动 work。
 import muicvCoachingSkill from '@skills/muicv-coaching/SKILL.md?raw';
-import muicvCoreSkill from '@skills/muicv-core/SKILL.md?raw';
 import organizePrompt from '@skills/muicv-core/references/organize-prompt.md?raw';
+import muicvCoreSkill from '@skills/muicv-core/SKILL.md?raw';
 import muicvCritiqueSkill from '@skills/muicv-critique/SKILL.md?raw';
-import muicvGenerateSkill from '@skills/muicv-generate/SKILL.md?raw';
 import generatePrompts from '@skills/muicv-generate/references/prompts.md?raw';
-import muicvInterviewSkill from '@skills/muicv-interview/SKILL.md?raw';
+import muicvGenerateSkill from '@skills/muicv-generate/SKILL.md?raw';
 import interviewLevelCategoryHeuristics from '@skills/muicv-interview/references/level-category-heuristics.md?raw';
 import interviewQuestionDesignFramework from '@skills/muicv-interview/references/question-design-framework.md?raw';
 import interviewRoundRecipes from '@skills/muicv-interview/references/round-recipes.md?raw';
+import muicvInterviewSkill from '@skills/muicv-interview/SKILL.md?raw';
 import muicvJobsSkill from '@skills/muicv-jobs/SKILL.md?raw';
 import muicvRenderSkill from '@skills/muicv-render/SKILL.md?raw';
 

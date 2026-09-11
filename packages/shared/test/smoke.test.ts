@@ -1,5 +1,5 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import type { ResumeJson } from '../src/index.ts';
 
 test('shared 包可被导入（类型）', () => {

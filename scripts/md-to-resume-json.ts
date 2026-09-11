@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * 半自动迁移工具：从 `versions/foo.md` 里抽出能机械识别的字段，
  * 输出 `versions/foo.resume.json` 骨架（TemplateResumeData schema）。
@@ -16,8 +17,8 @@
  * 输出后用户对照 docs/template-resume-sample.resume.json 把缺失字段补齐即可。
  */
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
 type Frontmatter = Record<string, string>;

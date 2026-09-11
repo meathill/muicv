@@ -13,7 +13,7 @@
  *   node scripts/seed-marketing-posts.ts deepseek-v4-1-flash --dry-run
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

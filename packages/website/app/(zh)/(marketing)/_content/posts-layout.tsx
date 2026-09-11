@@ -2,7 +2,7 @@ import type { ContentLocale, ContentPost } from '@muicv/shared';
 
 import { BLOG_STRINGS, blogUrlPrefix } from '../_i18n/blog';
 import { ContentCard } from './content-card';
-import { PostCategoryNav, countPostsBySection, type PostCategory } from './post-category-nav';
+import { countPostsBySection, type PostCategory, PostCategoryNav } from './post-category-nav';
 
 /**
  * 文章列表两栏外壳：左侧分类侧边栏 + 右侧文章列表，供中文 /posts 与多语言 /<locale>/posts 共用。

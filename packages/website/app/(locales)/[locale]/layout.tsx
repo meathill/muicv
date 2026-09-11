@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-
-import { Analytics } from '@/components/analytics';
-import { JsonLd } from '@/components/json-ld';
-
 import { getDictionary } from '@/app/(zh)/(marketing)/_i18n/dict';
 import { isLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
+import { Analytics } from '@/components/analytics';
+import { JsonLd } from '@/components/json-ld';
 import { fontDisplay, fontMono, fontSans } from '../../_theme/fonts';
 import { ORGANIZATION_SCHEMA, websiteSchema } from '../../_theme/root-schema';
 import { ThemeInitScript } from '../../_theme/theme-init-script';

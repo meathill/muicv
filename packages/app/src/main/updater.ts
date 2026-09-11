@@ -1,4 +1,4 @@
-import { type BrowserWindow, app, ipcMain } from 'electron';
+import { app, type BrowserWindow, ipcMain } from 'electron';
 import electronUpdater from 'electron-updater';
 
 import type { UpdaterStatus } from '../shared/types.ts';

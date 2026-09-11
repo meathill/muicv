@@ -1,7 +1,6 @@
+import { resolveModelAlias } from '@muicv/shared';
 import { setDefaultOpenAIClient, setDefaultOpenAIKey, setOpenAIAPI } from '@openai/agents';
 import OpenAI from 'openai';
-
-import { resolveModelAlias } from '@muicv/shared';
 
 import type { AppConfig } from '../../shared/types.ts';
 import { isThinkingModeModel, loggingFetch } from './reasoning-capture.ts';

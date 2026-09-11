@@ -1,16 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
-import { isAbsolute, resolve } from 'node:path';
 import { homedir } from 'node:os';
+import { isAbsolute, resolve } from 'node:path';
 
-import { ipcMain, type WebContents, systemPreferences } from 'electron';
+import { ipcMain, systemPreferences, type WebContents } from 'electron';
 
 import type {
   AppConfig,
   AudioRecordingPayload,
   AudioRecordingRequest,
-  AudioTranscodeRequest,
   AudioTranscodedPayload,
+  AudioTranscodeRequest,
 } from '../shared/types.ts';
 import { postTranscribeWithRetry } from './audio-retry.ts';
 import { countFillers } from './lib/filler-count.ts';

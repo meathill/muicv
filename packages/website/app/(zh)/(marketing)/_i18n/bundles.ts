@@ -1,12 +1,11 @@
-import type { LocaleContent } from './locale-content';
-import type { Dictionary } from './types';
-
 import { content as deContent, dict as deDict } from './de';
 import { content as esContent, dict as esDict } from './es';
 import { content as frContent, dict as frDict } from './fr';
 import { content as jaContent, dict as jaDict } from './ja';
+import type { LocaleContent } from './locale-content';
 import { content as ptContent, dict as ptDict } from './pt';
 import { content as thContent, dict as thDict } from './th';
+import type { Dictionary } from './types';
 import { content as viContent, dict as viDict } from './vi';
 
 /**

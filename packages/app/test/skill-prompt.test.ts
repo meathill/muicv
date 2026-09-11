@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-
 import { readFile } from 'node:fs/promises';
+import test from 'node:test';
 
 test('muicv-core 初始化不再要求写 .gitkeep 占位文件', async () => {
   const skill = await readFile(new URL('../../../skills/muicv-core/SKILL.md', import.meta.url), 'utf8');

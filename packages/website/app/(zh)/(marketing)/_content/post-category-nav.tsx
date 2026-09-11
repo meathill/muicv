@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import type { ContentPost, PostSection } from '@muicv/shared';
+import Link from 'next/link';
 
 import type { BlogStrings } from '../_i18n/blog';
 

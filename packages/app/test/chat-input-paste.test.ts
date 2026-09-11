@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { ClipboardEvent } from 'react';
-
-import { extractClipboardFiles, useChatInputPaste } from '../src/renderer/lib/use-chat-input-paste.ts';
 import type { ChatAttachmentsApi } from '../src/renderer/lib/use-chat-attachments.ts';
+import { extractClipboardFiles, useChatInputPaste } from '../src/renderer/lib/use-chat-input-paste.ts';
 
 test('extractClipboardFiles: null 或 undefined 返回空数组', () => {
   assert.deepEqual(extractClipboardFiles(null), []);

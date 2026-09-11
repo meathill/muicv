@@ -1,6 +1,5 @@
-import { useCallback } from 'react';
-
 import { modelSupportsAudioInput, modelSupportsVision } from '@muicv/shared';
+import { useCallback } from 'react';
 
 import type { AgentChunk, ArtifactRef, AttachmentRef, ToolCallRecord } from '../../shared/types.ts';
 import { classifyError, cryptoRandomId, formatAttachmentsFooter, safeParseJson } from '../components/chat-utils';

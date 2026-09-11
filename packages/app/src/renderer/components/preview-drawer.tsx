@@ -7,6 +7,9 @@ import { useAppStore } from '../lib/store';
 import { useEnterAnimation } from '../lib/use-enter-animation';
 import { EditDrawer } from './edit-drawer';
 import { MarkdownView } from './markdown-view';
+import { ChangeTemplateButton } from './preview-drawer/change-template-button';
+import { ResumeJsonPreviewButton } from './preview-drawer/resume-preview-button';
+import { TemplateSelect } from './preview-drawer/template-select';
 import {
   ALLOWED_PHOTO_MIME,
   type JsonTemplateId,
@@ -15,9 +18,6 @@ import {
   readPhotoUrlFromJson,
   readTemplateFromJson,
 } from './preview-drawer/tools';
-import { ChangeTemplateButton } from './preview-drawer/change-template-button';
-import { ResumeJsonPreviewButton } from './preview-drawer/resume-preview-button';
-import { TemplateSelect } from './preview-drawer/template-select';
 
 const TRANSITION_MS = 220;
 

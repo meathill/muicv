@@ -1,10 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { cpSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-
-import { app, safeStorage } from 'electron';
-import Store from 'electron-store';
-
 import {
   isSupportedLlmModel,
   normalizeModel,
@@ -13,6 +9,8 @@ import {
   type ReasoningEffort,
   resolveModelAlias,
 } from '@muicv/shared';
+import { app, safeStorage } from 'electron';
+import Store from 'electron-store';
 
 import { type AppConfig, DEFAULT_CONFIG, type Profile } from '../shared/types.ts';
 

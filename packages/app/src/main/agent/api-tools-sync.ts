@@ -1,8 +1,7 @@
-import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-
-import { tool } from '@openai/agents';
 import { validateResumeSyncPayload } from '@muicv/shared';
+import { tool } from '@openai/agents';
 import { z } from 'zod';
 
 import type { AppConfig } from '../../shared/types.ts';

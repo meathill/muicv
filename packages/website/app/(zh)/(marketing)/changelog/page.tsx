@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { getWebsitePublishedChangelog } from '@/lib/cms-content';
-
-import { MarketingShell } from '../_content/marketing-shell';
 import { MarkdownBody } from '../_content/markdown';
+import { MarketingShell } from '../_content/marketing-shell';
 import { Highlight } from '../_icons';
 import { soloPageMetadata } from '../_page-meta';
 

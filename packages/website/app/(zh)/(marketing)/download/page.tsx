@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-
-import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '../_page-meta';
 import { getDictionary } from '../_i18n/dict';
+import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '../_page-meta';
 import { DownloadView } from './_view';
 
 // Header 客户端读 session 之后页面可走 ISR。GitHub fetch 内部 revalidate 300 决定数据新鲜度，

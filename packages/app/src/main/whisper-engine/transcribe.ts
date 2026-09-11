@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { type ModelName, getEngineBinPath, getModelPath } from './state.ts';
+import { getEngineBinPath, getModelPath, type ModelName } from './state.ts';
 
 /**
  * 本地 whisper-cli 转写（issue #1 M3）。

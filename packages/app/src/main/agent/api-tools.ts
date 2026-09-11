@@ -1,7 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
-
-import { tool } from '@openai/agents';
 import {
   assertTemplateResumeData,
   isJsonTemplateId,
@@ -10,6 +8,7 @@ import {
   TEMPLATE_IDS,
   type TemplateResumeData,
 } from '@muicv/shared';
+import { tool } from '@openai/agents';
 import { z } from 'zod';
 
 import type { AppConfig } from '../../shared/types.ts';
@@ -315,7 +314,7 @@ function slugify(s: string): string {
 
 function escapeYaml(s: string): string {
   // 简单加引号兜底特殊字符
-  if (/[:#\[\]{}|>*!&%@`,]/.test(s) || /^\s|\s$/.test(s)) {
+  if (/[:#[\]{}|>*!&%@`,]/.test(s) || /^\s|\s$/.test(s)) {
     return `"${s.replace(/"/g, '\\"')}"`;
   }
   return s;

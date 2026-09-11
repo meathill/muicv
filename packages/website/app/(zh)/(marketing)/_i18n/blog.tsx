@@ -1,4 +1,4 @@
-import { CONTENT_LOCALES, contentLocalePrefix, type ContentLocale, type PostSection } from '@muicv/shared';
+import { CONTENT_LOCALES, type ContentLocale, contentLocalePrefix, type PostSection } from '@muicv/shared';
 
 import { fromContentLocale, localizedHref } from './locale';
 

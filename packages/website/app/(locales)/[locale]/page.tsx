@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { HomePage } from '@/app/(zh)/(marketing)/_home';
 import { getDictionary } from '@/app/(zh)/(marketing)/_i18n/dict';
 import { isLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
-import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE, alternateLanguages } from '@/app/(zh)/(marketing)/_page-meta';
+import { alternateLanguages, DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '@/app/(zh)/(marketing)/_page-meta';
 
 export const revalidate = 3600;
 

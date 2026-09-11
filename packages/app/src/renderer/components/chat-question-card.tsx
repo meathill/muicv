@@ -9,9 +9,8 @@ import {
   SquareIcon,
 } from '@phosphor-icons/react';
 import { useState } from 'react';
-
-import { useAppStore } from '../lib/store';
 import type { ToolCallRecord } from '../../shared/types.ts';
+import { useAppStore } from '../lib/store';
 
 type AskQuestionInput = {
   question?: string;

@@ -1,14 +1,12 @@
+import { getSampleTemplateBySlug, pickLang, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getSampleTemplateBySlug, pickLang, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
-
-import { JsonLd } from '@/components/json-ld';
-
 import { MarketingShell } from '@/app/(zh)/(marketing)/_content/marketing-shell';
 import { ArrowUpRight } from '@/app/(zh)/(marketing)/_icons';
 import { pageMetadata } from '@/app/(zh)/(marketing)/_page-meta';
 import { TemplatePreviewViewer } from '@/app/(zh)/(marketing)/templates/template-preview-viewer';
+import { JsonLd } from '@/components/json-ld';
 
 export const revalidate = 3600;
 

@@ -1,5 +1,5 @@
-import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
 const requireFromApp = createRequire(new URL('../packages/app/package.json', import.meta.url));

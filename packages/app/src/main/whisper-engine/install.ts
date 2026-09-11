@@ -1,21 +1,21 @@
+import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { chmod, mkdir, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawn } from 'node:child_process';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 import { describeCause } from './error-format.ts';
 import {
-  type ModelName,
-  MODEL_CATALOG,
   getEngineBinDir,
   getEngineBinPath,
   getEngineRoot,
   getModelPath,
   getModelsDir,
+  MODEL_CATALOG,
+  type ModelName,
 } from './state.ts';
 
 /**

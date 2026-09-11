@@ -1,5 +1,3 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
 import {
   getSampleTemplates,
   pickLang,
@@ -7,12 +5,12 @@ import {
   TEMPLATE_CATEGORIES,
   type TemplateCategory,
 } from '@muicv/shared';
-
-import { JsonLd } from '@/components/json-ld';
-
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import { MarketingShell } from '@/app/(zh)/(marketing)/_content/marketing-shell';
 import { ArrowUpRight, Highlight } from '@/app/(zh)/(marketing)/_icons';
 import { pageMetadata } from '@/app/(zh)/(marketing)/_page-meta';
+import { JsonLd } from '@/components/json-ld';
 
 export const revalidate = 3600;
 

@@ -1,5 +1,5 @@
-import { CaretDownIcon, CaretUpIcon, GearIcon } from '@phosphor-icons/react';
 import { getPlanLabel } from '@muicv/shared';
+import { CaretDownIcon, CaretUpIcon, GearIcon } from '@phosphor-icons/react';
 import { useRef, useState } from 'react';
 
 import { useAppStore } from '../lib/store';

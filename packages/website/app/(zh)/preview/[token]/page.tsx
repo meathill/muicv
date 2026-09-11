@@ -1,8 +1,3 @@
-import type { Metadata } from 'next';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { notFound } from 'next/navigation';
-import { cache } from 'react';
-
 import {
   assertTemplateResumeData,
   isJsonTemplateId,
@@ -12,14 +7,18 @@ import {
   type TemplateLang,
   type TemplateResumeData,
 } from '@muicv/shared';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { cache } from 'react';
 
 import { getCurrentSession } from '@/lib/session';
 
 import { jsonTemplates } from '../../r/render/[token]/templates/registry';
 
 import { PhotoSlotButton } from './photo-slot';
-import PreviewToolbar from './preview-toolbar';
 import styles from './preview.module.css';
+import PreviewToolbar from './preview-toolbar';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';

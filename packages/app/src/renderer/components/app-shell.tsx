@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react';
-
 import type { ComponentType } from 'react';
-
-import { useAudioTranscoder } from '../lib/use-audio-transcoder';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../lib/store';
+import { useAudioTranscoder } from '../lib/use-audio-transcoder';
 import { ChatView } from './chat-view';
 import { OnboardingView } from './onboarding-view';
 import { PreviewDrawer } from './preview-drawer';

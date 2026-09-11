@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { getDictionary } from '@/app/(zh)/(marketing)/_i18n/dict';
 import { isLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
-import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE, alternateLanguages } from '@/app/(zh)/(marketing)/_page-meta';
+import { alternateLanguages, DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '@/app/(zh)/(marketing)/_page-meta';
 import { DownloadView } from '@/app/(zh)/(marketing)/download/_view';
 
 export const revalidate = 300;

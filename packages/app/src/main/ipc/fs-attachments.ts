@@ -1,7 +1,7 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
 
-import { BrowserWindow, Menu, ipcMain, shell } from 'electron';
+import { BrowserWindow, ipcMain, Menu, shell } from 'electron';
 
 import type { AttachmentSaveResult, AttachmentUploadInput } from '../../shared/types.ts';
 import { saveAttachmentWithRemote } from '../attachment-remote.ts';

@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import type { ContentLocale, ContentPost } from '@muicv/shared';
+import Link from 'next/link';
 import { JsonLd } from '@/components/json-ld';
 
 import { BLOG_STRINGS, blogUrlPrefix, marketingHref } from '../_i18n/blog';

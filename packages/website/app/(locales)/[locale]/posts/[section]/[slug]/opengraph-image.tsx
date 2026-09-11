@@ -1,8 +1,8 @@
 import { CONTENT_LOCALES, type ContentLocale, type PostSection } from '@muicv/shared';
-import { getWebsitePostBySlug } from '@/lib/cms-content';
+import { OG_SIZE, renderPostOgImage } from '@/app/(zh)/(marketing)/_content/post-og';
 
 import { BLOG_STRINGS } from '@/app/(zh)/(marketing)/_i18n/blog';
-import { OG_SIZE, renderPostOgImage } from '@/app/(zh)/(marketing)/_content/post-og';
+import { getWebsitePostBySlug } from '@/lib/cms-content';
 
 export const alt = 'MuiCV article';
 export const size = OG_SIZE;

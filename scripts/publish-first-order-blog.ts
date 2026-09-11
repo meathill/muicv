@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
+import { createInterface } from 'node:readline/promises';
 
 const MCP_URL = 'https://meathill.com/api/mcp';
 const SOURCE_PATH = new URL('../docs/marketing-first-order-campaign.md', import.meta.url);

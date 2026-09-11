@@ -3,9 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { JsonLd } from '@/components/json-ld';
 import { getWebsitePublishedSkills, getWebsiteSkillBySlug } from '@/lib/cms-content';
-
-import { MarketingShell } from '../../_content/marketing-shell';
 import { MarkdownBody } from '../../_content/markdown';
+import { MarketingShell } from '../../_content/marketing-shell';
 import { ArrowUpRight } from '../../_icons';
 
 const SITE_URL = 'https://muicv.com';

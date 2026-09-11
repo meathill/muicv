@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * 把 SEO 核心技术博文 seed 到 muicv CMS 的 posts 集合（幂等，可重复执行）。
  *
@@ -7,8 +8,8 @@
  *   node scripts/seed-seo-posts.ts --dry-run                        # 只看会写什么
  */
 
-import { type CreatePostRawInput, normalizeUpsertPostInput } from '../mcp/post-input.ts';
 import { CmsClient } from '../mcp/payload-client.ts';
+import { type CreatePostRawInput, normalizeUpsertPostInput } from '../mcp/post-input.ts';
 
 export const SEO_POSTS: CreatePostRawInput[] = [
   {

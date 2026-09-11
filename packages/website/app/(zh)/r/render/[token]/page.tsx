@@ -1,6 +1,3 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { notFound } from 'next/navigation';
-
 import {
   assertTemplateResumeData,
   isJsonTemplateId,
@@ -8,6 +5,8 @@ import {
   type TemplateLang,
   type TemplateResumeData,
 } from '@muicv/shared';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { notFound } from 'next/navigation';
 
 import { parseResume } from '@/lib/render/parse-resume';
 

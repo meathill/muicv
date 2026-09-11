@@ -1,5 +1,3 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
 import {
   getSampleTemplates,
   pickLang,
@@ -7,6 +5,8 @@ import {
   TEMPLATE_CATEGORIES,
   type TemplateCategory,
 } from '@muicv/shared';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { JsonLd } from '@/components/json-ld';
 

@@ -1,7 +1,6 @@
 import { randomBytes } from 'node:crypto';
-
-import { type BrowserWindow, app, shell } from 'electron';
 import { isTemplateId } from '@muicv/shared';
+import { app, type BrowserWindow, shell } from 'electron';
 
 import type { MuirouterLinkResult, SessionCheckResult } from '../shared/types.ts';
 import { loginWithKey } from './session.ts';

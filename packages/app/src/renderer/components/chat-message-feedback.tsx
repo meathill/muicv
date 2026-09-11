@@ -1,4 +1,11 @@
 import {
+  FEEDBACK_COMMENT_MAX_CHARS,
+  FEEDBACK_COMMENT_MIN_CHARS,
+  FEEDBACK_COMMENT_REWARD,
+  FEEDBACK_RATING_REWARD,
+  TTS_MAX_TEXT_CHARS,
+} from '@muicv/shared';
+import {
   ChatCircleIcon,
   CircleNotchIcon,
   GitForkIcon,
@@ -10,14 +17,6 @@ import {
   XIcon,
 } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
-
-import {
-  FEEDBACK_COMMENT_MAX_CHARS,
-  FEEDBACK_COMMENT_MIN_CHARS,
-  FEEDBACK_COMMENT_REWARD,
-  FEEDBACK_RATING_REWARD,
-  TTS_MAX_TEXT_CHARS,
-} from '@muicv/shared';
 
 import type { ChatMessageFeedback } from '../../shared/types.ts';
 import { useAppStore } from '../lib/store';

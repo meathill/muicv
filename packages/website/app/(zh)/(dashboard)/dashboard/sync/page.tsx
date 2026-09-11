@@ -1,7 +1,6 @@
+import { RESUME_SYNC_BLOB_MAX_SIZE_BYTES, RESUME_SYNC_HISTORY_KEEP, RESUME_SYNC_MAX_SIZE_BYTES } from '@muicv/shared';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-
-import { RESUME_SYNC_BLOB_MAX_SIZE_BYTES, RESUME_SYNC_HISTORY_KEEP, RESUME_SYNC_MAX_SIZE_BYTES } from '@muicv/shared';
 
 import { getAuth } from '@/lib/auth';
 import { getResumeBlobSyncStatus, getResumeSyncStatus } from '@/lib/resume-sync';

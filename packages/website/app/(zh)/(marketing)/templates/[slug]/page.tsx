@@ -1,7 +1,7 @@
+import { getSampleTemplateBySlug, pickLang, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getSampleTemplateBySlug, pickLang, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
 
 import { JsonLd } from '@/components/json-ld';
 

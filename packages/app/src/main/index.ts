@@ -3,15 +3,15 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { BrowserWindow, app, protocol } from 'electron';
+import { app, BrowserWindow, protocol } from 'electron';
 
 import { handleDeepLink, registerScheme, setMainWindowGetter } from './deep-link.ts';
 import { registerAgentConversationIpc } from './ipc/agent-conversation.ts';
 import { registerAudioPreviewIpc } from './ipc/audio-preview.ts';
-import { registerSpeechIpc } from './ipc/speech.ts';
 import { registerConfigProfileIpc } from './ipc/config-profile.ts';
 import { inWorkspace, registerFsAttachmentsIpc } from './ipc/fs-attachments.ts';
 import { registerSessionShellAppIpc } from './ipc/session-shell-app.ts';
+import { registerSpeechIpc } from './ipc/speech.ts';
 import { dedupeProfiles, getConfig } from './store.ts';
 import { setupUpdater, triggerInitialCheck } from './updater.ts';
 import { registerWhisperEngineIpc } from './whisper-engine/index.ts';

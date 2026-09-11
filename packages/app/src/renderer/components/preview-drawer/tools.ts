@@ -1,4 +1,9 @@
-import { assertTemplateResumeData, isJsonTemplateId, JSON_TEMPLATE_IDS, type TemplateResumeData } from '@muicv/shared';
+import {
+  assertTemplateResumeData,
+  isJsonTemplateId,
+  type JSON_TEMPLATE_IDS,
+  type TemplateResumeData,
+} from '@muicv/shared';
 
 export type JsonTemplateId = (typeof JSON_TEMPLATE_IDS)[number];
 

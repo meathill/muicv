@@ -1,6 +1,6 @@
 import {
-  type ContentLocale,
   CONTENT_LOCALES,
+  type ContentLocale,
   contentLocalePrefix,
   DEFAULT_CONTENT_LOCALE,
   fetchCmsPostBySlug,

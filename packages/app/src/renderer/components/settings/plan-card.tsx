@@ -1,5 +1,5 @@
-import { ArrowClockwiseIcon, CheckIcon } from '@phosphor-icons/react';
 import { getPlanLabel } from '@muicv/shared';
+import { ArrowClockwiseIcon, CheckIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 import { DASHBOARD_URL, ExternalButton } from './bits';

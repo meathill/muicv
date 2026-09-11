@@ -1,6 +1,6 @@
+import type { PostSection } from '@muicv/shared';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import type { PostSection } from '@muicv/shared';
 import { getPostAlternateLanguages, getWebsitePostBySlug, getWebsitePublishedPosts } from '@/lib/cms-content';
 
 import { MarketingShell } from '../../../_content/marketing-shell';

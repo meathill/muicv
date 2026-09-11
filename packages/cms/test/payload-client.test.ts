@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
-import { CmsClient } from '../mcp/payload-client.ts';
 import type { CmsChangelogPayload } from '../mcp/changelog-input.ts';
+import { CmsClient } from '../mcp/payload-client.ts';
 import type { CmsPostPayload } from '../mcp/post-input.ts';
 import type { CmsSkillPayload } from '../mcp/skill-input.ts';
 

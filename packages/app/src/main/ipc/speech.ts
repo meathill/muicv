@@ -1,6 +1,5 @@
-import { ipcMain } from 'electron';
-
 import { TTS_MAX_TEXT_CHARS } from '@muicv/shared';
+import { ipcMain } from 'electron';
 
 import type { TtsSpeakOutcome } from '../../shared/types.ts';
 import { getConfig } from '../store.ts';

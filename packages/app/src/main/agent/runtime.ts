@@ -1,24 +1,22 @@
-import type { WebContents } from 'electron';
-
-import { Agent, run } from '@openai/agents';
-
 import { randomUUID } from 'node:crypto';
-
 import {
   modelSupportsAudioInput,
   modelSupportsReasoningEffort,
   modelSupportsVision,
   resolveModelAlias,
 } from '@muicv/shared';
+import { Agent, run } from '@openai/agents';
+import type { WebContents } from 'electron';
 
 import type { AgentChunk, AppConfig, ChatMessage, ConversationType, ToolCallRecord } from '../../shared/types.ts';
 import { getConversation, saveConversation } from '../conversations.ts';
+import { buildApiTools } from './api-tools.ts';
 import { buildSttTools } from './api-tools-stt.ts';
 import { buildSyncTools } from './api-tools-sync.ts';
-import { buildApiTools } from './api-tools.ts';
 import { buildAgentInput, getModelBudget } from './history.ts';
 import { configureLlmForRun, currentOpenAIAPI } from './llm-config.ts';
 import { readAudioAsBase64, readImageAsDataUrl } from './multimodal.ts';
+import { buildQuestionTools, cancelPendingQuestions } from './question-tools.ts';
 import { resetReasoningState, setReasoningDeltaListener, setRunSessionId } from './reasoning-capture.ts';
 import { buildSystemPrompt } from './skills.ts';
 import {
@@ -30,7 +28,6 @@ import {
   streamIdleTimeoutMsForModel,
 } from './stream-helpers.ts';
 import { type ArtifactEmitter, buildFileTools } from './tools.ts';
-import { buildQuestionTools, cancelPendingQuestions } from './question-tools.ts';
 
 const activeRuns = new Map<string, AbortController>();
 

@@ -2,7 +2,7 @@ import { app, ipcMain, shell } from 'electron';
 
 import { fetchSkillsCatalog } from '../content-catalog.ts';
 import { beginConnect, beginLinkMuirouter } from '../deep-link.ts';
-import { checkSession as runCheckSession, loginWithKey, logout as runLogout, verifyCandidateKey } from '../session.ts';
+import { loginWithKey, checkSession as runCheckSession, logout as runLogout, verifyCandidateKey } from '../session.ts';
 import { getConfig } from '../store.ts';
 
 /** session / shell / app 元信息 IPC：登录态、外链、版本号。 */

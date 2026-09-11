@@ -2,11 +2,10 @@ import type { Metadata } from 'next';
 
 import { Analytics } from '@/components/analytics';
 import { JsonLd } from '@/components/json-ld';
-
-import { getDictionary } from '../(zh)/(marketing)/_i18n/dict';
 import { fontDisplay, fontMono, fontSans } from '../_theme/fonts';
 import { ORGANIZATION_SCHEMA, websiteSchema } from '../_theme/root-schema';
 import { ThemeInitScript } from '../_theme/theme-init-script';
+import { getDictionary } from '../(zh)/(marketing)/_i18n/dict';
 import '../globals.css';
 
 // 英文营销子树独立的 root layout（Next.js "multiple root layouts" 模式）。

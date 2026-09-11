@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import type { TemplateId, TemplateLang, TemplateResumeData } from '@muicv/shared';
+import { useState } from 'react';
 
 import { jsonTemplates } from '../../r/render/[token]/templates/registry';
 

@@ -1,6 +1,6 @@
+import { isJsonTemplateId, isTemplateLang } from '@muicv/shared';
 import { setUserPreviewTemplate } from '@/lib/preview';
 import { getCurrentSession } from '@/lib/session';
-import { isJsonTemplateId, isTemplateLang } from '@muicv/shared';
 
 export const dynamic = 'force-dynamic';
 

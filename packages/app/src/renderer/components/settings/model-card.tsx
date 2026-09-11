@@ -1,11 +1,11 @@
-import { CpuIcon } from '@phosphor-icons/react';
 import {
-  type ReasoningEffort,
   LLM_DISPLAY_META,
   modelSupportsReasoningEffort,
   REASONING_EFFORTS,
+  type ReasoningEffort,
   SUPPORTED_LLM_MODELS,
 } from '@muicv/shared';
+import { CpuIcon } from '@phosphor-icons/react';
 
 import { useAppStore } from '../../lib/store';
 

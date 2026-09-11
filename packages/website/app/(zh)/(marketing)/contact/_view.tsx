@@ -1,5 +1,5 @@
-import { getDictionary, type Locale, localizedHref } from '../_i18n/dict';
 import { EXTRA_LOCALE_BUNDLES, type ExtraLocale } from '../_i18n/bundles';
+import { getDictionary, type Locale, localizedHref } from '../_i18n/dict';
 import { ArrowUpRight, Highlight } from '../_icons';
 import { Footer } from '../_sections/footer';
 import { Header } from '../_sections/header';

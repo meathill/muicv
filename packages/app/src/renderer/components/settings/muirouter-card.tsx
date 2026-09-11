@@ -1,5 +1,5 @@
-import { ArrowClockwiseIcon, WalletIcon } from '@phosphor-icons/react';
 import { formatCents } from '@muicv/shared';
+import { ArrowClockwiseIcon, WalletIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 import type { MuirouterInfo } from '../../../shared/types';

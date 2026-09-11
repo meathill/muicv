@@ -5,9 +5,9 @@ import {
   commentMessage,
   commentResultToWire,
   countCodePoints,
+  type RatingKind,
   rateMessage,
   rateResultToWire,
-  type RatingKind,
 } from '../lib/feedback.ts';
 import type { AppEnv } from '../middleware/api-key.ts';
 

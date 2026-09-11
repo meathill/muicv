@@ -1,5 +1,5 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
 
 import { buildAgentInput, estimateTokens, getModelBudget } from '../src/main/agent/history.ts';
 import type { ChatMessage } from '../src/shared/types.ts';

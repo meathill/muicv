@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { hsmDelete, hsmGet, hsmPut, HsmError, muirouterHsmPath } from '../src/hsm-client.ts';
+import { HsmError, hsmDelete, hsmGet, hsmPut, muirouterHsmPath } from '../src/hsm-client.ts';
 
 const CONFIG = { baseUrl: 'https://hsm.meathill.com', secret: 'unit-test-secret' };
 

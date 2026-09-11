@@ -1,4 +1,4 @@
-import { DEFAULT_CONTENT_LOCALE, type ContentLocale } from './content-locales.ts';
+import { type ContentLocale, DEFAULT_CONTENT_LOCALE } from './content-locales.ts';
 
 export type ContentStatus = 'draft' | 'published';
 

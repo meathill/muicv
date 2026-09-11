@@ -1,6 +1,6 @@
 import { EXTRA_LOCALE_BUNDLES } from '../_i18n/bundles';
-import { localizedHref } from '../_i18n/locale';
 import type { Locale } from '../_i18n/locale';
+import { localizedHref } from '../_i18n/locale';
 import type { FaqItem } from '../_i18n/types';
 
 // FAQ 手风琴问答内容按 locale 拆分，就近维护在这里，不放进 zh.tsx/en.tsx 词典。

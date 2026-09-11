@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  hashResumeFiles,
   RESUME_SYNC_MAX_FILE_COUNT,
   RESUME_SYNC_MAX_SIZE_BYTES,
-  hashResumeFiles,
   validateResumeSyncPayload,
 } from '../src/resume-sync.ts';
 

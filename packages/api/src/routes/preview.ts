@@ -12,7 +12,6 @@ import type { Context } from 'hono';
 
 import { toErrorMessage } from '../lib/error-message.ts';
 import { readJsonBody } from '../lib/json-body.ts';
-import { renderPdf } from '../lib/render-pdf.ts';
 import {
   createPreview,
   extendPreview,
@@ -24,15 +23,16 @@ import {
   listPreviewsByUser,
   PREVIEW_SHARE_MODES,
   PREVIEW_TTL_DAYS_OPTIONS,
-  revokePreview,
-  setPreviewShareMode,
-  setPreviewTemplate,
   type PreviewRecord,
   type PreviewShareMode,
   type PreviewTtlDays,
+  revokePreview,
+  setPreviewShareMode,
+  setPreviewTemplate,
 } from '../lib/preview-store.ts';
-import type { AppEnv } from '../middleware/api-key.ts';
+import { renderPdf } from '../lib/render-pdf.ts';
 import { charge, ensureBalance } from '../lib/wallet.ts';
+import type { AppEnv } from '../middleware/api-key.ts';
 
 /** UUID v4：8-4-4-4-12 = 36 位含连字符。 */
 const TOKEN_RE = /^[0-9a-f-]{36}$/i;

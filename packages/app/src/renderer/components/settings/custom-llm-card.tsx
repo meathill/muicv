@@ -1,5 +1,5 @@
-import { CheckIcon } from '@phosphor-icons/react';
 import { DEFAULT_LLM_MODEL, resolveModelAlias, SUPPORTED_LLM_MODELS } from '@muicv/shared';
+import { CheckIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 import { useAppStore } from '../../lib/store';

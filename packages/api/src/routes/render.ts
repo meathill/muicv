@@ -12,7 +12,7 @@ import type { Context } from 'hono';
 
 import { toErrorMessage } from '../lib/error-message.ts';
 import { readJsonBody } from '../lib/json-body.ts';
-import { renderPdf, type RenderPdfInput } from '../lib/render-pdf.ts';
+import { type RenderPdfInput, renderPdf } from '../lib/render-pdf.ts';
 import { charge, ensureBalance } from '../lib/wallet.ts';
 import type { AppEnv } from '../middleware/api-key.ts';
 
