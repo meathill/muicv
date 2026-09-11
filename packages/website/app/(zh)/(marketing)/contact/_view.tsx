@@ -1,11 +1,11 @@
 import { getDictionary, type Locale, localizedHref } from '../_i18n/dict';
+import { EXTRA_LOCALE_BUNDLES, type ExtraLocale } from '../_i18n/bundles';
 import { ArrowUpRight, Highlight } from '../_icons';
 import { Footer } from '../_sections/footer';
 import { Header } from '../_sections/header';
 
-type ContactCard = { label: string; tag: string; email: string; desc: string };
-
-type ContactContent = {
+export type ContactCard = { label: string; tag: string; email: string; desc: string };
+export type ContactContent = {
   meta: { title: string; description: string };
   heroEyebrow: string;
   heroTitleLead: string;
@@ -17,6 +17,13 @@ type ContactContent = {
   noteLink: string;
   noteAfter: string;
 };
+
+/** ja/de/fr/es/pt/th/vi 的联系页文案来自各自 _i18n/<locale>.tsx 的 content.contact。 */
+function extraContactContent(): Record<ExtraLocale, ContactContent> {
+  return Object.fromEntries(
+    Object.entries(EXTRA_LOCALE_BUNDLES).map(([locale, bundle]) => [locale, bundle.content.contact]),
+  ) as Record<ExtraLocale, ContactContent>;
+}
 
 const CONTACT_CONTENT: Record<Locale, ContactContent> = {
   zh: {
@@ -85,6 +92,8 @@ const CONTACT_CONTENT: Record<Locale, ContactContent> = {
     noteLink: 'Download the desktop app',
     noteAfter: 'to start now — available on macOS / Windows / Linux.',
   },
+  // ja/de/fr/es/pt/th/vi 的文案在各自 _i18n/<locale>.tsx 的 content.contact 里。
+  ...extraContactContent(),
 };
 
 export function getContactMeta(locale: Locale) {

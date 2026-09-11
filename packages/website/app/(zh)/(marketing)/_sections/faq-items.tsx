@@ -1,3 +1,4 @@
+import { EXTRA_LOCALE_BUNDLES } from '../_i18n/bundles';
 import { localizedHref } from '../_i18n/locale';
 import type { Locale } from '../_i18n/locale';
 import type { FaqItem } from '../_i18n/types';
@@ -245,4 +246,8 @@ const FAQ_ITEMS_EN: FaqItem[] = [
 export const FAQ_ITEMS: Record<Locale, FaqItem[]> = {
   zh: FAQ_ITEMS_ZH,
   en: FAQ_ITEMS_EN,
-};
+  // ja/de/fr/es/pt/th/vi 的 FAQ 在各自 _i18n/<locale>.tsx 的 content.faq 里。
+  ...(Object.fromEntries(
+    Object.entries(EXTRA_LOCALE_BUNDLES).map(([locale, bundle]) => [locale, bundle.content.faq]),
+  ) as Record<string, FaqItem[]>),
+} as Record<Locale, FaqItem[]>;

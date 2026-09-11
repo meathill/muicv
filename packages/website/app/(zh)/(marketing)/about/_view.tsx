@@ -3,12 +3,13 @@ import type { ReactNode } from 'react';
 import { CorgiMascot } from '@/components/corgi-mascot';
 
 import { getDictionary, type Locale, localizedHref } from '../_i18n/dict';
+import { EXTRA_LOCALE_BUNDLES, type ExtraLocale } from '../_i18n/bundles';
 import { ArrowUpRight, Highlight, PawIcon } from '../_icons';
 import { AccountLink } from '../_sections/account-link';
 import { Footer } from '../_sections/footer';
 import { Header } from '../_sections/header';
 
-type AboutContent = {
+export type AboutContent = {
   meta: { title: string; description: string };
   heroEyebrow: string;
   heroTitleLead: string;
@@ -31,6 +32,13 @@ type AboutContent = {
   ctaSignedOut: string;
   ctaContact: string;
 };
+
+/** ja/de/fr/es/pt/th/vi 的关于页文案来自各自 _i18n/<locale>.tsx 的 content.about。 */
+function extraAboutContent(): Record<ExtraLocale, AboutContent> {
+  return Object.fromEntries(
+    Object.entries(EXTRA_LOCALE_BUNDLES).map(([locale, bundle]) => [locale, bundle.content.about]),
+  ) as Record<ExtraLocale, AboutContent>;
+}
 
 const ABOUT_CONTENT: Record<Locale, AboutContent> = {
   zh: {
@@ -129,12 +137,13 @@ const ABOUT_CONTENT: Record<Locale, AboutContent> = {
     ctaSignedOut: 'Start free',
     ctaContact: 'Contact us',
   },
+  // ja/de/fr/es/pt/th/vi 的文案在各自 _i18n/<locale>.tsx 的 content.about 里。
+  ...extraAboutContent(),
 };
 
 export function getAboutMeta(locale: Locale) {
   return ABOUT_CONTENT[locale].meta;
 }
-
 export function AboutView({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
   const c = ABOUT_CONTENT[locale];

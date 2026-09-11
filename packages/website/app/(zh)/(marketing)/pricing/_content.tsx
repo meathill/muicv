@@ -1,4 +1,5 @@
 import type { Locale } from '../_i18n/locale';
+import { EXTRA_LOCALE_BUNDLES, type ExtraLocale } from '../_i18n/bundles';
 
 // 定价页文案（中英）。价格 / token 数 / 货币等数据来自 @muicv/shared，不在这里；这里只放 UI 文案。
 export type PricingContent = {
@@ -246,5 +247,8 @@ const en: PricingContent = {
 };
 
 export function getPricingContent(locale: Locale): PricingContent {
-  return locale === 'en' ? en : zh;
+  if (locale === 'zh') return zh;
+  if (locale === 'en') return en;
+  // ja/de/fr/es/pt/th/vi 的定价页文案在各自 _i18n/<locale>.tsx 的 content.pricing 里。
+  return EXTRA_LOCALE_BUNDLES[locale as ExtraLocale].content.pricing;
 }
