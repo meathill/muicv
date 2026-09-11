@@ -37,15 +37,36 @@
 - **slug 即翻译组键**：唯一约束从 `slug` 全局唯一下沉到 `(locale, slug)` 复合唯一，
   **不额外加 translationGroup 字段**。于是各语言 URL 形态对称（`/ja/posts/product/<slug>`），
   hreflang 按 slug 聚合即可，少一个字段少一处不一致。`articles` 的 `(site, locale, slug)` 是同一模式。
-- **中文无前缀，其余 `/<locale>`**：`contentLocalePrefix()` 是唯一来源（shared），
-  sitemap / 页面 / 面包屑都从它取。注意 CMS 侧 locale 写 `zh-CN`，网站层 `Locale` 用 `zh`，
-  两者靠 `_home.tsx` 里的显式映射衔接，别混用。
-- **博客外壳独立于整站营销词典**：`MarketingShell` 依赖 `_i18n/{zh,en}.tsx` 的整站词典
-  （hero/features/faq 约 250 行），扩一种语言就要翻译整站。博客改用自己的 `_i18n/blog.tsx`
-  小词典 + `BlogShell`，于是 9 语言即时可用，不必等整站营销文案。**整站营销站本地化仍是待办**。
-- **营销页链接要回退英文**：只有 zh/en 有本地化营销页（首页/下载/定价等），所以博客里指向营销页的
-  链接走 `marketingHref()`（非 zh/en 回退 `/en`），而博客自身路径各语言都有，用 `blogUrlPrefix()`。
-  别用 `blogUrlPrefix` 拼营销页 URL，会造出 `/ja/download` 这类 404。
+- **中文无前缀，其余 `/<locale>`**：`contentLocalePrefix()`（shared，给内容层）与
+  `localizedHref()`（website，给页面链接）是各自的唯一来源，sitemap / 页面 / 面包屑都从它们取。
+  注意 CMS 侧 locale 写 `zh-CN`、网站层 `Locale` 写 `zh`，两者靠 `toContentLocale` /
+  `fromContentLocale`（`_i18n/locale.ts`）转换，别在各处手写。
+- **路由用 `(locales)/[locale]` 动态子树承接**：`(zh)` / `(en)` 仍是静态子树，新增的
+  `app/(locales)/[locale]/` 承接其余 7 种语言的营销页 + 博客。实测 Next 静态优先，
+  `/posts`、`/en/*` 优先级不受影响；`generateStaticParams` 里显式排除 `zh`。
+- **新增一种语言 = 三步**（详见 [[project_website_i18n]]）：
+  1. `_i18n/<locale>.tsx` 导出 `dict` + `content`（`Dictionary` 字段全必填 = 编译期护栏）
+  2. 在 `_i18n/bundles.ts` 的 `EXTRA_LOCALE_BUNDLES` 注册
+  3. `_i18n/locale.ts` 的 `LOCALES` 加成员
+  路由、sitemap、语言切换器、hreflang 全部自动生效。`about`/`contact`/`pricing`/`faq-items`
+  四个消费端已接 `bundles.ts`；zh/en 暂留原有内联 Record，可择机迁到同形状。
+- **链接三级回退**：`localizedHref` 按「本语言版 → 英文版 → 默认语言」解析。9 语言齐备的路径在
+  `LOCALIZED_ROUTES`，只有英文版的在 `EN_ROUTES`（当前只有模板库——模板数据只有中英双语，
+  本地化需另译 8 个模板内容，属独立内容工程）。所以 `/ja/templates` 是 404、链接指向 `/en/templates`，
+  这是预期行为；**别把未本地化的路径写进 `LOCALIZED_ROUTES`**，否则链接会指向 404。
+- **hreflang 从路由白名单推导**：`pageMetadata` / `alternateLanguages`（`_page-meta.ts`）按
+  `LOCALIZED_ROUTES` / `EN_ROUTES` 决定列几种语言，zh/en 与新语言页共用同一函数，保证互指对称。
+  文章详情页则用 `getPostAlternateLanguages()` 只列**确实有译文**的语言（按 slug 查各语言），
+  避免指向 404。sitemap 里的 alternates 同源同规则。
+- **博客与营销页共用 `MarketingShell`**：语言切换器（`LangSwitch`）已升级为 9 语言选择器，
+  用 `usePathname()` 推导当前页各语言 URL 并自动回退，Footer 恒显示——所以页面不再传 `altHref`
+  （该参数已删除）。早期博客用过独立的 `BlogShell`，营销站本地化完成后已合并删除。
+- **草稿 → CMS 的发布通道**：`packages/cms/scripts/seed-marketing-posts.ts` 扫
+  `docs/marketing/<campaign>/*.md`（frontmatter 带发布字段，正文即 bodyMarkdown），按
+  `(locale, slug)` 幂等 upsert；**先整体校验再写入**（避免部分语言已发布的半成品），
+  支持 `--dry-run`。自带极简 frontmatter 解析，不引入 YAML 依赖。
+  发布新公告 = 加 md + `node --env-file packages/cms/.dev.vars packages/cms/scripts/seed-marketing-posts.ts`。
+  改完删掉或改 published：`posts` 默认 draft，需显式 `status: published` 才公开。
 - **hreflang 只指向真实译文**：`getPostAlternateLanguages()` 先查各语言是否真有该 slug 的译文，
   只收录存在的语言，避免 hreflang 指向 404（对 SEO 有害）。列表页各语言都存在，可直接全量输出。
 - **静态兜底只有中文**：`content-registry.ts` 的 3 篇 seed 是中文，非 `zh-CN` 时 `getPublishedPosts`
