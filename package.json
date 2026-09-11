@@ -6,7 +6,10 @@
     "node": ">=22"
   },
   "scripts": {
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "keywords": [],
   "author": "",

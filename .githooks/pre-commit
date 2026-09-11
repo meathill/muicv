@@ -1,0 +1,45 @@
+#!/bin/sh
+# pre-commit：对本仓库「已暂存的源码文件」跑 biome（format + 安全自动修复），
+# 然后把修复结果重新加入暂存区，保证提交下去的内容永远是 biome 规整过的。
+#
+# 为什么只跑暂存文件：全仓要扫 500+ 文件，每次提交都做太慢；只处理本次改动即可，
+# 未改动的文件在各自引入时已被规整过。
+#
+# 为什么「不阻断提交」：仓库有 127 个历史遗留、不可自动修复的 lint
+# （noArrayIndexKey / useExhaustiveDependencies / a11y 等，需人工重构），
+# 若直接拿 biome 的退出码卡提交，这 52 个文件会永远提交不了。
+# 故这里只做「自动修复 + 提示」：能修的当场修好并重新 stage，修不了的打印出来供参考。
+# 查看全量基线：pnpm run lint；全仓自动修：pnpm run lint:fix。
+#
+# 安装：pnpm install 时由 package.json 的 prepare 脚本设置 core.hooksPath=.githooks。
+# 手工安装：git config core.hooksPath .githooks
+
+set -u
+
+# 用 -z（NUL 分隔）安全处理含空格 / 括号 / 方括号的路径，例如
+# app/(zh)/r/render/[token]/。pathspec 在每个命令里内联重复，因为 POSIX sh 没有数组。
+staged=$(git diff --cached --name-only --diff-filter=ACM -- \
+  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' '*.json' '*.css')
+if [ -z "$staged" ]; then
+  exit 0
+fi
+
+printf '%s\n' '[pre-commit] biome check --write（已暂存的源码文件）'
+
+git diff --cached --name-only --diff-filter=ACM -z -- \
+  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' '*.json' '*.css' \
+  | xargs -0 npx biome check --write
+biome_status=$?
+
+# biome 改过的文件重新入暂存区（未变化的文件重复 add 无副作用）。
+git diff --cached --name-only --diff-filter=ACM -z -- \
+  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' '*.json' '*.css' \
+  | xargs -0 git add --
+
+if [ "$biome_status" -ne 0 ]; then
+  printf '\n%s\n' '[pre-commit] 上面的问题 biome 无法自动修复（多为历史遗留），本次提交照常进行。'
+  printf '%s\n' '             查看全量基线：pnpm run lint'
+fi
+
+# 永远放行：原因见文件头。格式 / import 已在上面自动修好并 stage，不会漏。
+exit 0
