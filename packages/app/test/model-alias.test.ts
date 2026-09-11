@@ -12,15 +12,17 @@ const baseConfig: AppConfig = {
   workspaceDir: null,
   muicvApiKey: 'mui_test_key',
   muicvApiBase: 'https://api.muicv.com',
-  defaultModel: 'deepseek-v4-flash',
+  defaultModel: 'deepseek-v4.1-flash',
   llmReasoningEffort: 'xhigh',
   customLlmBase: null,
   customLlmKey: null,
   onboardingCompleted: true,
 };
 
-test('resolveModelAlias: mimo-v2.5-pro 兼容映射为 deepseek-v4-flash', () => {
-  assert.equal(resolveModelAlias('mimo-v2.5-pro'), 'deepseek-v4-flash');
+test('resolveModelAlias: deepseek-v4-flash / mimo-v2.5-pro 兼容映射为 deepseek-v4.1-flash', () => {
+  assert.equal(resolveModelAlias('deepseek-v4-flash'), 'deepseek-v4.1-flash');
+  assert.equal(resolveModelAlias('deepseek-v4-flash-vision-exp'), 'deepseek-v4.1-flash');
+  assert.equal(resolveModelAlias('mimo-v2.5-pro'), 'deepseek-v4.1-flash');
 });
 
 test('resolveModelAlias: gpt-5.4 与 gpt-5.5 兼容映射为 gpt-5.6-sol', () => {
@@ -28,7 +30,7 @@ test('resolveModelAlias: gpt-5.4 与 gpt-5.5 兼容映射为 gpt-5.6-sol', () =>
   assert.equal(resolveModelAlias('gpt-5.5'), 'gpt-5.6-sol');
 });
 
-test('selectOpenAIAPI: mimo-v2.5-pro 经 alias 转为 deepseek-v4-flash (thinking-mode) 后走 chat_completions', () => {
+test('selectOpenAIAPI: mimo-v2.5-pro 经 alias 转为 deepseek-v4.1-flash (thinking-mode) 后走 chat_completions', () => {
   const config = { ...baseConfig, defaultModel: 'mimo-v2.5-pro' };
   assert.equal(selectOpenAIAPI(config), 'chat_completions');
 });

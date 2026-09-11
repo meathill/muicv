@@ -19,7 +19,7 @@ test('loggingFetch: 注入当前 run 的 session header 与 User-Agent', async (
     await loggingFetch('https://api.muicv.com/llm/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'deepseek-v4-flash', messages: [] }),
+      body: JSON.stringify({ model: 'deepseek-v4.1-flash', messages: [] }),
     });
 
     const headers = new Headers(capturedInit?.headers);
@@ -48,7 +48,7 @@ test('loggingFetch: 请求 opencode.ai 且无 session 时注入兜底 session', 
     await loggingFetch('https://opencode.ai/zen/go/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'deepseek-v4-flash', messages: [] }),
+      body: JSON.stringify({ model: 'deepseek-v4.1-flash', messages: [] }),
     });
 
     const headers = new Headers(capturedInit?.headers);

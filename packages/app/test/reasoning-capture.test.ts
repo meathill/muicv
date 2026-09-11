@@ -10,8 +10,8 @@ import {
 } from '../src/main/agent/reasoning-capture.ts';
 
 test('isThinkingModeModel: 识别 deepseek 和 mimo 系列模型', () => {
+  assert.equal(isThinkingModeModel('deepseek-v4.1-flash'), true);
   assert.equal(isThinkingModeModel('deepseek-v4-flash'), true);
-  assert.equal(isThinkingModeModel('deepseek-v4-flash-vision-exp'), true);
   assert.equal(isThinkingModeModel('mimo-v2.5'), true);
   assert.equal(isThinkingModeModel('gpt-5.6-luna'), false);
   assert.equal(isThinkingModeModel('gpt-5.6-sol'), false);
@@ -56,7 +56,7 @@ test('loggingFetch: 捕获 thinking-mode SSE 流的 reasoning_content 并注入�
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'deepseek-v4-flash',
+        model: 'deepseek-v4.1-flash',
         messages: [{ role: 'user', content: 'read file' }],
       }),
     });
@@ -77,7 +77,7 @@ test('loggingFetch: 捕获 thinking-mode SSE 流的 reasoning_content 并注入�
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'deepseek-v4-flash',
+        model: 'deepseek-v4.1-flash',
         messages: [
           { role: 'user', content: 'read file' },
           {
@@ -125,7 +125,7 @@ test('loggingFetch: 当 assistant 未捕获思考过程时，兜底注入空字�
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'deepseek-v4-flash',
+        model: 'deepseek-v4.1-flash',
         messages: [
           { role: 'user', content: 'hello' },
           { role: 'assistant', content: null, tool_calls: [{ id: '1' }] },

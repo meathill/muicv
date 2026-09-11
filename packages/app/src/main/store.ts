@@ -113,8 +113,8 @@ const store = new Store<LegacyShape>({
     },
     '0.5.3': (s) => {
       const current = s.get('defaultModel') as string | undefined;
-      // 兼容历史老版本（如 mimo-v2.5 / mimo-v2.5-pro / 已下架 gpt-5.4 / gpt-5.5）：
-      // 若原默认模型为旧默认或已下架模型，自动迁移到新默认模型 deepseek-v4-flash
+      // 兼容历史老版本（如 mimo-v2.5 / 已下架 gpt-5.4 / 表外旧默认）：
+      // 若原默认模型为旧默认或已下架模型，自动迁移到当前默认模型
       if (!current || current === 'mimo-v2.5' || current === 'mimo-v2.5-pro' || !isSupportedLlmModel(current)) {
         s.set('defaultModel', DEFAULT_CONFIG.defaultModel);
       }

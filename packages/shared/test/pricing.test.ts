@@ -52,10 +52,9 @@ describe('Pricing', () => {
   });
 
   describe('LLM_PRICING table', () => {
-    it('包含 6 个支持的 model（声明顺序 = UI 展示顺序，默认在前）', () => {
+    it('包含 5 个支持的 model（声明顺序 = UI 展示顺序，默认在前）', () => {
       assert.deepEqual(SUPPORTED_LLM_MODELS, [
-        'deepseek-v4-flash',
-        'deepseek-v4-flash-vision-exp',
+        'deepseek-v4.1-flash',
         'mimo-v2.5',
         'gpt-5.6-luna',
         'gpt-5.6-terra',
@@ -64,8 +63,7 @@ describe('Pricing', () => {
     });
 
     it('upstream 归属：文本主力与语音理解走 OpenCode Go，GPT 升级档走 OpenAI', () => {
-      assert.equal(LLM_PRICING['deepseek-v4-flash'].upstream, 'opencode-go');
-      assert.equal(LLM_PRICING['deepseek-v4-flash-vision-exp'].upstream, 'opencode-go');
+      assert.equal(LLM_PRICING['deepseek-v4.1-flash'].upstream, 'opencode-go');
       assert.equal(LLM_PRICING['mimo-v2.5'].upstream, 'opencode-go');
       for (const id of ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol']) {
         assert.equal(LLM_PRICING[id].upstream, 'openai');
@@ -85,9 +83,11 @@ describe('Pricing', () => {
     });
 
     it('isSupportedLlmModel 正/负样本（含已下架旧 id）', () => {
-      assert.equal(isSupportedLlmModel('deepseek-v4-flash'), true);
+      assert.equal(isSupportedLlmModel('deepseek-v4.1-flash'), true);
       assert.equal(isSupportedLlmModel('mimo-v2.5'), true);
       assert.equal(isSupportedLlmModel('gpt-5.6-luna'), true);
+      assert.equal(isSupportedLlmModel('deepseek-v4-flash'), false); // 已下架，通过 alias 兼容
+      assert.equal(isSupportedLlmModel('deepseek-v4-flash-vision-exp'), false); // 已下架，通过 alias 兼容
       assert.equal(isSupportedLlmModel('mimo-v2.5-pro'), false); // 已下架，通过 alias 兼容
       assert.equal(isSupportedLlmModel('gpt-5.4'), false); // 已下架，通过 alias 兼容
       assert.equal(isSupportedLlmModel('gpt-4o-mini'), false);
@@ -95,10 +95,12 @@ describe('Pricing', () => {
     });
 
     it('resolveModelAlias：已下架别名映射到目标兼容模型，其他模型原样返回', () => {
-      assert.equal(resolveModelAlias('mimo-v2.5-pro'), 'deepseek-v4-flash');
+      assert.equal(resolveModelAlias('deepseek-v4-flash'), 'deepseek-v4.1-flash');
+      assert.equal(resolveModelAlias('deepseek-v4-flash-vision-exp'), 'deepseek-v4.1-flash');
+      assert.equal(resolveModelAlias('mimo-v2.5-pro'), 'deepseek-v4.1-flash');
       assert.equal(resolveModelAlias('gpt-5.4'), 'gpt-5.6-sol');
       assert.equal(resolveModelAlias('gpt-5.5'), 'gpt-5.6-sol');
-      assert.equal(resolveModelAlias('deepseek-v4-flash'), 'deepseek-v4-flash');
+      assert.equal(resolveModelAlias('deepseek-v4.1-flash'), 'deepseek-v4.1-flash');
       assert.equal(resolveModelAlias('gpt-5.6-luna'), 'gpt-5.6-luna');
       assert.equal(resolveModelAlias('unknown-model'), 'unknown-model');
       assert.equal(resolveModelAlias(null), null);
@@ -109,12 +111,14 @@ describe('Pricing', () => {
       assert.ok(SUPPORTED_LLM_MODELS.includes(DEFAULT_LLM_MODEL), `DEFAULT_LLM_MODEL=${DEFAULT_LLM_MODEL} 未注册`);
     });
 
-    it('DEFAULT_LLM_MODEL 是 deepseek-v4-flash（OpenCode Go 包月供给的省成本默认）', () => {
-      assert.equal(DEFAULT_LLM_MODEL, 'deepseek-v4-flash');
+    it('DEFAULT_LLM_MODEL 是 deepseek-v4.1-flash（OpenCode Go 包月供给的多模态省成本默认）', () => {
+      assert.equal(DEFAULT_LLM_MODEL, 'deepseek-v4.1-flash');
     });
 
     it('normalizeModel：别名模型映射到对应兼容模型，未知模型静默回退到默认', () => {
-      assert.equal(normalizeModel('mimo-v2.5-pro'), 'deepseek-v4-flash');
+      assert.equal(normalizeModel('deepseek-v4-flash'), 'deepseek-v4.1-flash');
+      assert.equal(normalizeModel('deepseek-v4-flash-vision-exp'), 'deepseek-v4.1-flash');
+      assert.equal(normalizeModel('mimo-v2.5-pro'), 'deepseek-v4.1-flash');
       assert.equal(normalizeModel('gpt-5.4'), 'gpt-5.6-sol');
       assert.equal(normalizeModel('gpt-5.5'), 'gpt-5.6-sol');
       assert.equal(normalizeModel('foo'), DEFAULT_LLM_MODEL);
@@ -133,17 +137,16 @@ describe('Pricing', () => {
   describe('capability flags', () => {
     it('modelSupportsAudioInput 只对 mimo-v2.5（全模态）为 true', () => {
       assert.equal(modelSupportsAudioInput('mimo-v2.5'), true);
-      assert.equal(modelSupportsAudioInput('deepseek-v4-flash'), false);
+      assert.equal(modelSupportsAudioInput('deepseek-v4.1-flash'), false);
       assert.equal(modelSupportsAudioInput('gpt-5.6-luna'), false);
       assert.equal(modelSupportsAudioInput('unknown-model'), false);
     });
 
-    it('modelSupportsVision：GPT-5.6 系与 deepseek-v4-flash-vision-exp 原生 vision；主线 flash / mimo 关闭', () => {
+    it('modelSupportsVision：GPT-5.6 系与 deepseek-v4.1-flash 原生 vision；mimo 关闭', () => {
       assert.equal(modelSupportsVision('gpt-5.6-luna'), true);
       assert.equal(modelSupportsVision('gpt-5.6-terra'), true);
       assert.equal(modelSupportsVision('gpt-5.6-sol'), true);
-      assert.equal(modelSupportsVision('deepseek-v4-flash-vision-exp'), true);
-      assert.equal(modelSupportsVision('deepseek-v4-flash'), false);
+      assert.equal(modelSupportsVision('deepseek-v4.1-flash'), true);
       assert.equal(modelSupportsVision('mimo-v2.5'), false);
       assert.equal(modelSupportsVision('unknown-model'), false);
     });
@@ -159,7 +162,7 @@ describe('Pricing', () => {
       assert.equal(modelSupportsReasoningEffort('gpt-5.6-luna'), true);
       assert.equal(modelSupportsReasoningEffort('gpt-5.6-terra'), true);
       assert.equal(modelSupportsReasoningEffort('gpt-5.6-sol'), true);
-      assert.equal(modelSupportsReasoningEffort('deepseek-v4-flash'), false);
+      assert.equal(modelSupportsReasoningEffort('deepseek-v4.1-flash'), false);
       assert.equal(modelSupportsReasoningEffort('mimo-v2.5'), false);
       assert.equal(modelSupportsReasoningEffort('unknown-model'), false);
     });

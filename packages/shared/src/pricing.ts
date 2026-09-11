@@ -98,7 +98,7 @@ export type LlmUpstream = 'openai' | 'opencode-go';
  *   - gpt-5.6-luna：developers.openai.com 官方刊例 $0.20 / $0.02 cached / $1.20 per 1M（2026-08 校准）
  *   - gpt-5.6-terra：同上 $2 / $0.2 / $12
  *   - gpt-5.6-sol：同上 $4 / $0.4 / $20
- *   - deepseek-v4-flash / mimo-v2.5：OpenCode Go 包月供给，边际成本≈配额摊销；
+ *   - deepseek-v4.1-flash / mimo-v2.5：OpenCode Go 包月供给，边际成本≈配额摊销；
  *     价格对齐各厂商公开 API 价位段取整，包月期内偏毛利（quota 内近乎零成本）
  *
  * 平台路径（余额 > 0）只接受表里的 model；表外 model 在 routes/llm.ts 拦截 400。
@@ -110,15 +110,8 @@ export const LLM_PRICING: Record<
   string,
   { upstream: LlmUpstream; inputRate: number; cachedInputRate: number; outputRate: number }
 > = {
-  // OpenCode Go 包月，DeepSeek Flash 快而便宜，工具调用强——日常对话主力
-  'deepseek-v4-flash': { upstream: 'opencode-go', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.08 },
-  // OpenCode Go 图像理解变体，在有图片上传时自动分流使用，支持视觉输入
-  'deepseek-v4-flash-vision-exp': {
-    upstream: 'opencode-go',
-    inputRate: 0.02,
-    cachedInputRate: 0.002,
-    outputRate: 0.08,
-  },
+  // OpenCode Go 包月，DeepSeek V4.1 Flash 快而便宜、原生多模态、工具调用强——日常对话主力
+  'deepseek-v4.1-flash': { upstream: 'opencode-go', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.08 },
   // 同 id 从 Xiaomi 直连迁到 OpenCode Go（价格不变，用户无感）；语音理解 / 音频直通专用
   'mimo-v2.5': { upstream: 'opencode-go', inputRate: 0.008, cachedInputRate: 0.008, outputRate: 0.2 },
   // 上游 $0.20 / cached $0.02 / output $1.20 per 1M —— 重推理性价比档，默认 xhigh
@@ -135,11 +128,16 @@ export const LLM_RATIO = 1.1;
 /**
  * 历史/别名模型兼容映射。当客户端或老配置请求别名模型时，自动重定向到兼容的目标模型。
  * 例如：
- *   - mimo-v2.5-pro 下架后兼容重定向到 deepseek-v4-flash
+ *   - deepseek-v4-flash 下架后兼容重定向到 deepseek-v4.1-flash
+ *   - deepseek-v4-flash-vision-exp 是已移除的视觉实验变体，旧客户端带图时仍会发它，
+ *     也重定向到 4.1（多模态）避免 400
+ *   - mimo-v2.5-pro 下架后兼容重定向到 deepseek-v4.1-flash
  *   - gpt-5.4 / gpt-5.5 升级重定向到同档位的 gpt-5.6-sol
  */
 export const LLM_MODEL_ALIASES: Record<string, string> = {
-  'mimo-v2.5-pro': 'deepseek-v4-flash',
+  'deepseek-v4-flash': 'deepseek-v4.1-flash',
+  'deepseek-v4-flash-vision-exp': 'deepseek-v4.1-flash',
+  'mimo-v2.5-pro': 'deepseek-v4.1-flash',
   'gpt-5.4': 'gpt-5.6-sol',
   'gpt-5.5': 'gpt-5.6-sol',
 };
@@ -160,7 +158,7 @@ export function isSupportedLlmModel(model: string): boolean {
 export const SUPPORTED_LLM_MODELS = Object.keys(LLM_PRICING);
 
 /** 全平台默认模型 id。新装 / 老 store 里没设过时回退到这个；UI 也按 isDefault 标识。 */
-export const DEFAULT_LLM_MODEL = 'deepseek-v4-flash';
+export const DEFAULT_LLM_MODEL = 'deepseek-v4.1-flash';
 
 /**
  * 校验 / 回退用户保存的 model id。优先解析兼容别名，未知静默回退到默认，不弹窗。
@@ -201,7 +199,7 @@ export const LLM_DISPLAY_META: Record<
     /**
      * 当前 muicv 平台路径下该 model id 是否能接受图像 input。
      * 模型本身能力 ≠ 平台路由能力——GPT-5.6 系走 OpenAI 原生 vision；
-     * DeepSeek Flash 主线不带图（官方另有 -vision-exp 实验变体），保守关掉避免误发图炸 400。
+     * DeepSeek V4.1 Flash 起原生多模态，直接吃图；mimo 系与纯文本档保守关掉避免误发图炸 400。
      */
     supportsVision: boolean;
     /**
@@ -221,22 +219,13 @@ export const LLM_DISPLAY_META: Record<
     supportsAudioInput?: boolean;
   }
 > = {
-  'deepseek-v4-flash': {
-    label: 'DeepSeek V4 Flash',
+  'deepseek-v4.1-flash': {
+    label: 'DeepSeek V4.1 Flash',
     vendor: 'opencode-go',
     inputPrice: '$0.20 / 1M',
     outputPrice: '$0.80 / 1M',
-    hint: '默认 · 快而便宜 · agent 工具调用首选',
+    hint: '默认 · 多模态 · 快而便宜 · agent 工具调用首选',
     isDefault: true,
-    supportsVision: false,
-    supportsToolCalls: true,
-  },
-  'deepseek-v4-flash-vision-exp': {
-    label: 'DeepSeek V4 Flash Vision',
-    vendor: 'opencode-go',
-    inputPrice: '$0.20 / 1M',
-    outputPrice: '$0.80 / 1M',
-    hint: '图像理解 · 视觉实验版 · 支持图片与图表解析',
     supportsVision: true,
     supportsToolCalls: true,
   },

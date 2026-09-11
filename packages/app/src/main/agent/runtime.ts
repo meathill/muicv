@@ -61,14 +61,8 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     return;
   }
   const workspaceDir = config.workspaceDir;
-  // 检查当前发送的最新消息（当前窗口）中是否有图片附件（历史图片略过不传，避免溢出且节省 token）
-  const lastUserMsg = messages[messages.length - 1];
-  const hasImage = lastUserMsg?.role === 'user' && Boolean(lastUserMsg.attachments?.some((a) => a.kind === 'image'));
-  let effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
-  // 如果当前轮上传了图片，且当前模型不支持 vision，自动分流到 deepseek-v4-flash-vision-exp 处理
-  if (hasImage && !modelSupportsVision(effectiveModel)) {
-    effectiveModel = 'deepseek-v4-flash-vision-exp';
-  }
+  // 默认模型直接沿用用户配置。自 V4.1 起默认模型原生多模态，不再按本轮是否带图切换模型。
+  const effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
 
   if (!configureLlmForRun(config, effectiveModel)) {
     send({ type: 'error', message: 'NOT_LOGGED_IN' });
@@ -150,6 +144,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   // 图片有第二种用途（upload_photo agent tool 上传证件照到 R2），不需要 vision。
   // 仅在 model 支持 vision 时把图 base64 进 input_image；不支持就跳过 imageReader，
   // 让 footer 的"调 upload_photo"提示引导 agent 走 R2 上传路径。
+  // 默认模型 V4.1 Flash 原生多模态，带图时无需再切模型。
   const supportsVision = modelSupportsVision(effectiveModel);
   // Audio 直通：mimo-v2.5（全模态版）原生听音频，把 wav 以 Xiaomi 规范的
   // wav 裸 base64 灌进 Agents SDK audio content block，跳过 Whisper STT。

@@ -651,16 +651,16 @@ function makeChatCompletionResponse(model: string): Response {
   );
 }
 
-test('POST /llm/v1/chat/completions model=deepseek-v4-flash → 上游 OpenCode Go + GO key', async () => {
+test('POST /llm/v1/chat/completions model=deepseek-v4.1-flash → 上游 OpenCode Go + GO key', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4-flash'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4.1-flash'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
       {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...AUTH },
-        body: JSON.stringify({ model: 'deepseek-v4-flash', messages: [{ role: 'user', content: 'hi' }] }),
+        body: JSON.stringify({ model: 'deepseek-v4.1-flash', messages: [{ role: 'user', content: 'hi' }] }),
       },
       mockEnv({ authenticated: true, walletMicro: 100_000_000, opencodeGoKey: 'sk-go-test' }),
       ctx,
@@ -677,9 +677,9 @@ test('POST /llm/v1/chat/completions model=deepseek-v4-flash → 上游 OpenCode 
   }
 });
 
-test('POST /llm/v1/chat/completions model=deepseek-v4-flash-vision-exp → 上游 OpenCode Go + GO key', async () => {
+test('POST /llm/v1/chat/completions model=deepseek-v4-flash-vision-exp（已移除，兼容映射）→ 上游 model=deepseek-v4.1-flash', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4-flash-vision-exp'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4.1-flash'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
@@ -699,6 +699,8 @@ test('POST /llm/v1/chat/completions model=deepseek-v4-flash-vision-exp → 上�
     assert.equal(captures[0]?.url, 'https://opencode.ai/zen/go/v1/chat/completions');
     const headers = new Headers(captures[0]?.init?.headers as HeadersInit);
     assert.equal(headers.get('authorization'), 'Bearer sk-go-test');
+    const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
+    assert.equal(forwardedBody.model, 'deepseek-v4.1-flash');
   } finally {
     restore();
   }
@@ -706,7 +708,7 @@ test('POST /llm/v1/chat/completions model=deepseek-v4-flash-vision-exp → 上�
 
 test('POST /llm/v1/chat/completions 透传客户端携带的 x-opencode-session', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4-flash'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4.1-flash'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
@@ -717,7 +719,7 @@ test('POST /llm/v1/chat/completions 透传客户端携带的 x-opencode-session'
           'x-opencode-session': 'custom-client-session',
           ...AUTH,
         },
-        body: JSON.stringify({ model: 'deepseek-v4-flash', messages: [{ role: 'user', content: 'hi' }] }),
+        body: JSON.stringify({ model: 'deepseek-v4.1-flash', messages: [{ role: 'user', content: 'hi' }] }),
       },
       mockEnv({ authenticated: true, walletMicro: 100_000_000, opencodeGoKey: 'sk-go-test' }),
       ctx,
@@ -796,16 +798,19 @@ test('POST /llm/v1/chat/completions model=gpt-4o-mini（表外）→ 400 unsuppo
   assert.equal(res.status, 400);
   const body = (await res.json()) as { error: string; supported: string[] };
   assert.equal(body.error, 'unsupported_model');
-  // 已下线的 gpt-5.4 / mimo-v2.5-pro 也不在支持列表里
+  // 已下线的 deepseek-v4-flash / deepseek-v4-flash-vision-exp / gpt-5.4 / mimo-v2.5-pro 也不在支持列表里
+  assert.ok(body.supported.includes('deepseek-v4.1-flash'));
   assert.ok(body.supported.includes('gpt-5.6-luna'));
   assert.ok(body.supported.includes('mimo-v2.5'));
+  assert.ok(!body.supported.includes('deepseek-v4-flash'));
+  assert.ok(!body.supported.includes('deepseek-v4-flash-vision-exp'));
   assert.ok(!body.supported.includes('gpt-5.4'));
   assert.ok(!body.supported.includes('mimo-v2.5-pro'));
 });
 
-test('POST /llm/v1/chat/completions model=mimo-v2.5-pro（兼容映射）→ 上游 OpenCode Go model=deepseek-v4-flash', async () => {
+test('POST /llm/v1/chat/completions model=mimo-v2.5-pro（兼容映射）→ 上游 OpenCode Go model=deepseek-v4.1-flash', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4-flash'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4.1-flash'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
@@ -821,7 +826,7 @@ test('POST /llm/v1/chat/completions model=mimo-v2.5-pro（兼容映射）→ 上
     assert.equal(captures.length, 1);
     assert.equal(captures[0]?.url, 'https://opencode.ai/zen/go/v1/chat/completions');
     const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
-    assert.equal(forwardedBody.model, 'deepseek-v4-flash');
+    assert.equal(forwardedBody.model, 'deepseek-v4.1-flash');
   } finally {
     restore();
   }
@@ -851,13 +856,13 @@ test('POST /llm/v1/chat/completions model=gpt-5.4（兼容映射）→ 上游 Op
   }
 });
 
-test('POST /llm/v1/chat/completions model=deepseek-v4-flash 但缺 OPENCODE_GO_API_KEY → 500 opencode-go-key-missing', async () => {
+test('POST /llm/v1/chat/completions model=deepseek-v4.1-flash 但缺 OPENCODE_GO_API_KEY → 500 opencode-go-key-missing', async () => {
   const res = await app.request(
     '/llm/v1/chat/completions',
     {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...AUTH },
-      body: JSON.stringify({ model: 'deepseek-v4-flash', messages: [{ role: 'user', content: 'hi' }] }),
+      body: JSON.stringify({ model: 'deepseek-v4.1-flash', messages: [{ role: 'user', content: 'hi' }] }),
     },
     mockEnv({ authenticated: true, walletMicro: 100_000_000, opencodeGoKey: null }),
     ctx,

@@ -22,7 +22,7 @@ test('getModelBudget mimo 系列走 1M context（800k 预算）', () => {
 });
 
 test('getModelBudget DeepSeek、GPT-5.6 与未知模型走 256K context（204800 预算）', () => {
-  assert.equal(getModelBudget('deepseek-v4-flash'), 204_800);
+  assert.equal(getModelBudget('deepseek-v4.1-flash'), 204_800);
   assert.equal(getModelBudget('gpt-5.6-luna'), 204_800);
   assert.equal(getModelBudget('gpt-5.6-terra'), 204_800);
   assert.equal(getModelBudget('gpt-5.6-sol'), 204_800);

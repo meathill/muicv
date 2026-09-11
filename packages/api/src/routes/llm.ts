@@ -28,7 +28,7 @@ import type { AppEnv } from '../middleware/api-key.ts';
  *   1. **平台 OpenAI**：余额 > 0 + 表内 gpt-5.6-* → worker secret OPENAI_API_KEY，
  *      上游 https://api.openai.com/v1，按 model 分价扣费（见 shared LLM_PRICING）。
  *      premium 升级档，支持 /v1/responses 与 reasoning effort。
- *   2. **平台 OpenCode Go**：余额 > 0 + 表内 deepseek-v4-flash / mimo-v2.5 →
+ *   2. **平台 OpenCode Go**：余额 > 0 + 表内 deepseek-v4.1-flash / mimo-v2.5 →
  *      worker secret OPENCODE_GO_API_KEY，上游 https://opencode.ai/zen/go/v1
  *      （包月订阅，成本锁死）。只暴露 chat/completions；/v1/responses 直接 400 挡掉。
  *   3. **muirouter fallback**：余额 = 0 + 用户绑了 muirouter → 解密 access_token

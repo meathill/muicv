@@ -68,6 +68,7 @@ const KIND_LABEL: Record<AttachmentKind, string> = {
  *     supportsVision=true：本条消息已经把图 base64 进 input_image，agent 直接看图
  *     supportsVision=false：模型看不到图（如 mimo 系），请用户用文字描述图片内容
  *   两种情况下 agent 都**禁止 read_file 二进制图片**——会拿到一堆乱码。
+ *   默认模型 V4.1 Flash 原生多模态，恒为 true；该分支仅为 mimo 等纯文本档保留。
  *   简历用的证件照上传走"预览 drawer → 上传头像"UI 路径，agent 不参与。
  */
 export function formatAttachmentsFooter(

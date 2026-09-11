@@ -738,11 +738,21 @@ $10/月订阅）提供 ~25 个开源模型的 OpenAI 兼容 REST（`https://open
 边际成本≈0。量大之后计划切 **zen** 按量付费——切回时只需改 `shared/pricing.ts` 各条的
 `upstream` + `api/routes/llm.ts` 的 base/key 映射，路由本身已是表驱动，没有前缀 if。
 
-**最终矩阵**：默认文本 `deepseek-v4-flash`@oc-go；语音理解 `mimo-v2.5`@oc-go（同 id 从 Xiaomi
+**最终矩阵**：默认文本 `deepseek-v4.1-flash`@oc-go（原生多模态，2026-09 从 `deepseek-v4-flash`
+升级）；语音理解 `mimo-v2.5`@oc-go（同 id 从 Xiaomi
 直连迁过来，价格不变用户无感）；升级档 `gpt-5.6-luna/terra/sol`@OpenAI（luna 是便宜档
 $0.2/$1.2 per 1M、terra $2/$12、sol 官方校准 $4/$20）。下架 gpt-5.4 /
 mimo-v2.5-pro：normalizeModel 静默回退新默认。Xiaomi completion 直连退役，MIMO_API_KEY 只剩
 TTS 在用。
+
+**DeepSeek V4.1 Flash 升级（2026-09）**：4.1 起原生多模态，于是：
+- 移除 `deepseek-v4-flash-vision-exp` 视觉实验变体——不再需要"带图时自动切 vision 模型"
+  的分流逻辑（原先在 `runtime.ts` 按 `hasImage` 判断并改写 `effectiveModel`）。
+- `deepseek-v4-flash` 与 `deepseek-v4-flash-vision-exp` 都进 `LLM_MODEL_ALIASES` 重定向到
+  4.1。后者必须保留：**旧版本 app（≤0.5.8）带图时会主动发 vision-exp**，不加 alias 会 400。
+- 计费沿用 v4-flash 现价（input 0.02 / cached 0.002 / output 0.08）。
+- 模型"能否收图"的能力门 `modelSupportsVision` 保留——mimo 系仍不收图，只删了按输入内容
+  分流，不是删能力门。
 
 **OpenCode Go 关键事实 / 风险备忘**：
 - 订阅是**单人共享配额**（月上限 $60 / 5h 窗口 $12）：当多租户生产上游会被打爆出 429；
@@ -753,11 +763,12 @@ TTS 在用。
   `{error:'opencode-go-key-missing'}`。
 - 必须携带 `x-opencode-session`（缺失时报 400 "Request is missing x-opencode-session and cannot be routed efficiently"）：用于后端节点会话亲和与 prompt cache 路由。app 与 api 两端均已注入稳定的会话 ID 及定制 `User-Agent`。
 - **落表前必须实探 model id**（2026-09 踩坑）：上游目录里的 id 是唯一真值，不能凭版本号推断。
-  曾把默认模型改成 `deepseek-v4.1-flash`——该 id 在 OpenCode Go 上**不存在**，导致默认路径
+  曾把默认模型改成 `deepseek-v4.1-flash`——当时该 id 在 OpenCode Go 上**不存在**，导致默认路径
   请求上游失败。这类不存在的 id 不需要专门加别名兜底：`normalizeModel` 对表外 id 会静默
   回落到 `DEFAULT_LLM_MODEL`，写盘的老配置读出来就自愈了。
   `scripts/opencode-go-probe.ts` 会拉真实 model 清单校验，新增 / 改默认模型前先跑它
   （需 `OPENCODE_GO_API_KEY`），别再跳过。
+  （2026-09 复查：该 id 上游已上线且多模态，遂正式落表为默认。）
 
 **GPT-5.6 家族（Sol/Terra/Luna）**：OpenAI 2026 推出的三档变体，走 `/v1/responses`，
 reasoning.effort 支持 none..max 六级；平台 UI 只放 low/medium/high/xhigh（默认 xhigh）。
