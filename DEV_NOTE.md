@@ -675,12 +675,12 @@ Stripe price ID 只在 `packages/website/lib/stripe-prices.ts`。算法：
   affected rows=0 即已处理）；(2) `credit()` 用 `invoice_<id>` / `checkout_<sid>` 当
   ledgerId，重复触发不重复入账。两层独立，缺一不可。
 - **price_id → token 映射放代码**：不查 Stripe API（每次 webhook 多一跳），直接查
-  `packages/website/lib/stripe-prices.ts` 的常量表（`STRIPE_SUBSCRIPTION_PRICES` /
+  `packages/shared/src/stripe-prices.ts` 的常量表（`STRIPE_SUBSCRIPTION_PRICES` /
   `STRIPE_TOPUP_PRICES`，反查走 `SUBSCRIPTION_PRICE_META` / `TOPUP_PRICE_META`）。
-  **不在 wrangler.jsonc vars 里**——priceId 是 `plan × interval` 结构化数据，扁平 key-value
-  难维护、易漏改。增减档位只改这个 TS 表和 `packages/shared/src/pricing.ts`。
-  （注：`packages/api/src/routes/me.ts` 仍残留老的 `env.STRIPE_PRICE_*` 映射，只认 USD
-  月/年付 ID，且 Pro 年付 ID 与 website 表已不一致，属遗留问题，见文末「已知技术债」。）
+  **website 与 api 两端共用这一份**，不在 wrangler.jsonc vars 里——priceId 是
+  `plan × interval` 结构化数据，扁平 key-value 难维护、易漏改；两端各存一份更会漂移
+  （曾导致 Pro 订阅在桌面 app 显示为免费版，见文末）。增减档位只改这个表和
+  `packages/shared/src/pricing.ts`。
 - **订阅只卖 USD，人民币只卖补充包**（2026-09 起）：Stripe 本账户不支持 CNY recurring
   （Alipay 进不了 subscription mode，WeChat Pay 全平台不支持 recurring），所以
   `STRIPE_SUBSCRIPTION_PRICES` 只有 usd 一份；`/api/checkout` 对 `currency=cny` 直接 400，
@@ -900,10 +900,20 @@ TTS_RATE_PER_CHAR），账单在小米控制台可看。
 （llm-usage.ts / transcribe.ts / content.ts 的 exactOptionalPropertyTypes 类问题），本次只保证
 改动文件零报错，欠账待还。
 
-**已知技术债：`packages/api/src/routes/me.ts` 的 plan 反查已与 website 脱节。**
-它从 `env.STRIPE_PRICE_PRO_MONTHLY` 等 4 个 wrangler vars 反查 plan（`resolvePlanFromPriceId`），
-只认老的 USD 月/年付 ID，且 `packages/api/wrangler.jsonc` 里 Pro 年付 ID（`price_1TRwb4…`）
-与 website 的 `STRIPE_SUBSCRIPTION_PRICES.pro.yearly`（`price_1TUjkF…`）已经不一致 —— 后果是
-当前 Pro 年付订阅在 `/me` 里反查为 null，桌面 app 会把它当免费版显示。
-修法：把 price ID 表下沉到 `@muicv/shared`（或给 api 一份同步的常量），删掉这 4 个 env var，
-让两端共用同一张表。未做，因为超出本次「定价页」范围。
+**已修（2026-09）：price 表下沉 `@muicv/shared`，两端不再漂移。**
+`packages/api/src/routes/me.ts` 原先自维护 `env.STRIPE_PRICE_*` 反查 plan，与 website 的
+price ID 代际不同步（Pro 月付 `price_1TRwa8…` vs `price_1TUjjp…`，Pro 年付同样对不上），
+后果是 **Pro 订阅用户在桌面 app 里被显示成免费版**（Max 恰好一致所以没暴露）。
+现在 price 注册表 + 反查函数放在 `packages/shared/src/stripe-prices.ts`，
+website（`lib/stripe.ts` 只留需要 Stripe SDK / D1 的部分）与 api 都 import 同一份；
+`packages/api/wrangler.jsonc` 的 4 个 env var 与 `worker-configuration.d.ts` 对应项已删。
+api 单测补了 Pro 年付的回归用例（曾显示 free）。
+教训：**同一份外部标识符不要在两处各存一份**——跨 worker 的常量要下沉到 shared，
+否则代际更新时必然漏掉一边，而且症状是静默降级、很难发现。
+
+**支付通道的现实约束（2026-09 学员反馈）**：中国大陆用户常见「只有银联信用卡」，
+银联卡在 Stripe 上**通常既不能开人民币订阅（本账户不支持 CNY recurring），也完不成美元订阅扣款**
+（银联卡对跨境美元定期扣款授权失败率高）。所以对国内用户的正确引导是
+**买一次性补充包**（¥ 通道开微信 / 支付宝 / 国际卡，这几种都能付），而不是「切美元订阅」。
+定价页 ¥ 视图提示、dashboard 文案、9 语言 FAQ 都按这个口径写；加了「支持哪些支付方式」FAQ。
+如果你确认某类银联卡可用，需要再校准这段文案。

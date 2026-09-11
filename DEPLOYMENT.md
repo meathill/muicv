@@ -314,8 +314,10 @@ api worker 只读 token 余额、写流水，零 stripe 依赖。
    - 创建后 **Reveal signing secret** 拿 `whsec_test_...`
 
 > 2026-09 起人民币不能订阅：Stripe 本账户拒绝 Alipay 进 subscription mode，WeChat Pay 全平台
-> 不支持 recurring。历史遗留的 4 个 CNY recurring price 与「CN 月包/年包」一次性 SKU
-> 已从代码移除；若 Stripe 侧仍有这些 price，建议归档（代码不再引用）。
+> 不支持 recurring。此外**国内银联信用卡通常也无法完成美元订阅扣款**（跨境美元定期扣款授权
+> 失败率高，学员实测反馈）——所以对国内用户的正确引导是买一次性补充包（¥ 通道可用微信 /
+> 支付宝 / 国际卡），而不是「切美元订阅」。历史遗留的 4 个 CNY recurring price 与
+> 「CN 月包/年包」一次性 SKU 已从代码移除；若 Stripe 侧仍有这些 price，建议归档（代码不再引用）。
 
 #### wrangler 配置（生产）
 
