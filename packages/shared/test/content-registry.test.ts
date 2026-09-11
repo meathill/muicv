@@ -10,7 +10,7 @@ import {
 import { getPublishedPosts, getPublishedSkills } from '../src/content-registry.ts';
 
 test('content registry 内置核心 SEO 求职文章', () => {
-  const jobsPosts = getPublishedPosts('jobs');
+  const jobsPosts = getPublishedPosts('zh-CN', 'jobs');
   assert.ok(jobsPosts.length >= 2);
   assert.ok(jobsPosts.some((p) => p.slug === 'ai-resume-tips-for-developers'));
   assert.ok(jobsPosts.some((p) => p.slug === 'english-resume-for-chinese-developers'));
@@ -18,13 +18,14 @@ test('content registry 内置核心 SEO 求职文章', () => {
 });
 
 test('cms content fetch maps Payload posts into registry shape', async () => {
-  const posts = await fetchCmsPublishedPosts('jobs', {
+  const posts = await fetchCmsPublishedPosts('zh-CN', 'jobs', {
     baseUrl: 'https://cms.example.com',
     fetchImpl: async () =>
       Response.json({
         docs: [
           {
             slug: 'cms-post',
+            locale: 'zh-CN',
             section: 'jobs',
             status: 'published',
             title: 'CMS 文章',
@@ -50,7 +51,7 @@ test('cms content fetch maps Payload posts into registry shape', async () => {
 test('cms content fetch allows caller to choose cache mode', async () => {
   let cacheMode: unknown;
 
-  await fetchCmsPublishedPosts(undefined, {
+  await fetchCmsPublishedPosts('zh-CN', undefined, {
     baseUrl: 'https://cms.example.com',
     cache: 'force-cache',
     fetchImpl: async (_url, init) => {
@@ -106,7 +107,7 @@ test('cms content fetch returns empty when Payload is unavailable', async () => 
 });
 
 test('cms content detail returns null when Payload has no matching slug', async () => {
-  const post = await fetchCmsPostBySlug('jobs', 'third-party-skills-tencent-campus-recruiting', {
+  const post = await fetchCmsPostBySlug('zh-CN', 'jobs', 'third-party-skills-tencent-campus-recruiting', {
     baseUrl: 'https://cms.example.com',
     fetchImpl: async () => Response.json({ docs: [] }),
   });

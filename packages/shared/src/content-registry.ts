@@ -1,9 +1,13 @@
+import { DEFAULT_CONTENT_LOCALE, type ContentLocale } from './content-locales.ts';
+
 export type ContentStatus = 'draft' | 'published';
 
 export type PostSection = 'jobs' | 'product' | 'guide';
 
 export type ContentPost = {
   slug: string;
+  /** 语言。同一篇文章的各语言译文共享同一个 slug，靠 locale 区分。 */
+  locale: ContentLocale;
   section: PostSection;
   status: ContentStatus;
   title: string;
@@ -77,6 +81,7 @@ export const POST_SECTION_META: Record<PostSection, { label: string; path: strin
 export const CONTENT_POSTS: ContentPost[] = [
   {
     slug: 'ai-resume-tips-for-developers',
+    locale: DEFAULT_CONTENT_LOCALE,
     section: 'jobs',
     status: 'published',
     title: 'AI 写简历的 7 个实战技巧：程序员如何用 AI 改出一份拿大厂 Offer 的硬核简历',
@@ -174,6 +179,7 @@ Google 招聘团队推荐的简历黄金公式是：**Accomplished [X] as measur
   },
   {
     slug: 'english-resume-for-chinese-developers',
+    locale: DEFAULT_CONTENT_LOCALE,
     section: 'jobs',
     status: 'published',
     title: '中国程序员如何写出一份地道的英文简历？外企与 Remote 远程求职避坑指南',
@@ -269,6 +275,7 @@ Google 招聘团队推荐的简历黄金公式是：**Accomplished [X] as measur
   },
   {
     slug: 'how-to-optimize-resume-for-ats',
+    locale: DEFAULT_CONTENT_LOCALE,
     section: 'guide',
     status: 'published',
     title: '程序员如何针对 ATS 招聘筛选系统优化简历？从算法解析到 100% 关键字匹配实操',
@@ -356,14 +363,19 @@ function byPublishedAtDesc<T extends { publishedAt: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
 
-export function getPublishedPosts(section?: PostSection): ContentPost[] {
-  const posts = CONTENT_POSTS.filter((post) => post.status === 'published' && (!section || post.section === section));
+/** 静态兜底内容只有中文，因此带 locale 过滤：非默认语言不应拿到中文种子当译文。 */
+export function getPublishedPosts(locale: ContentLocale, section?: PostSection): ContentPost[] {
+  const posts = CONTENT_POSTS.filter(
+    (post) => post.status === 'published' && post.locale === locale && (!section || post.section === section),
+  );
   return byPublishedAtDesc(posts);
 }
 
-export function getPostBySlug(section: PostSection, slug: string): ContentPost | null {
+export function getPostBySlug(locale: ContentLocale, section: PostSection, slug: string): ContentPost | null {
   return (
-    CONTENT_POSTS.find((post) => post.status === 'published' && post.section === section && post.slug === slug) ?? null
+    CONTENT_POSTS.find(
+      (post) => post.status === 'published' && post.locale === locale && post.section === section && post.slug === slug,
+    ) ?? null
   );
 }
 

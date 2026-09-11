@@ -28,6 +28,37 @@
   bullet / 编号会全部消失。改 `.prose-mui` 时把 ul / ol / li / marker 同时校一遍。
 - **SEO 路径约定**：求职博文从 `/posts/jobs` 起步；更细分类先用 tags / keywords，不提前拆更多 route。
 
+### 博客多语言（locale 维度，2026-09）
+
+- **一行一语言，不用 Payload 官方 localization**：`posts` 加 `locale` select 字段（值取 shared 的
+  `CONTENT_LOCALES`），同一篇文章的各语言译文是独立文档。`Config.locale` 仍是 `null`——
+  Payload 原生 i18n 会把译文塞进 JSON 列，D1 上查询/迁移都更绕，且本项目 `articles` 早已是
+  「一行一语言」的建模，保持一致性。
+- **slug 即翻译组键**：唯一约束从 `slug` 全局唯一下沉到 `(locale, slug)` 复合唯一，
+  **不额外加 translationGroup 字段**。于是各语言 URL 形态对称（`/ja/posts/product/<slug>`），
+  hreflang 按 slug 聚合即可，少一个字段少一处不一致。`articles` 的 `(site, locale, slug)` 是同一模式。
+- **中文无前缀，其余 `/<locale>`**：`contentLocalePrefix()` 是唯一来源（shared），
+  sitemap / 页面 / 面包屑都从它取。注意 CMS 侧 locale 写 `zh-CN`，网站层 `Locale` 用 `zh`，
+  两者靠 `_home.tsx` 里的显式映射衔接，别混用。
+- **博客外壳独立于整站营销词典**：`MarketingShell` 依赖 `_i18n/{zh,en}.tsx` 的整站词典
+  （hero/features/faq 约 250 行），扩一种语言就要翻译整站。博客改用自己的 `_i18n/blog.tsx`
+  小词典 + `BlogShell`，于是 9 语言即时可用，不必等整站营销文案。**整站营销站本地化仍是待办**。
+- **营销页链接要回退英文**：只有 zh/en 有本地化营销页（首页/下载/定价等），所以博客里指向营销页的
+  链接走 `marketingHref()`（非 zh/en 回退 `/en`），而博客自身路径各语言都有，用 `blogUrlPrefix()`。
+  别用 `blogUrlPrefix` 拼营销页 URL，会造出 `/ja/download` 这类 404。
+- **hreflang 只指向真实译文**：`getPostAlternateLanguages()` 先查各语言是否真有该 slug 的译文，
+  只收录存在的语言，避免 hreflang 指向 404（对 SEO 有害）。列表页各语言都存在，可直接全量输出。
+- **静态兜底只有中文**：`content-registry.ts` 的 3 篇 seed 是中文，非 `zh-CN` 时 `getPublishedPosts`
+  返回空——**不能**把中文当译文渲染。因此非中文在 seed 到 CMS 前会显示空态，这是预期行为。
+- **路由用 `(locales)/[locale]` 动态子树承接**：`(zh)` / `(en)` 仍是静态子树，新增的
+  `app/(locales)/[locale]/` 只承接其余语言。实测 Next 静态优先，`/posts`、`/en/*` 优先级不受影响；
+  `generateStaticParams` 里显式排除 `zh-CN`（由 `(zh)` 承接）。新增语言 = 加 `CONTENT_LOCALES` 成员
+  + 加 `BLOG_STRINGS` 词条，路由自动生效。
+- **内容草稿 → CMS 的通道**：`packages/cms/scripts/seed-marketing-posts.ts` 扫
+  `docs/marketing/<campaign>/*.md`（frontmatter 带发布字段，正文即 bodyMarkdown），按
+  `(locale, slug)` 幂等 upsert，支持 `--dry-run`。它自带极简 frontmatter 解析，**不引入 YAML 依赖**
+  （gray-matter 只在 website 包）。发新公告 = 加 md + 跑脚本（需 `MUICV_CMS_API_KEY`）。
+
 ## 简历模板 + 在线预览（新）
 
 - **两种数据模型并存**：

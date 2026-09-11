@@ -1,7 +1,8 @@
 import type { CollectionConfig } from 'payload';
 
-import { publishedOrAuthenticated } from './access';
-import { validateSlugFormat } from './validate-slug';
+import { publishedOrAuthenticated } from './access.ts';
+import { CONTENT_LOCALES } from './content-locales.ts';
+import { validateSlugFormat } from './validate-slug.ts';
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -10,7 +11,7 @@ export const Posts: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'section', 'status', 'updatedAt'],
+    defaultColumns: ['title', 'section', 'locale', 'status', 'updatedAt'],
   },
   versions: {
     drafts: true,
@@ -20,7 +21,16 @@ export const Posts: CollectionConfig = {
   },
   fields: [
     { name: 'title', type: 'text', required: true },
-    { name: 'slug', type: 'text', required: true, unique: true, index: true },
+    // slug 不再是全局唯一：同一篇文章的各语言译文共享同一个 slug，
+    // 「同一翻译组」由 slug 标识，唯一性下沉到 (locale, slug) 复合索引。
+    { name: 'slug', type: 'text', required: true, index: true },
+    {
+      name: 'locale',
+      type: 'select',
+      required: true,
+      defaultValue: 'zh-CN',
+      options: CONTENT_LOCALES.map((value) => ({ label: value === 'zh-CN' ? '简体中文' : value, value })),
+    },
     {
       name: 'section',
       type: 'select',
@@ -50,5 +60,11 @@ export const Posts: CollectionConfig = {
     { name: 'publishedAt', type: 'date', required: true },
     { name: 'seoTitle', type: 'text', required: true },
     { name: 'seoDescription', type: 'textarea', required: true },
+  ],
+  indexes: [
+    {
+      fields: ['locale', 'slug'],
+      unique: true,
+    },
   ],
 };

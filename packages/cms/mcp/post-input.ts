@@ -1,7 +1,10 @@
 import * as z from 'zod/v4';
 
+import { CONTENT_LOCALES } from '../collections/content-locales.ts';
+
 export const postSectionSchema = z.enum(['jobs', 'product', 'guide']);
 export const contentStatusSchema = z.enum(['draft', 'published']);
+export const contentLocaleSchema = z.enum(CONTENT_LOCALES);
 
 const stringListSchema = z.array(z.string().trim().min(1)).default([]);
 
@@ -16,6 +19,8 @@ export const postFieldsSchema = z.object({
   title: z.string().trim().min(1).max(120),
   slug: slugSchema.optional(),
   section: postSectionSchema.default('jobs'),
+  // 同一篇文章的各语言译文共享同一个 slug，靠 locale 区分；(locale, slug) 在 CMS 侧唯一。
+  locale: contentLocaleSchema.default('zh-CN'),
   status: contentStatusSchema.default('draft'),
   summary: z.string().trim().min(1).max(320),
   bodyMarkdown: z.string().trim().min(1),
@@ -37,6 +42,7 @@ export const upsertPostInputSchema = createPostInputSchema.extend({
 
 export const getPostInputSchema = z.object({
   slug: slugSchema,
+  locale: contentLocaleSchema.default('zh-CN'),
 });
 
 export type CreatePostInput = z.output<typeof createPostInputSchema>;
@@ -51,6 +57,7 @@ export type CmsPostPayload = {
   title: string;
   slug: string;
   section: CreatePostInput['section'];
+  locale: CreatePostInput['locale'];
   status: CreatePostInput['status'];
   _status: CreatePostInput['status'];
   summary: string;
@@ -117,6 +124,7 @@ function buildPostPayload(input: CreatePostInput, now: Date): CmsPostPayload {
     title: input.title,
     slug,
     section: input.section,
+    locale: input.locale,
     status: input.status,
     _status: input.status,
     summary: input.summary,

@@ -2,6 +2,7 @@ export * from './attachments.ts';
 export * from './domain/resume-json.ts';
 export * from './domain/template-resume.ts';
 export * from './domain/sample-templates.ts';
+export * from './content-locales.ts';
 export * from './content-registry.ts';
 export * from './cms-content.ts';
 export * from './format.ts';

@@ -321,7 +321,7 @@ async function main(): Promise<void> {
 
   for (const post of SEO_POSTS) {
     const normalized = normalizeUpsertPostInput({ ...post, onConflict: 'update' });
-    const existing = await client.findPostBySlug(normalized.payload.slug);
+    const existing = await client.findPostBySlug(normalized.payload.slug, normalized.payload.locale);
     if (!existing) {
       await client.createPost(normalized.payload);
       created += 1;

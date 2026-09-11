@@ -10,6 +10,7 @@ import {
   getPostBySlug,
   getPublishedPosts,
 } from './content-registry.ts';
+import { isContentLocale, type ContentLocale } from './content-locales.ts';
 
 const DEFAULT_CMS_BASE_URL = 'https://cms.muicv.com';
 const FETCH_LIMIT = '100';
@@ -27,15 +28,18 @@ type PayloadListResponse = {
 };
 
 export async function fetchCmsPublishedPosts(
+  locale: ContentLocale,
   section?: PostSection,
   options: CmsContentOptions = {},
 ): Promise<ContentPost[]> {
-  const fallback = getPublishedPosts(section);
+  // 静态兜底只有中文；非默认语言拿不到兜底，CMS 不可用时返回空而不是把中文当译文渲染。
+  const fallback = getPublishedPosts(locale, section);
   const params = new URLSearchParams({
     depth: '0',
     limit: FETCH_LIMIT,
     sort: '-publishedAt',
     'where[status][equals]': 'published',
+    'where[locale][equals]': locale,
   });
 
   if (section) {
@@ -48,21 +52,24 @@ export async function fetchCmsPublishedPosts(
   }
 
   const cmsPosts = docs.map(parsePost).filter(isContentPost);
-  const cmsSlugs = new Set(cmsPosts.map((p) => p.slug));
-  const merged = [...cmsPosts, ...fallback.filter((p) => !cmsSlugs.has(p.slug))];
+  // 按 (locale, slug) 去重：同一 slug 的不同语言译文是不同文档，不能互相遮蔽。
+  const cmsKeys = new Set(cmsPosts.map((p) => `${p.locale}/${p.slug}`));
+  const merged = [...cmsPosts, ...fallback.filter((p) => !cmsKeys.has(`${p.locale}/${p.slug}`))];
   return byPublishedAtDesc(merged);
 }
 
 export async function fetchCmsPostBySlug(
+  locale: ContentLocale,
   section: PostSection,
   slug: string,
   options: CmsContentOptions = {},
 ): Promise<ContentPost | null> {
-  const fallback = getPostBySlug(section, slug);
+  const fallback = getPostBySlug(locale, section, slug);
   const params = new URLSearchParams({
     depth: '0',
     limit: '1',
     'where[status][equals]': 'published',
+    'where[locale][equals]': locale,
     'where[section][equals]': section,
     'where[slug][equals]': slug,
   });
@@ -154,6 +161,7 @@ function parsePost(value: unknown): ContentPost | null {
 
   const slug = readString(value.slug);
   const section = parsePostSection(value.section);
+  const locale = parseLocale(value.locale);
   const status = parseContentStatus(value.status);
   const title = readString(value.title);
   const summary = readString(value.summary);
@@ -166,6 +174,7 @@ function parsePost(value: unknown): ContentPost | null {
   if (
     !slug ||
     !section ||
+    !locale ||
     !status ||
     !title ||
     !summary ||
@@ -180,6 +189,7 @@ function parsePost(value: unknown): ContentPost | null {
 
   return {
     slug,
+    locale,
     section,
     status,
     title,
@@ -311,6 +321,10 @@ function parseContentStatus(value: unknown): ContentStatus | null {
 
 function parsePostSection(value: unknown): PostSection | null {
   return value === 'jobs' || value === 'product' || value === 'guide' ? value : null;
+}
+
+function parseLocale(value: unknown): ContentLocale | null {
+  return isContentLocale(value) ? value : null;
 }
 
 function parsePublisherType(value: unknown): SkillPublisherType | null {

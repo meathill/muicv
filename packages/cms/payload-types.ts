@@ -181,6 +181,7 @@ export interface Post {
   id: number;
   title: string;
   slug: string;
+  locale: 'zh-CN' | 'en' | 'ja' | 'de' | 'fr' | 'es' | 'pt' | 'th' | 'vi';
   section: 'jobs' | 'product' | 'guide';
   status: 'draft' | 'published';
   summary: string;
@@ -212,7 +213,7 @@ export interface Post {
 export interface Article {
   id: number;
   site: 'muicv' | 'dyqr' | 'taomenu' | 'muirouter';
-  locale: 'en' | 'zh-CN' | 'de' | 'fr' | 'es' | 'pt' | 'th' | 'vi' | 'ja';
+  locale: 'zh-CN' | 'en' | 'ja' | 'de' | 'fr' | 'es' | 'pt' | 'th' | 'vi';
   title: string;
   slug: string;
   status: 'draft' | 'published';
@@ -449,6 +450,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PostsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  locale?: T;
   section?: T;
   status?: T;
   summary?: T;

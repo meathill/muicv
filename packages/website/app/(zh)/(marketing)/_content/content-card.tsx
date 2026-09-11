@@ -8,12 +8,14 @@ export function ContentCard({
   title,
   summary,
   tags,
+  ctaLabel = '查看详情',
 }: {
   href: string;
   eyebrow: string;
   title: string;
   summary: string;
   tags: string[];
+  ctaLabel?: string;
 }) {
   return (
     <article className="rounded-xl border-2 border-ink bg-cream p-5 shadow-[0_4px_0_0_var(--color-ink-line)] transition-transform hover:-translate-y-1">
@@ -36,7 +38,7 @@ export function ContentCard({
         prefetch={false}
         className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-yellow-deep hover:text-ink"
       >
-        查看详情
+        {ctaLabel}
         <ArrowUpRight />
       </Link>
     </article>

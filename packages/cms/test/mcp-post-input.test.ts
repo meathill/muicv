@@ -23,6 +23,7 @@ test('normalizeCreatePostInput 补齐 Payload posts 默认值', () => {
     title: '腾讯校招就业指导怎么准备',
     slug: 'tencent-campus-career-guide',
     section: 'jobs',
+    locale: 'zh-CN',
     status: 'draft',
     _status: 'draft',
     summary: '一篇面向校招同学的求职准备文章。',
@@ -34,6 +35,23 @@ test('normalizeCreatePostInput 补齐 Payload posts 默认值', () => {
     seoTitle: '腾讯校招就业指导怎么准备',
     seoDescription: '一篇面向校招同学的求职准备文章。',
   });
+});
+
+test('normalizeCreatePostInput 支持多语言译文（同 slug 不同 locale）', () => {
+  const input = normalizeCreatePostInput(
+    {
+      title: 'DeepSeek V4.1 Flash goes multimodal',
+      slug: 'deepseek-v4-1-flash-multimodal-upgrade',
+      locale: 'en',
+      section: 'product',
+      summary: 'Our default model now understands images natively.',
+      bodyMarkdown: '## What changed',
+    },
+    NOW,
+  );
+
+  assert.equal(input.payload.locale, 'en');
+  assert.equal(input.payload.slug, 'deepseek-v4-1-flash-multimodal-upgrade');
 });
 
 test('normalizeUpsertPostInput 默认允许按 slug 更新', () => {

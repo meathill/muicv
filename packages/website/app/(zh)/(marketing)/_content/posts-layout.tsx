@@ -1,22 +1,33 @@
-import { POST_SECTION_META, type ContentPost } from '@muicv/shared';
+import type { ContentLocale, ContentPost } from '@muicv/shared';
 
+import { BLOG_STRINGS, blogUrlPrefix } from '../_i18n/blog';
 import { ContentCard } from './content-card';
 import { PostCategoryNav, countPostsBySection, type PostCategory } from './post-category-nav';
 
 /**
- * 文章列表两栏外壳：左侧分类侧边栏 + 右侧文章列表，供 /posts 与 /posts/[section] 共用。
- * 传入全量文章，内部同时算出各分类计数与当前分类的可见列表，保证计数始终是全站的。
+ * 文章列表两栏外壳：左侧分类侧边栏 + 右侧文章列表，供中文 /posts 与多语言 /<locale>/posts 共用。
+ * 传入全量文章与 locale，内部算各分类计数、当前分类可见列表，并生成本语言的链接与文案。
  */
-export function PostsLayout({ active, allPosts }: { active: PostCategory; allPosts: ContentPost[] }) {
+export function PostsLayout({
+  locale,
+  active,
+  allPosts,
+}: {
+  locale: ContentLocale;
+  active: PostCategory;
+  allPosts: ContentPost[];
+}) {
+  const strings = BLOG_STRINGS[locale];
+  const prefix = blogUrlPrefix(locale);
   const counts = countPostsBySection(allPosts);
   const visible = active === 'all' ? allPosts : allPosts.filter((post) => post.section === active);
   const heading =
     active === 'all'
-      ? { eyebrow: 'Posts', title: '全部文章', description: '围绕简历、校招、面试、offer 和 AI agent 的求职文章。' }
+      ? { eyebrow: strings.eyebrow, title: strings.allTitle, description: strings.allDescription }
       : {
-          eyebrow: active,
-          title: POST_SECTION_META[active].label,
-          description: POST_SECTION_META[active].description,
+          eyebrow: strings.eyebrow,
+          title: strings.sections[active],
+          description: strings.sectionDescs[active],
         };
 
   return (
@@ -31,27 +42,32 @@ export function PostsLayout({ active, allPosts }: { active: PostCategory; allPos
 
       <div className="mt-8 lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <PostCategoryNav active={active} counts={counts} total={allPosts.length} />
+          <PostCategoryNav
+            active={active}
+            counts={counts}
+            total={allPosts.length}
+            strings={strings}
+            hrefFor={(category) => (category === 'all' ? `${prefix}/posts` : `${prefix}/posts/${category}`)}
+          />
         </aside>
 
         <div className="mt-8 lg:mt-0">
-          <p className="text-[13px] text-mute">共 {visible.length} 篇</p>
+          <p className="text-[13px] text-mute">{strings.totalLabel(visible.length)}</p>
           {visible.length === 0 ? (
             <div className="mt-4 rounded-xl border-2 border-rule bg-paper p-8 text-[14px] text-ink-soft">
-              {active === 'all'
-                ? '文章还在整理中，先去 Skill 目录看看已经登记的求职工具。'
-                : '这个分类还在整理内容，先看看其他分类。'}
+              {active === 'all' ? strings.emptyAll : strings.emptySection}
             </div>
           ) : (
             <div className="mt-4 grid gap-5 md:grid-cols-2">
               {visible.map((post) => (
                 <ContentCard
-                  key={`${post.section}/${post.slug}`}
-                  href={`/posts/${post.section}/${post.slug}`}
-                  eyebrow={POST_SECTION_META[post.section].label}
+                  key={`${post.locale}/${post.section}/${post.slug}`}
+                  href={`${prefix}/posts/${post.section}/${post.slug}`}
+                  eyebrow={strings.sections[post.section]}
                   title={post.title}
                   summary={post.summary}
                   tags={post.tags}
+                  ctaLabel={strings.readMore}
                 />
               ))}
             </div>

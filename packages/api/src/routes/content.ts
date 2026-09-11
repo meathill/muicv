@@ -1,15 +1,24 @@
 import {
+  type ContentLocale,
+  DEFAULT_CONTENT_LOCALE,
   fetchCmsPostBySlug,
   fetchCmsPublishedChangelog,
   fetchCmsPublishedPosts,
   fetchCmsPublishedSkills,
   fetchCmsSkillBySlug,
+  isContentLocale,
   type PostSection,
 } from '@muicv/shared';
 import type { Context } from 'hono';
 
 function isPostSection(value: string): value is PostSection {
   return value === 'jobs' || value === 'product' || value === 'guide';
+}
+
+/** 内容接口的 locale 入参。缺省 / 非法都回落到默认语言（zh-CN）。 */
+function readLocale(c: Context): ContentLocale {
+  const raw = c.req.query('locale');
+  return raw && isContentLocale(raw) ? raw : DEFAULT_CONTENT_LOCALE;
 }
 
 function getCmsOptions(c: Context) {
@@ -60,15 +69,18 @@ export async function handlePostsList(c: Context) {
   if (sectionRaw && !isPostSection(sectionRaw)) {
     return c.json({ error: 'invalid-section' }, 400);
   }
-  const posts = (await fetchCmsPublishedPosts(sectionRaw, getCmsOptions(c))).map((post) => ({
+  const locale = readLocale(c);
+  const prefix = locale === DEFAULT_CONTENT_LOCALE ? '' : `/${locale}`;
+  const posts = (await fetchCmsPublishedPosts(locale, sectionRaw, getCmsOptions(c))).map((post) => ({
     slug: post.slug,
+    locale: post.locale,
     section: post.section,
     title: post.title,
     summary: post.summary,
     tags: post.tags,
     publishedAt: post.publishedAt,
     updatedAt: post.updatedAt,
-    url: `https://muicv.com/posts/${post.section}/${post.slug}`,
+    url: `https://muicv.com${prefix}/posts/${post.section}/${post.slug}`,
   }));
   return c.json({ posts });
 }
@@ -78,9 +90,11 @@ export async function handlePostDetail(c: Context) {
   const slug = c.req.param('slug');
   if (!isPostSection(section)) return c.json({ error: 'invalid-section' }, 400);
 
-  const post = await fetchCmsPostBySlug(section, slug, getCmsOptions(c));
+  const locale = readLocale(c);
+  const prefix = locale === DEFAULT_CONTENT_LOCALE ? '' : `/${locale}`;
+  const post = await fetchCmsPostBySlug(locale, section, slug, getCmsOptions(c));
   if (!post) return c.json({ error: 'post-not-found' }, 404);
-  return c.json({ ...post, url: `https://muicv.com/posts/${post.section}/${post.slug}` });
+  return c.json({ ...post, url: `https://muicv.com${prefix}/posts/${post.section}/${post.slug}` });
 }
 
 export async function handleChangelog(c: Context) {

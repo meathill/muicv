@@ -27,7 +27,6 @@ export type CmsPostDocument = CmsPostPayload & {
   createdAt?: string;
   updatedAt?: string;
 };
-
 export type CmsSkillDocument = CmsSkillPayload & {
   id: number | string;
   createdAt?: string;
@@ -94,10 +93,12 @@ export class CmsClient {
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
-  async findPostBySlug(slug: string): Promise<CmsPostDocument | null> {
+  /** 按 (locale, slug) 查文章：同一 slug 的各语言译文是不同的行。 */
+  async findPostBySlug(slug: string, locale = 'zh-CN'): Promise<CmsPostDocument | null> {
     const params = new URLSearchParams({
       depth: '0',
       limit: '1',
+      'where[locale][equals]': locale,
       'where[slug][equals]': slug,
     });
     const result = await this.request<PayloadListResponse<CmsPostDocument>>(`/api/posts?${params.toString()}`);

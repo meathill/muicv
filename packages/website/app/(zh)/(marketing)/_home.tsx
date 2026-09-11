@@ -16,7 +16,9 @@ import { Workflow } from './_sections/workflow';
 // 中英首页共用的渲染。两个 page.tsx 只负责各自的 metadata + revalidate。
 export async function HomePage({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
-  const recentPosts = (await getWebsitePublishedPosts()).slice(0, 4);
+  // 首页的 Locale 是站点语言（zh/en），内容读取要用 CMS 侧的 locale 写法。
+  const contentLocale = locale === 'zh' ? 'zh-CN' : 'en';
+  const recentPosts = (await getWebsitePublishedPosts(contentLocale)).slice(0, 4);
   const altHref = locale === 'zh' ? '/en' : '/';
 
   return (

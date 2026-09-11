@@ -61,9 +61,11 @@ server.registerTool(
       }
 
       const client = new CmsClient();
-      const existing = await client.findPostBySlug(input.payload.slug);
+      const existing = await client.findPostBySlug(input.payload.slug, input.payload.locale);
       if (existing) {
-        return errorResult(`slug "${input.payload.slug}" 已存在。请换 slug，或改用 upsert_post 更新已有文章。`);
+        return errorResult(
+          `slug "${input.payload.slug}"（locale=${input.payload.locale}）已存在。请换 slug，或改用 upsert_post 更新已有文章。`,
+        );
       }
 
       const post = await client.createPost(input.payload);
@@ -88,7 +90,7 @@ server.registerTool(
       }
 
       const client = new CmsClient();
-      const existing = await client.findPostBySlug(input.payload.slug);
+      const existing = await client.findPostBySlug(input.payload.slug, input.payload.locale);
 
       if (!existing) {
         const post = await client.createPost(input.payload);
@@ -96,7 +98,9 @@ server.registerTool(
       }
 
       if (input.onConflict === 'error') {
-        return errorResult(`slug "${input.payload.slug}" 已存在。设置 onConflict=update 才会覆盖更新。`);
+        return errorResult(
+          `slug "${input.payload.slug}"（locale=${input.payload.locale}）已存在。设置 onConflict=update 才会覆盖更新。`,
+        );
       }
 
       const post = await client.updatePost(existing.id, input.payload);
@@ -114,12 +118,12 @@ server.registerTool(
   },
   async (args) => {
     return withToolErrors(async () => {
-      const { slug } = normalizeGetPostInput(args);
+      const { slug, locale } = normalizeGetPostInput(args);
       const client = new CmsClient();
-      const post = await client.findPostBySlug(slug);
+      const post = await client.findPostBySlug(slug, locale);
 
       if (!post) {
-        return jsonResult({ ok: true, found: false, slug });
+        return jsonResult({ ok: true, found: false, slug, locale });
       }
 
       return jsonResult({ ok: true, found: true, post: toPostResult(post) });
@@ -351,13 +355,16 @@ function formatErrorMessage(error: unknown): string {
 }
 
 function toPostResult(post: CmsPostDocument) {
+  // zh-CN 是默认语言，站内不加前缀；其余语言走 /<locale>/posts/...（en 沿用现有 /en）。
+  const prefix = post.locale === 'zh-CN' ? '' : `/${post.locale}`;
   return {
     id: post.id,
     slug: post.slug,
+    locale: post.locale,
     section: post.section,
     status: post.status,
     title: post.title,
-    url: `https://muicv.com/posts/${post.section}/${post.slug}`,
+    url: `https://muicv.com${prefix}/posts/${post.section}/${post.slug}`,
     cmsUrl: `${process.env.MUICV_CMS_URL ?? 'https://cms.muicv.com'}/admin/collections/posts/${post.id}`,
     updatedAt: post.updatedAt,
   };

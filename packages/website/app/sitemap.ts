@@ -1,4 +1,4 @@
-import { POST_SECTION_META, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
+import { CONTENT_LOCALES, contentLocalePrefix, POST_SECTION_META, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
 import type { MetadataRoute } from 'next';
 import { getWebsitePublishedChangelog, getWebsitePublishedPosts, getWebsitePublishedSkills } from '@/lib/cms-content';
 
@@ -17,11 +17,20 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const generatedAt = new Date();
-  const [posts, skills, changelog] = await Promise.all([
-    getWebsitePublishedPosts(),
+  const [postsZh, skills, changelog] = await Promise.all([
+    getWebsitePublishedPosts('zh-CN'),
     getWebsitePublishedSkills(),
     getWebsitePublishedChangelog(),
   ]);
+  // 非默认语言的文章 URL（每个 locale 一组），用于 sitemap 收录与 hreflang。
+  const localizedPosts = Object.fromEntries(
+    await Promise.all(
+      CONTENT_LOCALES.filter((locale) => locale !== 'zh-CN').map(async (locale) => [
+        locale,
+        await getWebsitePublishedPosts(locale),
+      ]),
+    ),
+  ) as Partial<Record<(typeof CONTENT_LOCALES)[number], typeof postsZh>>;
   const changelogLastModified = changelog.reduce<Date>(
     (latest, item) => maxDate(latest, toDate(item.updatedAt)),
     new Date(0),
@@ -46,6 +55,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: section.path === '/posts/jobs' ? 0.8 : 0.55,
       changeFrequency: 'weekly' as const,
     })),
+    // 非默认语言的文章列表页（带前缀；en 的 /en/posts 也在此列）
+    ...CONTENT_LOCALES.filter((locale) => locale !== 'zh-CN').flatMap((locale) => {
+      const prefix = contentLocalePrefix(locale);
+      return [
+        { path: `${prefix}/posts`, priority: 0.7, changeFrequency: 'weekly' as const },
+        ...Object.keys(POST_SECTION_META).map((section) => ({
+          path: `${prefix}/posts/${section}`,
+          priority: section === 'jobs' ? 0.75 : 0.55,
+          changeFrequency: 'weekly' as const,
+        })),
+      ];
+    }),
     { path: '/skills', priority: 0.8, changeFrequency: 'weekly' },
     { path: '/changelog', priority: 0.5, changeFrequency: 'weekly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
@@ -76,14 +97,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     ];
   });
+  const postAlternatesFor = (section: string, slug: string) => ({
+    languages: Object.fromEntries(
+      CONTENT_LOCALES.map((locale) => [
+        locale,
+        `${contentLocalePrefix(locale)}/posts/${section}/${encodeURIComponent(slug)}`,
+      ]),
+    ),
+  });
   const contentPages = [
     ...templatePages,
-    ...posts.map((post) => ({
-      path: `${POST_SECTION_META[post.section].path}/${encodeURIComponent(post.slug)}`,
-      priority: post.section === 'jobs' ? 0.75 : 0.6,
-      changeFrequency: 'monthly' as const,
-      lastModified: toDate(post.updatedAt),
-    })),
+    // 中文文章（无前缀）
+    ...postsZh.map((post) => {
+      const path = `${POST_SECTION_META[post.section].path}/${encodeURIComponent(post.slug)}`;
+      return {
+        path,
+        priority: post.section === 'jobs' ? 0.75 : 0.6,
+        changeFrequency: 'monthly' as const,
+        lastModified: toDate(post.updatedAt),
+        alternates: postAlternatesFor(post.section, post.slug),
+      };
+    }),
+    // 非默认语言文章（带前缀），只有该语言确实有译文时才收录
+    ...Object.entries(localizedPosts).flatMap(([locale, posts]) =>
+      (posts ?? []).map((post) => ({
+        path: `${contentLocalePrefix(locale as (typeof CONTENT_LOCALES)[number])}/posts/${post.section}/${encodeURIComponent(post.slug)}`,
+        priority: post.section === 'jobs' ? 0.75 : 0.6,
+        changeFrequency: 'monthly' as const,
+        lastModified: toDate(post.updatedAt),
+        alternates: postAlternatesFor(post.section, post.slug),
+      })),
+    ),
     ...skills.map((skill) => ({
       path: `/skills/${encodeURIComponent(skill.slug)}`,
       priority: 0.7,

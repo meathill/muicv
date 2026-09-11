@@ -624,6 +624,7 @@ function cmsSkillDoc() {
 function cmsPostDoc() {
   return {
     slug: 'third-party-skills-tencent-campus-recruiting',
+    locale: 'zh-CN',
     section: 'jobs',
     status: 'published',
     title: '我们收录了腾讯校园招聘 Skill：先从官方来源索引开始',

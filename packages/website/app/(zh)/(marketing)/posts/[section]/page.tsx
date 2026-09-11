@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { POST_SECTION_META, type PostSection } from '@muicv/shared';
-import { getWebsitePublishedPosts } from '@/lib/cms-content';
+import { getListAlternateLanguages, getWebsitePublishedPosts } from '@/lib/cms-content';
 
 import { MarketingShell } from '../../_content/marketing-shell';
 import { PostsLayout } from '../../_content/posts-layout';
@@ -19,7 +19,11 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const resolvedParams = await params;
   if (!isPostSection(resolvedParams.section)) return {};
   const meta = POST_SECTION_META[resolvedParams.section];
-  return soloPageMetadata({ path: meta.path, title: meta.label, description: meta.description });
+  const base = soloPageMetadata({ path: meta.path, title: meta.label, description: meta.description });
+  return {
+    ...base,
+    alternates: { canonical: meta.path, languages: getListAlternateLanguages(resolvedParams.section) },
+  };
 }
 
 export default async function PostSectionPage({ params }: { params: Promise<Params> }) {
@@ -27,11 +31,11 @@ export default async function PostSectionPage({ params }: { params: Promise<Para
   if (!isPostSection(resolvedParams.section)) notFound();
 
   // 取全量用于侧边栏计数，当前分类的过滤在 PostsLayout 内完成。
-  const posts = await getWebsitePublishedPosts();
+  const posts = await getWebsitePublishedPosts('zh-CN');
 
   return (
     <MarketingShell>
-      <PostsLayout active={resolvedParams.section} allPosts={posts} />
+      <PostsLayout locale="zh-CN" active={resolvedParams.section} allPosts={posts} />
     </MarketingShell>
   );
 }

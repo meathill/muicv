@@ -1,8 +1,12 @@
 import Link from 'next/link';
-import { POST_SECTION_META, type ContentPost, type PostSection } from '@muicv/shared';
+import type { ContentPost, PostSection } from '@muicv/shared';
+
+import type { BlogStrings } from '../_i18n/blog';
 
 /** 文章分类筛选项：`all` 为「全部」，其余与 post section 一一对应。 */
 export type PostCategory = 'all' | PostSection;
+
+const SECTION_ORDER: PostSection[] = ['jobs', 'product', 'guide'];
 
 /** 按 section 统计文章数，供侧边栏显示计数。 */
 export function countPostsBySection(posts: ContentPost[]): Record<PostSection, number> {
@@ -12,38 +16,41 @@ export function countPostsBySection(posts: ContentPost[]): Record<PostSection, n
 }
 
 /**
- * 文章分类侧边栏。「全部」指向 /posts，其余指向各 section 列表页，
- * 当前分类由调用方的路由决定并通过 active 传入（server component 无需 usePathname）。
+ * 文章分类侧边栏。当前分类由调用方的路由决定并通过 active 传入（server component 无需 usePathname），
+ * 链接由 hrefFor 生成以便各语言加自己的 URL 前缀。
  */
 export function PostCategoryNav({
   active,
   counts,
   total,
+  strings,
+  hrefFor,
 }: {
   active: PostCategory;
   counts: Record<PostSection, number>;
   total: number;
+  strings: BlogStrings;
+  hrefFor: (category: PostCategory) => string;
 }) {
-  const items: Array<{ key: PostCategory; label: string; href: string; count: number }> = [
-    { key: 'all', label: '全部', href: '/posts', count: total },
-    ...(Object.keys(POST_SECTION_META) as PostSection[]).map((section) => ({
+  const items: Array<{ key: PostCategory; label: string; count: number }> = [
+    { key: 'all', label: strings.allLabel, count: total },
+    ...SECTION_ORDER.map((section) => ({
       key: section,
-      label: POST_SECTION_META[section].label,
-      href: POST_SECTION_META[section].path,
+      label: strings.sections[section],
       count: counts[section],
     })),
   ];
 
   return (
-    <nav aria-label="文章分类">
-      <p className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-yellow-deep">分类</p>
+    <nav aria-label={strings.eyebrow}>
+      <p className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-yellow-deep">{strings.eyebrow}</p>
       <ul className="mt-3 flex flex-wrap gap-2 lg:flex-col lg:gap-1">
         {items.map((item) => {
           const isActive = item.key === active;
           return (
             <li key={item.key}>
               <Link
-                href={item.href}
+                href={hrefFor(item.key)}
                 prefetch={false}
                 aria-current={isActive ? 'page' : undefined}
                 className={

@@ -9,6 +9,7 @@ import type { CmsSkillPayload } from '../mcp/skill-input.ts';
 const payload: CmsPostPayload = {
   title: '测试文章',
   slug: 'test-post',
+  locale: 'zh-CN',
   section: 'jobs',
   status: 'draft',
   _status: 'draft',
@@ -70,8 +71,26 @@ test('CmsClient 使用 bearer token 调 Payload API', async () => {
   assert.equal(requests[0]?.headers.get('Authorization'), 'Bearer token-123');
   assert.equal(
     requests[0]?.url,
-    'https://cms.example.com/api/posts?depth=0&limit=1&where%5Bslug%5D%5Bequals%5D=test-post',
+    'https://cms.example.com/api/posts?depth=0&limit=1&where%5Blocale%5D%5Bequals%5D=zh-CN&where%5Bslug%5D%5Bequals%5D=test-post',
   );
+});
+
+test('findPostBySlug 按 (locale, slug) 精确定位译文', async () => {
+  const requests: Request[] = [];
+  const client = new CmsClient({
+    baseUrl: 'https://cms.example.com',
+    token: 'token-123',
+    fetchImpl: async (input, init) => {
+      const request = new Request(input, init);
+      requests.push(request);
+      return Response.json({ docs: [{ id: 9, ...payload, locale: 'ja' }] });
+    },
+  });
+
+  const post = await client.findPostBySlug('test-post', 'ja');
+
+  assert.equal(post?.id, 9);
+  assert.ok(requests[0]?.url.includes('where%5Blocale%5D%5Bequals%5D=ja'));
 });
 
 test('CmsClient 使用 Payload 用户 API Key 调 Payload API', async () => {
