@@ -5,6 +5,7 @@ import { POST_SECTION_META, type PostSection } from '@muicv/shared';
 import { JsonLd } from '@/components/json-ld';
 import { getWebsitePostBySlug, getWebsitePublishedPosts } from '@/lib/cms-content';
 
+import { Breadcrumb } from '../../../_content/breadcrumb';
 import { MarketingShell } from '../../../_content/marketing-shell';
 import { MarkdownBody } from '../../../_content/markdown';
 import { ArrowUpRight } from '../../../_icons';
@@ -87,9 +88,14 @@ export default async function PostDetailPage({ params }: { params: Promise<Param
       <article>
         <header className="border-b border-rule bg-paper/55">
           <div className="mx-auto max-w-3xl px-5 py-14 md:px-8 md:py-16">
-            <Link href={sectionMeta.path} className="text-[13px] font-bold text-yellow-deep hover:text-ink">
-              ← {sectionMeta.label}
-            </Link>
+            <Breadcrumb
+              items={[
+                { name: '首页', href: '/' },
+                { name: '文章', href: '/posts' },
+                { name: sectionMeta.label, href: sectionMeta.path },
+                { name: post.title },
+              ]}
+            />
             <p className="mt-5 font-mono text-[12px] uppercase tracking-[0.18em] text-yellow-deep">
               {post.publishedAt} · {post.author}
             </p>
