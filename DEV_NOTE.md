@@ -121,7 +121,7 @@
   - 刻意不加 tag cache / cache purge：站点不用 `revalidateTag` / `revalidatePath`，按需失效链路用不到。
   - `deploy` 命令会跑 `populateCache` 把构建期预渲染数据写进 R2，所以纯静态页（如 pricing）改内容 = 部署即生效，不需要 revalidate 兜底。（这是 deploy 命令的机制说明；日常不要手动跑，见本节第 1 条——自动部署走的是同一套构建。）
 - **静态资源 immutable 头**：`public/_headers` 配 `/_next/static/*` → `Cache-Control: public,max-age=31536000,immutable`。OpenNext 会把 public/ 拷进 `.open-next/assets`，Cloudflare Workers Assets 直接吃这份 `_headers`；`next.config.ts` 的 headers 对静态资源无效（Worker 不跑在 assets 前面）。website / cms 都要各放一份。
-- **Pricing 页静态化（issue #14）**：跟首页同套路——静态壳 + 客户端动态区。动态数据（登录态 / 订阅 / 币种 / CN cooldown）由 `GET /api/pricing/state` 挂载后一次拿齐；币种切换走 `CurrencyToggle` 新增的可选 `onSwitch` prop（本地 state 更新，不再 router.refresh，dashboard 不传保持原行为）；interval 只维护本地 state 并 `history.replaceState` 同步 URL。价格未返回前显示占位符避免「先 $ 后 ¥」闪烁。
+- **Pricing 页静态化（issue #14）**：跟首页同套路——静态壳 + 客户端动态区。动态数据（登录态 / 订阅 / 币种）由 `GET /api/pricing/state` 挂载后一次拿齐；币种切换走 `CurrencyToggle` 的可选 `onSwitch` prop（本地 state 更新，不再 router.refresh，dashboard 不传保持原行为）；interval 只维护本地 state 并 `history.replaceState` 同步 URL，**默认年付**（`?interval=monthly` 可覆盖）。价格未返回前显示占位符避免「先 $ 后 ¥」闪烁。订阅卡固定美元标价，¥ 视图的登录用户看到「人民币不支持订阅」提示 + 一键切回美元（走 `lib/currency-client.ts` 的 `postCurrencyPreference`）。
 - **IndexNow（issue #13）**：key 文件 `public/<key>.txt`（内容 = key）随构建发布，`scripts/indexnow-submit.ts` 抓 sitemap 一次性提交全部 URL 到 api.indexnow.org，部署后手跑一次，不引入 cron。
 - **CDN 层缓存 Pricing（评估后不做，2026-08）**：OpenNext 缓存命中后 TTFB 仍有 1~3s（Worker 执行 + R2 读取），因为 Cloudflare CDN 默认不缓存 Worker 返回的 HTML。曾写过一个 Cache Rules API 脚本想给 `/pricing*` 加 `cache_everything` + `edge_ttl 1h`，但**最终决定不做**：ISR 已保证内容正确且命中，CDN 规则只是省掉 Worker 执行；代价是「部署改了价格/文案，但边缘还在发旧版」的失效心智负担（要记得 purge），低流量站点不划算。如果哪天要加，流程是 Dashboard 两条规则（hostname `muicv.com` + path `starts_with /pricing`、`/en/pricing`，Cache Everything + Edge TTL 1h），验证 `cf-cache-status: HIT`。
 - **API 路由统一 no-store**：Next 16 不会自动给 route handler 加 `Cache-Control`，`force-dynamic` 只保证 OpenNext 不缓存；防浏览器启发式缓存 / 未来加缓存规则时误缓存用户数据，在 `next.config.ts` 加 `/api/:path*` → `Cache-Control: no-store` 全局规则（已验证对 route handler 生效）。
@@ -544,6 +544,38 @@
 > 补充包随用随买。所有云端服务（LLM 按 model 分价、PDF 200、JD 300）按 token 扣。BYOK
 > 用户的 LLM 走 muirouter 自己付，但 PDF / JD 仍扣 muicv tokens。
 
+### 定价口径与毛利（2026-09 review）
+
+数字只在 `packages/shared/src/pricing.ts`（`SUBSCRIPTION_PLANS` / `TOPUP_PACKS`），
+Stripe price ID 只在 `packages/website/lib/stripe-prices.ts`。算法：
+
+- 锚点 **1 显示 token = $1e-5**；上游价统一 `× 1.1`（`LLM_RATIO`）。
+- 余额面值 = tokens × $1e-5；上游成本 = 面值 / 1.1；满载毛利 = 售价 − 上游成本。
+
+**满载毛利（所有 token 用尽，未计手续费）**：
+
+| SKU | 售价 | tokens | 满载毛利 | 毛利率 | $/M |
+| --- | --- | --- | --- | --- | --- |
+| Pro 月付 | $4.88 | 500K | +$0.33 | +6.8% | 9.76 |
+| Pro 年付 | $48.88 | 5.5M | −$1.12 | −2.3% | 8.89 |
+| Max 月付 | $15.88 | 1.7M | +$0.43 | +2.7% | 9.34 |
+| Max 年付 | $158.88 | 18.8M | −$12.03 | −7.6% | 8.45 |
+| topup small | $1.88 | 140K | +$0.61 | +32.4% | 13.43 |
+| topup medium | $5.88 | 480K | +$1.52 | +25.8% | 12.25 |
+| topup large | $19.88 | 1.75M | +$3.97 | +20.0% | 11.36 |
+
+两个容易漏的点：
+
+1. **必须叠加 Stripe 手续费**：约 2.9% + $0.30/笔（海外卡更高）。对 Pro 月付这种小额定单，
+   手续费就吃掉约 9 个百分点 → 满载实为微亏。**补充包才是真利润中心**（扣费后仍有 13~18%）。
+2. **年付折扣要克制**：年付售价 = 月付 × 10，token 若给到 ×12 就是「10 个月的钱买 12 个月的量」，
+   满载亏 11~14%。2026-09 把年付 token 收到 **×11（Pro 5.5M / Max 18.8M）**，折扣从 17% 降到
+   ≈9%，满载亏损收到 2~8%。订阅折扣的本质是**赌用户用不满**，不追求满载保本，但让利幅度要可控。
+
+价格本身（金额 / currency / interval）在 Stripe Dashboard 维护；**改 token 数无需动 Stripe**
+（recurring price 金额不变，token 由 webhook 从 `SUBSCRIPTION_PLANS` 反查入账）。存量年付订阅
+下次续费自动用新 token 量，已发放的不回收。
+
 - **D1 原子扣账：必须单 statement**。`UPDATE tokenBalance SET balance = balance - ?
   WHERE userId = ? AND balance >= ? RETURNING balance` —— SQLite 内部 page-level mutex
   保证原子，`first()` 返回 null 即余额不足。绝不允许"先 SELECT 再 UPDATE"两步走，
@@ -642,8 +674,24 @@
 - **双层幂等**：(1) `stripeEvent` 表对 evt_id 去重（`onConflictDoNothing().returning()`，
   affected rows=0 即已处理）；(2) `credit()` 用 `invoice_<id>` / `checkout_<sid>` 当
   ledgerId，重复触发不重复入账。两层独立，缺一不可。
-- **price_id → token 映射放代码**：不查 Stripe API（每次 webhook 多一跳），直接
-  对比 `env.STRIPE_PRICE_*`。切 live mode 时改 wrangler.jsonc vars。
+- **price_id → token 映射放代码**：不查 Stripe API（每次 webhook 多一跳），直接查
+  `packages/website/lib/stripe-prices.ts` 的常量表（`STRIPE_SUBSCRIPTION_PRICES` /
+  `STRIPE_TOPUP_PRICES`，反查走 `SUBSCRIPTION_PRICE_META` / `TOPUP_PRICE_META`）。
+  **不在 wrangler.jsonc vars 里**——priceId 是 `plan × interval` 结构化数据，扁平 key-value
+  难维护、易漏改。增减档位只改这个 TS 表和 `packages/shared/src/pricing.ts`。
+  （注：`packages/api/src/routes/me.ts` 仍残留老的 `env.STRIPE_PRICE_*` 映射，只认 USD
+  月/年付 ID，且 Pro 年付 ID 与 website 表已不一致，属遗留问题，见文末「已知技术债」。）
+- **订阅只卖 USD，人民币只卖补充包**（2026-09 起）：Stripe 本账户不支持 CNY recurring
+  （Alipay 进不了 subscription mode，WeChat Pay 全平台不支持 recurring），所以
+  `STRIPE_SUBSCRIPTION_PRICES` 只有 usd 一份；`/api/checkout` 对 `currency=cny` 直接 400，
+  引导切美元或买 `/api/topup`（微信/支付宝/卡）。曾用「CN 月包/年包」一次性 SKU +
+  cooldown 模拟订阅（`CN_PACKS` / `lib/cn-pack.ts` / `api/cn-pack`），2026-09 已整体下线删除，
+  `ledger.type='cn_pack'` 仅保留给历史流水。
+  - **别删 `LEGACY_CNY_SUBSCRIPTION_PRICES`**：Stripe 在 CN 订阅上虽拒了 Alipay/WeChat 但**允许 card**，
+    不能排除已有 CN 用户用国际卡订阅过。这 4 个 CNY recurring price 已从**可售表**摘除
+    （Checkout 选不中），但保留在**反查表**里，让存量订阅续费仍能入账——
+    否则就是对已付费用户静默少发 token。确认 Stripe 侧无 active 订阅后用
+    `scripts/check-legacy-cny-subscriptions.ts` 兜底，再删常量。
 - **Hosted Checkout + Customer Portal**：不嵌入 Stripe Elements（省 80KB bundle）。
   取消 / 切档 / 看发票全交给 Stripe Portal，自己只写跳转。
 - **Stripe API 2026-04 起 period 字段在 `subscription.items.data[0].current_period_*`**，
@@ -851,3 +899,11 @@ TTS_RATE_PER_CHAR），账单在小米控制台可看。
 **已知技术债**：packages/api 没有 typecheck script，手跑 `tsc --noEmit` 有 ~38 行存量报错
 （llm-usage.ts / transcribe.ts / content.ts 的 exactOptionalPropertyTypes 类问题），本次只保证
 改动文件零报错，欠账待还。
+
+**已知技术债：`packages/api/src/routes/me.ts` 的 plan 反查已与 website 脱节。**
+它从 `env.STRIPE_PRICE_PRO_MONTHLY` 等 4 个 wrangler vars 反查 plan（`resolvePlanFromPriceId`），
+只认老的 USD 月/年付 ID，且 `packages/api/wrangler.jsonc` 里 Pro 年付 ID（`price_1TRwb4…`）
+与 website 的 `STRIPE_SUBSCRIPTION_PRICES.pro.yearly`（`price_1TUjkF…`）已经不一致 —— 后果是
+当前 Pro 年付订阅在 `/me` 里反查为 null，桌面 app 会把它当免费版显示。
+修法：把 price ID 表下沉到 `@muicv/shared`（或给 api 一份同步的常量），删掉这 4 个 env var，
+让两端共用同一张表。未做，因为超出本次「定价页」范围。

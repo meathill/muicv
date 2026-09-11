@@ -297,13 +297,14 @@ api worker 只读 token 余额、写流水，零 stripe 依赖。
 #### 一次性建好 Stripe 后台
 
 1. 注册 [Stripe](https://dashboard.stripe.com)（个人或企业，先用 **test mode**）
-2. **Products → 创建 4 个 product**：
-   - "Mui Pro 月卡"：recurring monthly，金额对齐 `SUBSCRIPTION_PLANS.pro.priceCnyDisplay`（默认 ¥30）
-   - "Mui Max 月卡"：recurring monthly，对齐 `SUBSCRIPTION_PLANS.max.priceCnyDisplay`（¥98）
-   - "Mui 补充包 small"：one-time，10K tokens（¥10）
-   - "Mui 补充包 medium"：one-time，35K tokens（¥30）
-   - "Mui 补充包 large"：one-time，130K tokens（¥100）
-3. 每个 product 各有一个 `price_xxx` 内部 ID，记下来
+2. **Products → 创建 product / price**（金额与币种在 Stripe 侧维护，代码只记 price ID）：
+   - 订阅（**只卖 USD**——本账户不支持 CNY recurring）：Pro / Max × 月付 / 年付，共 4 个 USD recurring price
+   - 一次性补充包：small / medium / large，各建 **USD + CNY 两套 one-time price**（人民币只用于补充包，走微信 / 支付宝 / 卡）
+   - token 量不发在 Stripe 上，只发「金额 + 币种 + interval」；token 数在
+     `packages/shared/src/pricing.ts` 的 `SUBSCRIPTION_PLANS` / `TOPUP_PACKS` 维护
+3. 记下这些 `price_xxx` 内部 ID，填到 **`packages/website/lib/stripe-prices.ts`**
+   （`STRIPE_SUBSCRIPTION_PRICES` / `STRIPE_TOPUP_PRICES`）——
+   **不放 `wrangler.jsonc` vars**，原因见该文件注释（结构化数据用 TS 表更好维护）
 4. **Customer Portal → Settings**：开启 cancel subscription / switch plan / update payment method / view invoices
 5. **Developers → API keys**：拿 `sk_test_...`
 6. **Developers → Webhooks → Add endpoint** `https://muicv.com/api/stripe/webhook`，选事件：
@@ -311,6 +312,10 @@ api worker 只读 token 余额、写流水，零 stripe 依赖。
    - `customer.subscription.created` / `updated` / `deleted`
    - `invoice.paid` / `invoice.payment_failed`
    - 创建后 **Reveal signing secret** 拿 `whsec_test_...`
+
+> 2026-09 起人民币不能订阅：Stripe 本账户拒绝 Alipay 进 subscription mode，WeChat Pay 全平台
+> 不支持 recurring。历史遗留的 4 个 CNY recurring price 与「CN 月包/年包」一次性 SKU
+> 已从代码移除；若 Stripe 侧仍有这些 price，建议归档（代码不再引用）。
 
 #### wrangler 配置（生产）
 
@@ -322,7 +327,9 @@ echo -n "sk_test_xxxxxxxxxxxxxxxx" | pnpm --filter @muicv/website exec wrangler 
 echo -n "whsec_test_xxxxxxxxxxxxx" | pnpm --filter @muicv/website exec wrangler secret put STRIPE_WEBHOOK_SECRET
 ```
 
-把 `packages/website/wrangler.jsonc` 的 `vars.STRIPE_PRICE_*` 全改成上面记下的 5 个 price ID（这些是公开标识符，可以入 git；切 live mode 时改成 live price ID）。
+把上面记下的 price ID 填到 `packages/website/lib/stripe-prices.ts` 的
+`STRIPE_SUBSCRIPTION_PRICES` / `STRIPE_TOPUP_PRICES`（这些是公开标识符，可以入 git；
+切 live mode 时换成 live price ID）。**注意不要写进 `wrangler.jsonc`**。
 
 #### 本地 dev
 
@@ -345,13 +352,13 @@ stripe listen --forward-to http://localhost:8788/api/stripe/webhook
 #### 切到 live mode（test 跑稳后）
 
 1. Stripe Dashboard 右上切到 live mode
-2. 重建 4 个 product / 5 个 price（test 和 live 数据完全隔离）
-3. 改 `wrangler.jsonc` 的 5 个 `STRIPE_PRICE_*` 为 live price IDs
+2. 重建 product / price（test 和 live 数据完全隔离）
+3. 改 `packages/website/lib/stripe-prices.ts` 的常量表为 live price IDs
 4. live mode 重新 Add webhook endpoint，拿新 `whsec_live_...`
 5. `wrangler secret put STRIPE_SECRET_KEY` 替换为 `sk_live_...`
 6. `wrangler secret put STRIPE_WEBHOOK_SECRET` 替换为 `whsec_live_...`
-7. `pnpm --filter @muicv/website deploy` 重新部署
-8. 用真实银行卡走一遍最小金额验证（建议先创个 ¥1 的 small 补充包做 smoke test）
+7. commit + push 触发自动部署（**不要手动 deploy**，见 DEV_NOTE「部署走 Git 集成」）
+8. 用真实银行卡走一遍最小金额验证（建议先创个小额补充包做 smoke test）
 
 **绝不要一上来就用 sk_live**：live mode 不能删 customer，初期数据脏一次就再也清不干净。
 
@@ -362,10 +369,10 @@ stripe listen --forward-to http://localhost:8788/api/stripe/webhook
 1. 注册新用户 → `/api/me` 返回 `balance: 10000`，dashboard 流水有一条 `signup_bonus`
 2. 调用 `/render` 一次 → 余额 9800，流水 +1 (`pdf_render`, -200)
 3. SQL `UPDATE tokenBalance SET balance = 100 WHERE userId = ?` → 调用 `/render` → 402 `insufficient_balance`
-4. 跳 Pro 月卡 checkout，用 4242 4242 4242 4242 测试卡 → webhook `customer.subscription.created` + `invoice.paid`
-   → user.balance 多 100K，流水一条 `subscription`，subscription 表 status='active'
+4. 跳 Pro 月付 checkout，用 4242 4242 4242 4242 测试卡 → webhook `customer.subscription.created` + `invoice.paid`
+   → user.balance 多 500K，流水一条 `subscription`，subscription 表 status='active'
 5. dashboard 点"管理订阅" → Customer Portal → Cancel subscription → webhook `customer.subscription.updated` → subscription 表 cancelAtPeriodEnd=true
-6. 跳 medium 补充包 checkout → 付款 → webhook `checkout.session.completed (mode=payment)` → balance +35K，流水一条 `topup`
+6. 跳 medium 补充包 checkout → 付款 → webhook `checkout.session.completed (mode=payment)` → balance +480K，流水一条 `topup`
 7. `stripe trigger invoice.payment_failed` → status 进 past_due（余额不动）
 8. 同一个 webhook event 在 dashboard 重发一次 → 第二次返回 200 deduped，流水不重复入条
 
