@@ -798,6 +798,29 @@ dashboard 或 app 点关联
   比回报大，留给手测和 dogfood。
 - D1 binding 在测试里用极简 mock（`prepare/bind/run/first` 全部返回 stub）。
 
+## 提交前跑 biome（pre-commit hook）
+
+**约定：每次提交前必须跑 biome**，已用 git hook 固化，不依赖人记。
+
+- 格式化走 **biome**（不是 prettier / eslint）。命令：
+  - `pnpm run format` = `biome format --write`（只格式化）
+  - `pnpm run lint` = `biome check`（格式化 + 检查，看全量基线）
+  - `pnpm run lint:fix` = `biome check --write`（格式化 + 安全自动修复）
+- **hook 位置 `.githooks/pre-commit`**，由 `package.json` 的 `prepare` 脚本设
+  `git config core.hooksPath .githooks`（`pnpm install` 时自动生效）。
+  没有用 husky —— 一个 40 行的 sh 脚本够了，少一个依赖。
+- hook 行为：只对**本次暂存的源码文件**（ts/tsx/js/jsx/mjs/cjs/json/css）跑
+  `biome check --write`，改完自动重新 `git add`。只处理暂存文件是因为全仓 500+
+  文件每次提交都扫太慢；未改动的文件在各自引入时已被规整过。
+- **hook 刻意不阻断提交**：仓库有 127 个历史遗留、不可自动修复的 lint
+  （`noArrayIndexKey` 49 个 / `useExhaustiveDependencies` 13 个 / a11y 等，
+  分布在 52 个文件），拿 biome 的退出码卡提交会让这些文件永远提不了。
+  所以 hook 只做「自动修复 + 打印提示」，修不了的留给人工。要收紧成阻断，
+  得先把这些存量清了（`pnpm run lint:fix` 只能修掉其中可安全修复的一部分，
+  其余需要重构）。
+- 手动全仓规整一次：`pnpm run lint:fix`（2026-09 已跑过一次，提交 `5dee4c2`）。
+- 绕开 hook（不推荐）：`git commit --no-verify`。
+
 ## packages/app macOS 签名 + 公证
 
 > 不签 → 用户下载装完直接「已损坏」打不开。本节记录决策依据 + 凭据怎么拿、放哪、丢了怎么办。
