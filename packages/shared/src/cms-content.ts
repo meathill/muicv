@@ -1,16 +1,14 @@
 import { type ContentLocale, isContentLocale } from './content-locales.ts';
-import {
-  type ChangelogItem,
-  type ContentPost,
-  type ContentStatus,
-  getPostBySlug,
-  getPublishedPosts,
-  type PostSection,
-  type SkillAppAvailability,
-  type SkillCatalogItem,
-  type SkillDistributionMode,
-  type SkillPublisherType,
-} from './content-registry.ts';
+import type {
+  ChangelogItem,
+  ContentPost,
+  ContentStatus,
+  PostSection,
+  SkillAppAvailability,
+  SkillCatalogItem,
+  SkillDistributionMode,
+  SkillPublisherType,
+} from './content-types.ts';
 
 const DEFAULT_CMS_BASE_URL = 'https://cms.muicv.com';
 const FETCH_LIMIT = '100';
@@ -32,8 +30,6 @@ export async function fetchCmsPublishedPosts(
   section?: PostSection,
   options: CmsContentOptions = {},
 ): Promise<ContentPost[]> {
-  // 静态兜底只有中文；非默认语言拿不到兜底，CMS 不可用时返回空而不是把中文当译文渲染。
-  const fallback = getPublishedPosts(locale, section);
   const params = new URLSearchParams({
     depth: '0',
     limit: FETCH_LIMIT,
@@ -48,14 +44,10 @@ export async function fetchCmsPublishedPosts(
 
   const docs = await fetchPayloadDocs('posts', params, options);
   if (!docs) {
-    return fallback;
+    return [];
   }
 
-  const cmsPosts = docs.map(parsePost).filter(isContentPost);
-  // 按 (locale, slug) 去重：同一 slug 的不同语言译文是不同文档，不能互相遮蔽。
-  const cmsKeys = new Set(cmsPosts.map((p) => `${p.locale}/${p.slug}`));
-  const merged = [...cmsPosts, ...fallback.filter((p) => !cmsKeys.has(`${p.locale}/${p.slug}`))];
-  return byPublishedAtDesc(merged);
+  return byPublishedAtDesc(docs.map(parsePost).filter(isContentPost));
 }
 
 export async function fetchCmsPostBySlug(
@@ -64,7 +56,6 @@ export async function fetchCmsPostBySlug(
   slug: string,
   options: CmsContentOptions = {},
 ): Promise<ContentPost | null> {
-  const fallback = getPostBySlug(locale, section, slug);
   const params = new URLSearchParams({
     depth: '0',
     limit: '1',
@@ -75,10 +66,10 @@ export async function fetchCmsPostBySlug(
   });
   const docs = await fetchPayloadDocs('posts', params, options);
   if (!docs) {
-    return fallback;
+    return null;
   }
 
-  return parsePost(docs[0]) ?? fallback;
+  return parsePost(docs[0]);
 }
 
 export async function fetchCmsPublishedSkills(options: CmsContentOptions = {}): Promise<SkillCatalogItem[]> {

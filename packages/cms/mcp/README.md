@@ -17,9 +17,8 @@
 | `create_changelog` | 创建版本更新日志 | `changelog` |
 | `upsert_changelog` | 按 `slug` 创建或更新更新日志 | `changelog` |
 | `get_changelog` | 按 `slug` 检索更新日志 | `changelog` |
-| `create_article` | 创建多站点博客文章 (`dyqr` / `muicv`) | `articles` |
-| `upsert_article` | 按 `site` + `locale` + `slug` 创建或更新博客文章 | `articles` |
-| `get_article` | 检索指定站点与语言的多站点文章 | `articles` |
+
+> `articles` 集合（多站点博客）目前只通过 seed 脚本写入，MCP server 未注册其工具。
 
 ---
 

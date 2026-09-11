@@ -1,6 +1,6 @@
 # DEPLOYMENT
 
-最后更新：2026-05-16
+最后更新：2026-09-11
 
 Mui简历的**运行时代码**（service deploy 的部分）只有这几个独立部署单元：
 
@@ -412,8 +412,8 @@ pnpm --filter @muicv/cms deploy
 
 `migrate` 会读取 `packages/cms/migrations` 和生产 D1 的 `payload_migrations` 表，只执行未应用的 migration。
 
-当前 website / api / app 已先通过 `@muicv/shared` 的 seed registry 消费同一份内容形状。
-等 CMS 上线后，把 registry 数据源切到 Payload API 即可，不需要改公开路由和 app IPC。
+website / api / app 已通过 `@muicv/shared` 的 CMS helpers（`fetchCms*`）直读 Payload，
+CMS 不可用时返回空内容，不再有 seed registry 兜底；公开路由和 app IPC 无需随内容源变化。
 
 ### 本地 MCP 写作入口
 

@@ -2,13 +2,13 @@
 
 长期开发知识沉淀。记录决策依据、踩坑、框架/基建知识，避免日后重复。
 
-最后更新：2026-07-01
+最后更新：2026-09-11
 
 ---
 
 ## 内容中心 / Skill 目录 / Payload CMS（Phase 17）
 
-- **内容消费统一走 Payload**：`packages/shared/src/content-registry.ts` 只保留内容契约和 section metadata，不再放 seed 基线。website、api、app 通过 `@muicv/shared` 的 CMS helpers 读取 Payload；CMS 不可用时返回空内容，避免假装已发布。
+- **内容消费统一走 Payload**：`packages/shared/src/content-types.ts` 只放内容契约类型和 section metadata（原 `content-registry.ts` 的内联 seed 已随博客迁移删除），不再有静态兜底。website、api、app 通过 `@muicv/shared` 的 CMS helpers 读取 Payload；CMS 不可用时返回空内容，避免假装已发布。
 - **第三方官方 skill 默认先做来源索引**：例如腾讯招聘官方校招 skill，Mui 只登记公开来源和边界说明，不复制 `SKILL.md`，不托管安装包，不给竞品导流。无法确认能稳定接入前，不写“在 MuiCV 使用 / 安装 / 接入”的文案；app catalog 打开 MuiCV 自有详情页，由详情页说明当前是否仅为来源索引。
 - **自有/明确可分发 skill 才能安装**：`distributionMode='hosted' | 'external_direct'` 之后才允许 app 做真正安装；`built_in` 只展示“已内置”。
 - **Payload 独立 Worker，复用存储**：`packages/cms` 单独跑 `cms.muicv.com`，不嵌进 `packages/website`；但 D1 复用现有 `muicv`，R2 media 复用现有 `muicv` bucket，OpenNext cache 复用 `site-cache`。原因是早期内容量小，单独建库建桶会增加运维成本。
@@ -61,24 +61,13 @@
 - **博客与营销页共用 `MarketingShell`**：语言切换器（`LangSwitch`）已升级为 9 语言选择器，
   用 `usePathname()` 推导当前页各语言 URL 并自动回退，Footer 恒显示——所以页面不再传 `altHref`
   （该参数已删除）。早期博客用过独立的 `BlogShell`，营销站本地化完成后已合并删除。
-- **草稿 → CMS 的发布通道**：`packages/cms/scripts/seed-marketing-posts.ts` 扫
-  `docs/marketing/<campaign>/*.md`（frontmatter 带发布字段，正文即 bodyMarkdown），按
-  `(locale, slug)` 幂等 upsert；**先整体校验再写入**（避免部分语言已发布的半成品），
-  支持 `--dry-run`。自带极简 frontmatter 解析，不引入 YAML 依赖。
-  发布新公告 = 加 md + `node --env-file packages/cms/.dev.vars packages/cms/scripts/seed-marketing-posts.ts`。
-  改完删掉或改 published：`posts` 默认 draft，需显式 `status: published` 才公开。
-- **hreflang 只指向真实译文**：`getPostAlternateLanguages()` 先查各语言是否真有该 slug 的译文，
-  只收录存在的语言，避免 hreflang 指向 404（对 SEO 有害）。列表页各语言都存在，可直接全量输出。
-- **静态兜底只有中文**：`content-registry.ts` 的 3 篇 seed 是中文，非 `zh-CN` 时 `getPublishedPosts`
-  返回空——**不能**把中文当译文渲染。因此非中文在 seed 到 CMS 前会显示空态，这是预期行为。
-- **路由用 `(locales)/[locale]` 动态子树承接**：`(zh)` / `(en)` 仍是静态子树，新增的
-  `app/(locales)/[locale]/` 只承接其余语言。实测 Next 静态优先，`/posts`、`/en/*` 优先级不受影响；
-  `generateStaticParams` 里显式排除 `zh-CN`（由 `(zh)` 承接）。新增语言 = 加 `CONTENT_LOCALES` 成员
-  + 加 `BLOG_STRINGS` 词条，路由自动生效。
-- **内容草稿 → CMS 的通道**：`packages/cms/scripts/seed-marketing-posts.ts` 扫
-  `docs/marketing/<campaign>/*.md`（frontmatter 带发布字段，正文即 bodyMarkdown），按
-  `(locale, slug)` 幂等 upsert，支持 `--dry-run`。它自带极简 frontmatter 解析，**不引入 YAML 依赖**
-  （gray-matter 只在 website 包）。发新公告 = 加 md + 跑脚本（需 `MUICV_CMS_API_KEY`）。
+- **内容只写 CMS，仓库不留 markdown 草稿**：文章直接在 Payload Admin 或 `packages/cms/mcp`
+  的 `create_post` / `upsert_post` 里维护，`posts` 默认 draft，需显式 `status: published` 才公开。
+  早期「`docs/marketing/<campaign>/*.md` 草稿 + `seed-marketing-posts.ts` 幂等 upsert」的本地
+  发布通道已随博客迁移清理删除，不再维护 markdown 内容源与转换脚本。
+- **没有静态兜底**：shared 不再内联 seed 文章，`packages/shared/src/content-types.ts` 只放内容契约
+  类型和 section metadata；CMS 不可用时 `fetchCms*` 返回空（列表 `[]`、详情 `null`）。首页文章区 /
+  `/posts` 显示空态，这是预期行为，也就不存在「把中文当译文渲染」的问题。
 
 ## 简历模板 + 在线预览（新）
 
@@ -175,14 +164,12 @@
   在 `layout.tsx` 把同一个 URL 写了 3 遍（`icon` 数组 2 条 + `shortcut` 1 条），
   Lighthouse 网络瀑布图能看到浏览器真的把 `/icon.svg` 拉了 3 次、每次 660 KB
   ——这是本轮 Speed Index / TTI 偏高的主因（mobile Speed Index 5.2s → 4.2s，
-  TTI 6.9s → 3.4s，mobile score 93 → 95）。**根因在生成脚本**
-  [scripts/update-mui-logo-assets.ts](scripts/update-mui-logo-assets.ts)：
-  `writeSvgIcons()` 之前直接把未缩放的原图塞进 base64，`writeIconPngs()` 网页端和
-  electron 端共用同一张 1024 高清图。已修：网页端图标单独出一份缩小版（SVG 内嵌图
-  缩到 200px 宽、PNG 画布缩到 256×256），electron 端（多分辨率图标生成需要高清源图）
-  保持不变。**这个脚本是手动运行的一次性工具**（硬编码个人 `~/Downloads` 路径），
-  以后重新生成品牌资产（Phase 16 姆伊品牌形象重制会用到）时会自动产出正确尺寸，
-  不会重蹈覆辙。
+  TTI 6.9s → 3.4s，mobile score 93 → 95）。**根因在生成脚本**：`writeSvgIcons()` 之前直接把
+  未缩放的原图塞进 base64，`writeIconPngs()` 网页端和 electron 端共用同一张 1024 高清图。
+  已修：网页端图标单独出一份缩小版（SVG 内嵌图缩到 200px 宽、PNG 画布缩到 256×256），
+  electron 端（多分辨率图标生成需要高清源图）保持不变。**注意**：当初生成资产的一次性脚本
+  （硬编码个人 `~/Downloads` 路径）已随一次性工具清理删除，Phase 16 品牌形象重制需要重新生成
+  资产时，按上面这套尺寸结论写新脚本即可，别重蹈覆辙。
 - **i18n 词典（`_i18n/zh.tsx` / `en.tsx`）不要塞 JSX**：`FaqItem.a` 字段类型是
   `ReactNode`，词典里直接写 `<ul>/<strong>/<a>`——**类型设计上不好**（词典本该是纯
   可序列化数据），但**不是性能问题**：曾怀疑这会导致整份词典被 Turbopack 打进客户端
@@ -690,8 +677,8 @@ Stripe price ID 只在 `packages/website/lib/stripe-prices.ts`。算法：
   - **别删 `LEGACY_CNY_SUBSCRIPTION_PRICES`**：Stripe 在 CN 订阅上虽拒了 Alipay/WeChat 但**允许 card**，
     不能排除已有 CN 用户用国际卡订阅过。这 4 个 CNY recurring price 已从**可售表**摘除
     （Checkout 选不中），但保留在**反查表**里，让存量订阅续费仍能入账——
-    否则就是对已付费用户静默少发 token。确认 Stripe 侧无 active 订阅后用
-    `scripts/check-legacy-cny-subscriptions.ts` 兜底，再删常量。
+    否则就是对已付费用户静默少发 token。确认 Stripe 侧无 active 订阅后再删常量
+    （原先的核查脚本已随一次性工具清理删除，需要时用 Stripe Dashboard 或临时脚本查）。
 - **Hosted Checkout + Customer Portal**：不嵌入 Stripe Elements（省 80KB bundle）。
   取消 / 切档 / 看发票全交给 Stripe Portal，自己只写跳转。
 - **Stripe API 2026-04 起 period 字段在 `subscription.items.data[0].current_period_*`**，

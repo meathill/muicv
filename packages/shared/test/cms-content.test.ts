@@ -7,17 +7,17 @@ import {
   fetchCmsPublishedPosts,
   fetchCmsPublishedSkills,
 } from '../src/cms-content.ts';
-import { getPublishedPosts, getPublishedSkills } from '../src/content-registry.ts';
 
-test('content registry 内置核心 SEO 求职文章', () => {
-  const jobsPosts = getPublishedPosts('zh-CN', 'jobs');
-  assert.ok(jobsPosts.length >= 2);
-  assert.ok(jobsPosts.some((p) => p.slug === 'ai-resume-tips-for-developers'));
-  assert.ok(jobsPosts.some((p) => p.slug === 'english-resume-for-chinese-developers'));
-  assert.deepEqual(getPublishedSkills(), []);
+test('cms content fetch returns empty posts when Payload is unavailable', async () => {
+  const posts = await fetchCmsPublishedPosts('zh-CN', 'jobs', {
+    baseUrl: 'https://cms.example.com',
+    fetchImpl: async () => Response.json({ errors: [{ message: 'unavailable' }] }, { status: 503 }),
+  });
+
+  assert.deepEqual(posts, []);
 });
 
-test('cms content fetch maps Payload posts into registry shape', async () => {
+test('cms content fetch maps Payload posts into content shape', async () => {
   const posts = await fetchCmsPublishedPosts('zh-CN', 'jobs', {
     baseUrl: 'https://cms.example.com',
     fetchImpl: async () =>
@@ -63,7 +63,7 @@ test('cms content fetch allows caller to choose cache mode', async () => {
   assert.equal(cacheMode, 'force-cache');
 });
 
-test('cms content fetch maps Payload skills into registry shape', async () => {
+test('cms content fetch maps Payload skills into content shape', async () => {
   const skills = await fetchCmsPublishedSkills({
     baseUrl: 'https://cms.example.com',
     fetchImpl: async () =>
@@ -115,7 +115,7 @@ test('cms content detail returns null when Payload has no matching slug', async 
   assert.equal(post, null);
 });
 
-test('cms content fetch maps Payload changelog into registry shape', async () => {
+test('cms content fetch maps Payload changelog into content shape', async () => {
   const items = await fetchCmsPublishedChangelog({
     baseUrl: 'https://cms.example.com',
     fetchImpl: async () =>

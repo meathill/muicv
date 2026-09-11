@@ -43,8 +43,7 @@ export const STRIPE_SUBSCRIPTION_PRICES: Record<SubscriptionPlanKey, Record<Bill
  * 不能排除已有 CN 用户用国际卡成功订阅过。只把它们从「可售表」摘掉（Checkout 不再能选中），
  * 但保留在**反查表**里，让存量订阅的续费继续正常入账——否则会变成对已付费用户的静默少发 token。
  *
- * 真正确认 Stripe 侧无有效订阅后再删（核查脚本：
- * packages/website/scripts/check-legacy-cny-subscriptions.ts）。
+ * 真正确认 Stripe 侧无有效订阅后再删。
  */
 export const LEGACY_CNY_SUBSCRIPTION_PRICES: Partial<
   Record<SubscriptionPlanKey, Partial<Record<BillingInterval, string>>>
