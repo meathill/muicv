@@ -3,10 +3,10 @@
 import {
   type BillingInterval,
   type Currency,
-  type SubscriptionPlanKey,
-  type TopupPackKey,
   SUBSCRIPTION_PLANS,
+  type SubscriptionPlanKey,
   TOPUP_PACKS,
+  type TopupPackKey,
 } from '@muicv/shared';
 import { useState } from 'react';
 
@@ -102,7 +102,7 @@ export function BillingActions({
           {hasActiveSubscription
             ? '已订阅；切换档位 / 取消请走"管理订阅"。'
             : isCnyView
-              ? '人民币不支持订阅（Stripe 限制）。请切换到 $ USD 订阅，或购买下方补充包。'
+              ? '人民币不支持订阅（Stripe 限制）。订阅需国际信用卡（Visa / Mastercard 等），银联卡通常无法支付；只有银联卡请买下方补充包（支持微信 / 支付宝）。'
               : interval === 'yearly'
                 ? '年付：一次性收一年钱，立即到账约 11 个月用量的 Token，Token 永不过期。'
                 : '月付：每月自动续 Token。'}

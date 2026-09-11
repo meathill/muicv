@@ -1,7 +1,7 @@
 /**
  * 一次性核查：Stripe 侧还有没有挂在历史 CNY recurring price 上的订阅。
  *
- * 背景：2026-09 人民币订阅下线（代码见 lib/stripe-prices.ts 的 LEGACY_CNY_SUBSCRIPTION_PRICES）。
+ * 背景：2026-09 人民币订阅下线（代码见 @muicv/shared 的 LEGACY_CNY_SUBSCRIPTION_PRICES）。
  * 虽然 Stripe 拒了 Alipay / WeChat 进 subscription mode，但允许 card —— 不能排除
  * 已有 CN 用户用国际卡订阅过。代码已保留 4 个 LEGACY price 的反查，让存量续费正常入账；
  * 本脚本用来确认 Stripe 侧是否真的没有存量订阅，确认后即可删除那 4 个 price 常量。

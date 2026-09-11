@@ -1,9 +1,8 @@
-import { microToDisplay } from '@muicv/shared';
+import { microToDisplay, planFromPriceId } from '@muicv/shared';
 import { and, eq, isNull } from 'drizzle-orm';
 
 import { hashApiKey } from '@/lib/api-key';
 import { getDb, schema } from '@/lib/db';
-import { priceIdToPlanInterval } from '@/lib/stripe';
 import { ensureBalance } from '@/lib/wallet';
 
 const ACTIVE_SUB_STATUSES = new Set(['active', 'trialing', 'past_due']);
@@ -113,8 +112,8 @@ export async function GET(request: Request) {
   // 推 plan：必须 status 在活跃集合 + stripePriceId 能映射到已知档位，否则免费。
   let plan: 'free' | 'pro' | 'max' = 'free';
   if (sub && ACTIVE_SUB_STATUSES.has(sub.status) && sub.stripePriceId) {
-    const meta = priceIdToPlanInterval(sub.stripePriceId);
-    if (meta) plan = meta.plan;
+    const resolved = planFromPriceId(sub.stripePriceId);
+    if (resolved) plan = resolved;
   }
 
   return Response.json({

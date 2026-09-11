@@ -1,5 +1,5 @@
-import type { Locale } from '../_i18n/locale';
 import { EXTRA_LOCALE_BUNDLES, type ExtraLocale } from '../_i18n/bundles';
+import type { Locale } from '../_i18n/locale';
 
 // 定价页文案（中英）。价格 / token 数 / 货币等数据来自 @muicv/shared，不在这里；这里只放 UI 文案。
 export type PricingContent = {
@@ -93,8 +93,9 @@ const zh: PricingContent = {
   signUpToSubscribe: '注册后开通',
   manageSub: '管理订阅',
   subscribeNow: '立即订阅',
-  cnSubscribeHint: '人民币暂不支持订阅（Stripe 限制）。订阅请改用 $ USD，或直接购买下方补充包。',
-  switchToUsd: '改用美元订阅',
+  cnSubscribeHint:
+    '人民币暂不支持订阅（Stripe 限制）。订阅需用国际信用卡（Visa / Mastercard 等），国内银联卡通常无法支付；如果只有银联卡，建议购买下方补充包（支持微信 / 支付宝）。',
+  switchToUsd: '改用美元订阅（需国际卡）',
   topupHeading: '补充包（一次性买，永不过期）',
   topupDesc: '没准备订阅，或者偶尔超用一次。任何时候都能买。',
   buyNow: '立即购买',
@@ -109,6 +110,10 @@ const zh: PricingContent = {
     {
       q: '月付和年付有什么区别？',
       a: '价格上年付约 9% 折扣；token 上年付一次性给你约 11 个月的量，付款当天就能集中用。取消订阅后已发的 token 全部保留，永不过期。月付适合先试一试，年付适合确定要长期用。',
+    },
+    {
+      q: '支持哪些支付方式？',
+      a: '订阅（美元）走 Stripe，需要国际信用卡（Visa / Mastercard / Amex 等）——国内银联卡通常无法完成美元订阅扣款。一次性补充包支持更多方式：人民币可用微信 / 支付宝 / 国际卡，美元用国际卡。如果你只有银联卡，建议购买补充包。',
     },
     {
       q: '订阅和补充包能同时用吗？',
@@ -197,8 +202,8 @@ const en: PricingContent = {
   manageSub: 'Manage subscription',
   subscribeNow: 'Subscribe',
   cnSubscribeHint:
-    'Subscriptions are not available in CNY (Stripe limitation). Switch to $ USD to subscribe, or buy a top-up pack below.',
-  switchToUsd: 'Switch to USD',
+    'Subscriptions are not available in CNY (Stripe limitation). Subscribing requires an international credit card (Visa / Mastercard, etc.) — domestic UnionPay cards usually do not work. If you only have UnionPay, buy a top-up pack below (WeChat Pay / Alipay supported).',
+  switchToUsd: 'Switch to USD (intl. card)',
   topupHeading: 'Top-up packs (one-time, never expire)',
   topupDesc: 'Not ready to subscribe, or an occasional overage. Buy anytime.',
   buyNow: 'Buy now',
@@ -213,6 +218,10 @@ const en: PricingContent = {
     {
       q: "What's the difference between monthly and yearly?",
       a: 'Yearly is about 9% cheaper, and grants roughly 11 months of tokens up front — usable from day one. Cancel and all granted tokens stay, never expiring. Monthly is good to try; yearly is for committing long-term.',
+    },
+    {
+      q: 'Which payment methods are supported?',
+      a: 'Subscriptions (USD) go through Stripe and require an international credit card (Visa / Mastercard / Amex, etc.) — domestic UnionPay cards usually cannot authorize USD subscription charges. One-time top-up packs support more: CNY accepts WeChat Pay / Alipay / international cards, USD accepts international cards. If you only have UnionPay, buy a top-up pack.',
     },
     {
       q: 'Can I use a subscription and top-up packs together?',

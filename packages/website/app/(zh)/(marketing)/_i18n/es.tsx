@@ -416,8 +416,8 @@ export const content: LocaleContent = {
     manageSub: 'Gestionar suscripción',
     subscribeNow: 'Suscribirme',
     cnSubscribeHint:
-      'Las suscripciones no están disponibles en CNY (limitación de Stripe). Cambia a $ USD para suscribirte o compra un pack de recarga abajo.',
-    switchToUsd: 'Cambiar a USD',
+      'Las suscripciones no están disponibles en CNY (limitación de Stripe). Suscribirse requiere una tarjeta internacional (Visa / Mastercard, etc.); las tarjetas UnionPay locales no suelen funcionar. Si solo tienes UnionPay, compra un pack de recarga abajo (WeChat Pay / Alipay disponibles).',
+    switchToUsd: 'Cambiar a USD (tarjeta intl.)',
     topupHeading: 'Packs de recarga (pago puntual, sin caducidad)',
     topupDesc: 'No quieres suscribirte o solo te pasaste una vez. Cómpralos cuando quieras.',
     buyNow: 'Comprar ahora',
@@ -432,6 +432,10 @@ export const content: LocaleContent = {
       {
         q: '¿Cuál es la diferencia entre el pago mensual y el anual?',
         a: 'El anual tiene cerca de un 9% de descuento; además, entrega de una vez unos 11 meses de tokens, así que puedes usarlos desde el día del pago. Si cancelas, todos los tokens otorgados se conservan y nunca caducan. El mensual va bien para probar y el anual para comprometerse a largo plazo.',
+      },
+      {
+        q: '¿Qué métodos de pago se admiten?',
+        a: 'Las suscripciones (USD) van por Stripe y requieren una tarjeta internacional (Visa / Mastercard / Amex, etc.); las tarjetas UnionPay locales no suelen autorizar cobros de suscripción en USD. Los packs de recarga puntuales admiten más: en CNY, WeChat Pay / Alipay / tarjetas internacionales; en USD, tarjetas internacionales. Si solo tienes UnionPay, compra un pack de recarga.',
       },
       {
         q: '¿Puedo usar la suscripción y los packs de recarga a la vez?',

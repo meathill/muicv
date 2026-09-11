@@ -66,11 +66,10 @@
   "vars": {
     "RENDER_BASE_URL": "https://muicv.com",
     "PHOTOS_PUBLIC_BASE_URL": "https://i.muicv.com",
-    "PREVIEW_PUBLIC_BASE_URL": "https://muicv.com",
-    "STRIPE_PRICE_PRO_MONTHLY": "price_1TRwa8EpkXm2vxXTYEgJaDVp",
-    "STRIPE_PRICE_PRO_YEARLY": "price_1TRwb4EpkXm2vxXTP56EkfBh",
-    "STRIPE_PRICE_MAX_MONTHLY": "price_1TRwcYEpkXm2vxXTolTABRBM",
-    "STRIPE_PRICE_MAX_YEARLY": "price_1TRwczEpkXm2vxXTxoxuOYjq"
+    "PREVIEW_PUBLIC_BASE_URL": "https://muicv.com"
+    // Stripe priceId → plan 的反查表已下沉到 @muicv/shared（src/stripe-prices.ts），
+    // 与 packages/website 共用同一份，不再放 env vars（历史上两边 ID 代际不同步，
+    // 导致 Pro 订阅在桌面 app 显示为免费版）。
   },
   "observability": {
     "enabled": false

@@ -1,5 +1,7 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { STRIPE_SUBSCRIPTION_PRICES } from '@muicv/shared';
 
 import app from '../src/app.ts';
 
@@ -41,13 +43,6 @@ type MockOptions = {
     currentPeriodEnd: number | null;
     cancelAtPeriodEnd: number;
   } | null;
-  /** Stripe price IDs（覆盖默认）。设 null 模拟未配置（dev / 老部署）。 */
-  stripePriceIds?: {
-    pro_monthly?: string | null;
-    pro_yearly?: string | null;
-    max_monthly?: string | null;
-    max_yearly?: string | null;
-  };
 };
 
 const FAKE_API_KEY = `mui_${'a'.repeat(32)}`;
@@ -140,12 +135,6 @@ function mockEnv(opts: MockOptions = {}): unknown {
   };
   if (opts.openaiKey !== null) env.OPENAI_API_KEY = opts.openaiKey ?? 'sk-fake-openai';
   if (opts.opencodeGoKey !== null) env.OPENCODE_GO_API_KEY = opts.opencodeGoKey ?? 'sk-fake-go';
-  // Stripe price IDs：默认全配，单测可覆盖。/me 用它把 stripePriceId 反查成 plan。
-  const sp = opts.stripePriceIds ?? {};
-  if (sp.pro_monthly !== null) env.STRIPE_PRICE_PRO_MONTHLY = sp.pro_monthly ?? 'price_pro_m';
-  if (sp.pro_yearly !== null) env.STRIPE_PRICE_PRO_YEARLY = sp.pro_yearly ?? 'price_pro_y';
-  if (sp.max_monthly !== null) env.STRIPE_PRICE_MAX_MONTHLY = sp.max_monthly ?? 'price_max_m';
-  if (sp.max_yearly !== null) env.STRIPE_PRICE_MAX_YEARLY = sp.max_yearly ?? 'price_max_y';
   return env;
 }
 
@@ -475,8 +464,29 @@ test('GET /me 订阅 active + Pro 月付 priceId → plan=pro', async () => {
       walletMicro: 1,
       subscription: {
         status: 'active',
-        stripePriceId: 'price_pro_m',
+        stripePriceId: STRIPE_SUBSCRIPTION_PRICES.pro.monthly,
         monthlyTokens: 500_000,
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: 0,
+      },
+    }),
+    ctx,
+  );
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { plan: string };
+  assert.equal(body.plan, 'pro');
+});
+
+test('GET /me 订阅 active + Pro 年付 priceId → plan=pro（回归：曾因 env 映射代际不同步显示 free）', async () => {
+  const res = await app.request(
+    '/me',
+    { headers: AUTH },
+    authedEnv({
+      walletMicro: 1,
+      subscription: {
+        status: 'active',
+        stripePriceId: STRIPE_SUBSCRIPTION_PRICES.pro.yearly,
+        monthlyTokens: 5_500_000,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: 0,
       },
@@ -496,8 +506,8 @@ test('GET /me 订阅 trialing + Max 年付 priceId → plan=max', async () => {
       walletMicro: 1,
       subscription: {
         status: 'trialing',
-        stripePriceId: 'price_max_y',
-        monthlyTokens: 48_000_000,
+        stripePriceId: STRIPE_SUBSCRIPTION_PRICES.max.yearly,
+        monthlyTokens: 18_800_000,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: 0,
       },
@@ -509,6 +519,27 @@ test('GET /me 订阅 trialing + Max 年付 priceId → plan=max', async () => {
   assert.equal(body.plan, 'max');
 });
 
+test('GET /me 订阅 active + 未知 priceId → plan=free（不认识的 price 不乱认档）', async () => {
+  const res = await app.request(
+    '/me',
+    { headers: AUTH },
+    authedEnv({
+      walletMicro: 1,
+      subscription: {
+        status: 'active',
+        stripePriceId: 'price_unknown_from_other_env',
+        monthlyTokens: 500_000,
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: 0,
+      },
+    }),
+    ctx,
+  );
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { plan: string };
+  assert.equal(body.plan, 'free');
+});
+
 test('GET /me 订阅 canceled（非活跃 status）→ plan=free', async () => {
   const res = await app.request(
     '/me',
@@ -517,7 +548,7 @@ test('GET /me 订阅 canceled（非活跃 status）→ plan=free', async () => {
       walletMicro: 1,
       subscription: {
         status: 'canceled',
-        stripePriceId: 'price_pro_m',
+        stripePriceId: STRIPE_SUBSCRIPTION_PRICES.pro.monthly,
         monthlyTokens: 500_000,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: 0,

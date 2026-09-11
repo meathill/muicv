@@ -323,8 +323,8 @@ export type Currency = 'usd' | 'cny';
  *
  * 数据来源 / 维护：
  *   - tokens / display：本文件硬编码，调价时改这里 + Stripe Dashboard 同步
- *   - Stripe price ID：在 packages/website/lib/stripe-prices.ts 的常量表里给
- *     （结构 plan × interval，USD only，详见 lib/stripe.ts 的 priceIdToCycleTokens）
+ *   - Stripe price ID：在同包的 stripe-prices.ts（structure plan × interval，USD only），
+ *     website / api 两端共用同一份
  *   - savingsLabel：年付的折扣展示文案，纯 UI 用
  *
  * **设计原则（issue #4 重定价，2026-05-08；2026-09 年付降 token）**：订阅基本贴成本

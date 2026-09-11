@@ -1,8 +1,8 @@
-import { type BillingInterval, type SubscriptionPlanKey, SUBSCRIPTION_PLANS } from '@muicv/shared';
+import { type BillingInterval, planKeyToPriceId, SUBSCRIPTION_PLANS, type SubscriptionPlanKey } from '@muicv/shared';
 
 import { getRequestCurrency } from '@/lib/region';
 import { getCurrentSession } from '@/lib/session';
-import { getOrCreateStripeCustomer, getStripe, planKeyToPriceId } from '@/lib/stripe';
+import { getOrCreateStripeCustomer, getStripe } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 

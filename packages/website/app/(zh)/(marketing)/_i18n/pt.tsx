@@ -414,8 +414,8 @@ export const content: LocaleContent = {
     manageSub: 'Gerenciar assinatura',
     subscribeNow: 'Assinar',
     cnSubscribeHint:
-      'Assinaturas não estão disponíveis em CNY (limitação do Stripe). Mude para $ USD para assinar ou compre um pacote avulso abaixo.',
-    switchToUsd: 'Mudar para USD',
+      'Assinaturas não estão disponíveis em CNY (limitação do Stripe). Assinar exige um cartão internacional (Visa / Mastercard, etc.) — cartões UnionPay locais geralmente não funcionam. Se você só tem UnionPay, compre um pacote avulso abaixo (WeChat Pay / Alipay aceitos).',
+    switchToUsd: 'Mudar para USD (cartão intl.)',
     topupHeading: 'Pacotes avulsos (compra única, nunca expiram)',
     topupDesc: 'Não quer assinar agora ou só passou do limite uma vez. Compre quando quiser.',
     buyNow: 'Comprar agora',
@@ -430,6 +430,10 @@ export const content: LocaleContent = {
       {
         q: 'Qual a diferença entre mensal e anual?',
         a: 'O anual é cerca de 9% mais barato e concede cerca de 11 meses de tokens de uma vez — usável desde o primeiro dia. Ao cancelar, todos os tokens concedidos permanecem, sem expirar. O mensal é bom para testar; o anual, para quem quer se comprometer a longo prazo.',
+      },
+      {
+        q: 'Quais formas de pagamento são aceitas?',
+        a: 'Assinaturas (USD) passam pelo Stripe e exigem um cartão internacional (Visa / Mastercard / Amex, etc.); cartões UnionPay locais geralmente não autorizam cobranças de assinatura em USD. Os pacotes avulsos aceitam mais: em CNY, WeChat Pay / Alipay / cartões internacionais; em USD, cartões internacionais. Se você só tem UnionPay, compre um pacote avulso.',
       },
       {
         q: 'Posso usar assinatura e pacotes avulsos juntos?',

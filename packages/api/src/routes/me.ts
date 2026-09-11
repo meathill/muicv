@@ -1,29 +1,10 @@
-import { microToDisplay } from '@muicv/shared';
+import { microToDisplay, planFromPriceId } from '@muicv/shared';
 import type { Context } from 'hono';
 
 import { ensureBalance } from '../lib/wallet.ts';
 import type { AppEnv } from '../middleware/api-key.ts';
 
 const ACTIVE_SUB_STATUSES = new Set(['active', 'trialing', 'past_due']);
-
-/**
- * 把 Stripe price id 反查成 plan key（'pro' / 'max'）。env 里没配（dev / 老部署）
- * 时返回 null，调用方按免费处理。和 packages/website/lib/stripe.ts 的
- * priceIdToPlanInterval 等价，但本 worker 不需要 interval，少一次 await。
- */
-function resolvePlanFromPriceId(
-  env: {
-    STRIPE_PRICE_PRO_MONTHLY?: string;
-    STRIPE_PRICE_PRO_YEARLY?: string;
-    STRIPE_PRICE_MAX_MONTHLY?: string;
-    STRIPE_PRICE_MAX_YEARLY?: string;
-  },
-  priceId: string,
-): 'pro' | 'max' | null {
-  if (priceId === env.STRIPE_PRICE_PRO_MONTHLY || priceId === env.STRIPE_PRICE_PRO_YEARLY) return 'pro';
-  if (priceId === env.STRIPE_PRICE_MAX_MONTHLY || priceId === env.STRIPE_PRICE_MAX_YEARLY) return 'max';
-  return null;
-}
 
 /**
  * GET /me —— 桌面 app / skill 用 mui_ key 拉取登录用户信息。
@@ -79,7 +60,7 @@ export async function handleMe(c: Context<AppEnv>): Promise<Response> {
 
   let plan: 'free' | 'pro' | 'max' = 'free';
   if (sub && ACTIVE_SUB_STATUSES.has(sub.status) && sub.stripePriceId) {
-    const resolved = resolvePlanFromPriceId(c.env, sub.stripePriceId);
+    const resolved = planFromPriceId(sub.stripePriceId);
     if (resolved) plan = resolved;
   }
 

@@ -415,8 +415,8 @@ export const content: LocaleContent = {
     manageSub: 'Abo verwalten',
     subscribeNow: 'Jetzt abonnieren',
     cnSubscribeHint:
-      'Abos sind in CNY nicht verfügbar (Stripe-Einschränkung). Wechsle zu $ USD zum Abonnieren oder kaufe unten ein Top-up-Paket.',
-    switchToUsd: 'Zu USD wechseln',
+      'Abos sind in CNY nicht verfügbar (Stripe-Einschränkung). Für ein Abo brauchst du eine internationale Kreditkarte (Visa / Mastercard usw.) — inländische UnionPay-Karten funktionieren meist nicht. Wenn du nur UnionPay hast, kaufe unten ein Top-up-Paket (WeChat Pay / Alipay unterstützt).',
+    switchToUsd: 'Zu USD wechseln (intl. Karte)',
     topupHeading: 'Top-up-Pakete (einmalig kaufen, verfallen nie)',
     topupDesc: 'Kein Abo nötig, oder nur gelegentlich Mehrverbrauch. Jederzeit kaufbar.',
     buyNow: 'Jetzt kaufen',
@@ -431,6 +431,10 @@ export const content: LocaleContent = {
       {
         q: 'Worin unterscheiden sich monatliche und jährliche Zahlung?',
         a: 'Jährlich ist rund 9 % günstiger; die Tokens gibt es dann auf einen Schlag für etwa 11 Monate und du kannst sie ab dem Zahltag konzentriert nutzen. Nach einer Kündigung bleiben alle bereits gewährten Tokens erhalten und verfallen nie. Monatlich eignet sich zum Ausprobieren, jährlich für die langfristige Nutzung.',
+      },
+      {
+        q: 'Welche Zahlungsmethoden werden unterstützt?',
+        a: 'Abos (USD) laufen über Stripe und erfordern eine internationale Kreditkarte (Visa / Mastercard / Amex usw.); inländische UnionPay-Karten können USD-Abozahlungen meist nicht autorisieren. Einmalige Top-up-Pakete unterstützen mehr: CNY akzeptiert WeChat Pay / Alipay / internationale Karten, USD internationale Karten. Wenn du nur UnionPay hast, kaufe ein Top-up-Paket.',
       },
       {
         q: 'Kann ich Abo und Top-up-Pakete gleichzeitig nutzen?',

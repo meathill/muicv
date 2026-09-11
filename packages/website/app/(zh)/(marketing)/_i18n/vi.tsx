@@ -418,8 +418,8 @@ const pricing: PricingContent = {
   manageSub: 'Quản lý đăng ký',
   subscribeNow: 'Đăng ký ngay',
   cnSubscribeHint:
-    'Gói đăng ký không hỗ trợ CNY (giới hạn của Stripe). Chuyển sang $ USD để đăng ký, hoặc mua gói nạp thêm bên dưới.',
-  switchToUsd: 'Chuyển sang USD',
+    'Gói đăng ký không hỗ trợ CNY (giới hạn của Stripe). Đăng ký cần thẻ quốc tế (Visa / Mastercard, v.v.) — thẻ UnionPay nội địa thường không dùng được. Nếu chỉ có UnionPay, hãy mua gói nạp thêm bên dưới (hỗ trợ WeChat Pay / Alipay).',
+  switchToUsd: 'Chuyển sang USD (thẻ quốc tế)',
   topupHeading: 'Gói nạp thêm (mua một lần, không hết hạn)',
   topupDesc: 'Chưa muốn đăng ký, hoặc thỉnh thoảng dùng quá. Mua lúc nào cũng được.',
   buyNow: 'Mua ngay',
@@ -434,6 +434,10 @@ const pricing: PricingContent = {
     {
       q: 'Gói tháng và gói năm khác nhau thế nào?',
       a: 'Về giá, gói năm rẻ hơn khoảng 9%; về token, gói năm phát một lần khoảng 11 tháng, dùng được tập trung ngay từ ngày thanh toán. Hủy đăng ký vẫn giữ toàn bộ token đã phát, không bao giờ hết hạn. Gói tháng phù hợp để thử trước, gói năm phù hợp khi chắc chắn dùng lâu dài.',
+    },
+    {
+      q: 'Hỗ trợ những phương thức thanh toán nào?',
+      a: 'Gói đăng ký (USD) qua Stripe cần thẻ quốc tế (Visa / Mastercard / Amex, v.v.); thẻ UnionPay nội địa thường không thanh toán được gói đăng ký bằng USD. Gói nạp thêm một lần hỗ trợ nhiều hơn: CNY dùng WeChat Pay / Alipay / thẻ quốc tế, USD dùng thẻ quốc tế. Nếu chỉ có UnionPay, hãy mua gói nạp thêm.',
     },
     {
       q: 'Có thể dùng đồng thời đăng ký và gói nạp thêm không?',

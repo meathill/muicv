@@ -1,11 +1,10 @@
-import { microToDisplay } from '@muicv/shared';
+import { microToDisplay, priceIdToPlanInterval } from '@muicv/shared';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 
 import { getDb, schema } from '@/lib/db';
 import { getRequestCurrency } from '@/lib/region';
 import { getCurrentSession } from '@/lib/session';
-import { priceIdToPlanInterval } from '@/lib/stripe';
 import { ensureBalance, listLedger } from '@/lib/wallet';
 
 import { BillingActions } from './billing-actions';

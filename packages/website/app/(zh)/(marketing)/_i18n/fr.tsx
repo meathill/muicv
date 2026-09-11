@@ -416,8 +416,8 @@ export const content: LocaleContent = {
     manageSub: "Gérer l'abonnement",
     subscribeNow: "S'abonner",
     cnSubscribeHint:
-      'Les abonnements ne sont pas disponibles en CNY (limitation Stripe). Passez à $ USD pour vous abonner, ou achetez un pack de recharge ci-dessous.',
-    switchToUsd: 'Passer en USD',
+      "Les abonnements ne sont pas disponibles en CNY (limitation Stripe). S'abonner exige une carte bancaire internationale (Visa / Mastercard, etc.) — les cartes UnionPay locales ne fonctionnent généralement pas. Si vous n'avez qu'une UnionPay, achetez un pack de recharge ci-dessous (WeChat Pay / Alipay acceptés).",
+    switchToUsd: 'Passer en USD (carte intl.)',
     topupHeading: 'Packs de recharge (achat unique, sans expiration)',
     topupDesc: 'Pas prêt à vous abonner, ou un dépassement occasionnel ? Achetez quand vous voulez.',
     buyNow: 'Acheter maintenant',
@@ -432,6 +432,10 @@ export const content: LocaleContent = {
       {
         q: 'Quelle différence entre mensuel et annuel ?',
         a: "L'annuel est environ 9% moins cher et accorde environ 11 mois de tokens d'un coup — utilisable dès le premier jour. En cas de résiliation, tous les tokens accordés sont conservés et n'expirent jamais. Le mensuel convient pour essayer, l'annuel pour s'engager dans la durée.",
+      },
+      {
+        q: 'Quels moyens de paiement sont acceptés ?',
+        a: "Les abonnements (USD) passent par Stripe et exigent une carte bancaire internationale (Visa / Mastercard / Amex, etc.) ; les cartes UnionPay locales ne permettent généralement pas d'autoriser des prélèvements en USD. Les packs de recharge ponctuels acceptent plus de moyens : en CNY, WeChat Pay / Alipay / cartes internationales ; en USD, cartes internationales. Si vous n'avez qu'une UnionPay, achetez un pack de recharge.",
       },
       {
         q: 'Peut-on utiliser un abonnement et des packs de recharge en même temps ?',
