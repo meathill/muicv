@@ -100,6 +100,16 @@
 
 ## Cloudflare Worker / OpenNext（packages/website）
 
+- **部署走 Git 集成，禁止手动 deploy**：`muicv-web` 与 `muicv-cms` 两个 Worker 都在 Cloudflare
+  Workers Builds 里接了本仓库，**push 到 master 后 1~2 分钟自动构建并部署**（实测：push 后
+  每次都有一次非本机触发的 deployment）。所以改完代码/内容只需 commit + push，
+  **不要跑 `pnpm --filter @muicv/website run deploy` / `... cms run deploy`**——
+  手动部署会和自动部署并发竞争，且行为不一致（手动需显式带
+  `CLOUDFLARE_ACCOUNT_ID`，非交互下会卡在账号选择）。
+  值得注意的例外：**CMS 的 D1 migration 不会自动应用**，`pnpm --filter @muicv/cms migrate`
+  仍要手动跑；顺序是「先 push（或至少先应用 migration）+ 迁移已应用」，
+  否则 Worker 代码与库表结构会错配（曾出现：迁移已加 locale 列、Worker 还是旧版，
+  查询直接 400 "The following path cannot be queried: locale"）。
 - **必须 `export const dynamic = 'force-dynamic'`** 在用到 D1 的 SSR 页面顶部。
   否则 build 时 prerender 拿不到 Cloudflare bindings，构建直接失败。
   目前 `app/(marketing)/page.tsx` 因为 nav 要根据登录态切显，强制 SSR。
@@ -109,7 +119,7 @@
 - **缓存栈（2026-08，issue #14）**：`open-next.config.ts` = R2 incremental cache + regional cache（long-lived）+ DO Queue + `enableCacheInterception`。
   - **时间型 revalidation（posts / sitemap 的 `revalidate=3600`）必须有 DO Queue**（`NEXT_CACHE_DO_QUEUE` binding + `new_sqlite_classes: ["DOQueueHandler"]` migration）才会后台排队执行——之前只配了 R2 没配 queue，revalidate 实际没生效。
   - 刻意不加 tag cache / cache purge：站点不用 `revalidateTag` / `revalidatePath`，按需失效链路用不到。
-  - `deploy` 命令会跑 `populateCache` 把构建期预渲染数据写进 R2，所以纯静态页（如 pricing）改内容 = 部署即生效，不需要 revalidate 兜底。
+  - `deploy` 命令会跑 `populateCache` 把构建期预渲染数据写进 R2，所以纯静态页（如 pricing）改内容 = 部署即生效，不需要 revalidate 兜底。（这是 deploy 命令的机制说明；日常不要手动跑，见本节第 1 条——自动部署走的是同一套构建。）
 - **静态资源 immutable 头**：`public/_headers` 配 `/_next/static/*` → `Cache-Control: public,max-age=31536000,immutable`。OpenNext 会把 public/ 拷进 `.open-next/assets`，Cloudflare Workers Assets 直接吃这份 `_headers`；`next.config.ts` 的 headers 对静态资源无效（Worker 不跑在 assets 前面）。website / cms 都要各放一份。
 - **Pricing 页静态化（issue #14）**：跟首页同套路——静态壳 + 客户端动态区。动态数据（登录态 / 订阅 / 币种 / CN cooldown）由 `GET /api/pricing/state` 挂载后一次拿齐；币种切换走 `CurrencyToggle` 新增的可选 `onSwitch` prop（本地 state 更新，不再 router.refresh，dashboard 不传保持原行为）；interval 只维护本地 state 并 `history.replaceState` 同步 URL。价格未返回前显示占位符避免「先 $ 后 ¥」闪烁。
 - **IndexNow（issue #13）**：key 文件 `public/<key>.txt`（内容 = key）随构建发布，`scripts/indexnow-submit.ts` 抓 sitemap 一次性提交全部 URL 到 api.indexnow.org，部署后手跑一次，不引入 cron。
