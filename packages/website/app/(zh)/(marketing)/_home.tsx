@@ -19,19 +19,18 @@ export async function HomePage({ locale }: { locale: Locale }) {
   // 首页的 Locale 是站点语言（zh/en），内容读取要用 CMS 侧的 locale 写法。
   const contentLocale = locale === 'zh' ? 'zh-CN' : 'en';
   const recentPosts = (await getWebsitePublishedPosts(contentLocale)).slice(0, 4);
-  const altHref = locale === 'zh' ? '/en' : '/';
 
   return (
     <div className="relative">
       <JsonLd data={faqPageSchema(FAQ_ITEMS[locale], locale)} />
-      <Header locale={locale} brand={dict.brand} nav={dict.nav} altHref={altHref} />
+      <Header locale={locale} brand={dict.brand} nav={dict.nav} />
       <Hero dict={dict} locale={locale} />
       <KeyFeatures dict={dict} />
       <Workflow dict={dict} />
       <DesktopApp dict={dict} locale={locale} />
       <Install dict={dict} locale={locale} />
       <FaqAndArticles recentPosts={recentPosts} dict={dict} locale={locale} />
-      <Footer dict={dict} locale={locale} altHref={altHref} />
+      <Footer dict={dict} locale={locale} />
     </div>
   );
 }

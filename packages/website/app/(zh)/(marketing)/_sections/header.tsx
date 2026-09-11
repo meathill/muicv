@@ -24,8 +24,6 @@ type HeaderProps = {
   locale?: Locale | undefined;
   brand?: Dictionary['brand'] | undefined;
   nav?: Dictionary['nav'] | undefined;
-  /** 对侧语言的 href；保持可选以兼容上层调用（实际切换已迁移至 Footer）。 */
-  altHref?: string | undefined;
 };
 
 /**

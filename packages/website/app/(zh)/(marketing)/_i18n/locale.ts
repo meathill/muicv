@@ -27,16 +27,23 @@ export function isLocale(value: string): value is Locale {
 }
 
 /**
- * 已有本地化版本的路由（白名单）。非默认语言链到不在此列的路径时透传默认语言 URL，
- * 避免链到不存在的页（/ja/skills、/ja/dashboard、/ja/privacy 等尚未本地化）。
- * 加一个本地化页面 = 往这里加它的路径。
+ * 有英文版的路由（但不是 9 语言都有）。非默认语言链到这类路径时回退到英文版，
+ * 而不是落到中文页——比给日本用户看中文页更合理。
+ * 目前含模板库（模板数据只有 zh/en，本地化需另译 8 个模板的内容，属独立内容工程）。
  */
-export const LOCALIZED_ROUTES = ['/', '/download', '/pricing', '/about', '/contact', '/templates', '/posts'];
+export const EN_ROUTES = ['/templates'];
 
 /**
- * 把站内路径映射成当前 locale 对应的 href。
+ * 9 语言都有本地化版本的路由（白名单）。加一个本地化页面 = 往这里加它的路径。
+ */
+export const LOCALIZED_ROUTES = ['/', '/download', '/pricing', '/about', '/contact', '/posts'];
+
+/**
+ * 把站内路径映射成当前 locale 对应的 href。优先级：
+ *   1. 该路径有本语言版本 → `/<locale>` 前缀
+ *   2. 该路径只有英文版 → `/en` 前缀（英文兜底）
+ *   3. 都没有 → 透传（落到默认语言页）
  * - zh：原样返回（默认语言不加前缀）。
- * - 其它语言：仅当路径有本地化版本时加 `/<locale>` 前缀；否则透传（链到默认语言）。
  * - 纯锚点 / mailto / 外链 / /api：一律透传。
  */
 export function localizedHref(locale: Locale, path: string): string {
@@ -45,12 +52,18 @@ export function localizedHref(locale: Locale, path: string): string {
     return path;
   }
   const base = path.split(/[?#]/)[0] || '/';
-  const isLocalized = LOCALIZED_ROUTES.some((p) => base === p || base.startsWith(`${p}/`));
-  if (!isLocalized) return path;
-  if (path === '/') return `/${locale}`;
-  // '/#features' / '/?x' 这类首页带锚点/查询：去掉开头的 '/' 拼到 '/<locale>' 后面。
-  if (path.startsWith('/#') || path.startsWith('/?')) return `/${locale}${path.slice(1)}`;
-  return `/${locale}${path}`;
+  const matches = (routes: readonly string[]) => routes.some((p) => base === p || base.startsWith(`${p}/`));
+
+  if (matches(LOCALIZED_ROUTES)) return withPrefix(`/${locale}`, path);
+  if (matches(EN_ROUTES)) return withPrefix('/en', path);
+  return path;
+}
+
+/** '/#features' / '/?x' 这类带锚点/查询的首页路径，去掉开头 '/' 再拼前缀。 */
+function withPrefix(prefix: string, path: string): string {
+  if (path === '/') return prefix;
+  if (path.startsWith('/#') || path.startsWith('/?')) return `${prefix}${path.slice(1)}`;
+  return `${prefix}${path}`;
 }
 
 export { CONTENT_LOCALES };

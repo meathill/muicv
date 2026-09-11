@@ -147,11 +147,10 @@ export function getAboutMeta(locale: Locale) {
 export function AboutView({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
   const c = ABOUT_CONTENT[locale];
-  const altHref = locale === 'zh' ? '/en/about' : '/about';
 
   return (
     <div className="relative">
-      <Header locale={locale} brand={dict.brand} nav={dict.nav} altHref={altHref} />
+      <Header locale={locale} brand={dict.brand} nav={dict.nav} />
 
       <section className="relative overflow-hidden border-b border-rule">
         <div className="absolute inset-0 bg-sun" aria-hidden />
@@ -252,7 +251,7 @@ export function AboutView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <Footer dict={dict} locale={locale} altHref={altHref} />
+      <Footer dict={dict} locale={locale} />
     </div>
   );
 }

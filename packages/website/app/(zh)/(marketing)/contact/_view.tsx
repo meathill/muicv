@@ -103,11 +103,10 @@ export function getContactMeta(locale: Locale) {
 export function ContactView({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
   const c = CONTACT_CONTENT[locale];
-  const altHref = locale === 'zh' ? '/en/contact' : '/contact';
 
   return (
     <div className="relative">
-      <Header locale={locale} brand={dict.brand} nav={dict.nav} altHref={altHref} />
+      <Header locale={locale} brand={dict.brand} nav={dict.nav} />
 
       <section className="relative overflow-hidden border-b border-rule">
         <div className="absolute inset-0 bg-sun" aria-hidden />
@@ -162,7 +161,7 @@ export function ContactView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <Footer dict={dict} locale={locale} altHref={altHref} />
+      <Footer dict={dict} locale={locale} />
     </div>
   );
 }

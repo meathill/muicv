@@ -1,16 +1,35 @@
 import { CONTENT_LOCALES, contentLocalePrefix, POST_SECTION_META, SAMPLE_RESUME_TEMPLATES } from '@muicv/shared';
 import type { MetadataRoute } from 'next';
+import { LOCALES, type Locale } from '@/app/(zh)/(marketing)/_i18n/locale';
 import { getWebsitePublishedChangelog, getWebsitePublishedPosts, getWebsitePublishedSkills } from '@/lib/cms-content';
 
 const BASE = 'https://muicv.com';
 
-// 双语页对的 hreflang（sitemap 里必须用绝对 URL）。加英文页就往这里加对应映射。
-const HOME_ALT = { languages: { 'zh-CN': `${BASE}/`, en: `${BASE}/en` } };
-const DOWNLOAD_ALT = { languages: { 'zh-CN': `${BASE}/download`, en: `${BASE}/en/download` } };
-const PRICING_ALT = { languages: { 'zh-CN': `${BASE}/pricing`, en: `${BASE}/en/pricing` } };
-const ABOUT_ALT = { languages: { 'zh-CN': `${BASE}/about`, en: `${BASE}/en/about` } };
-const CONTACT_ALT = { languages: { 'zh-CN': `${BASE}/contact`, en: `${BASE}/en/contact` } };
-const TEMPLATES_ALT = { languages: { 'zh-CN': `${BASE}/templates`, en: `${BASE}/en/templates` } };
+/** 营销页在某语言下的路径：zh 无前缀，其余 /<locale>；'/' 特判不带结尾斜杠之外的前缀拼接。 */
+function marketingPath(locale: Locale, path: string): string {
+  if (locale === 'zh') return path;
+  return path === '/' ? `/${locale}` : `/${locale}${path}`;
+}
+
+/** hreflang 键：默认语言用 zh-CN，其余与 URL 段同名。 */
+function hreflangKey(locale: Locale): string {
+  return locale === 'zh' ? 'zh-CN' : locale;
+}
+
+/** 9 语言齐备的营销页 alternates（sitemap 必须绝对 URL）。 */
+function marketingAlternates(path: string) {
+  return { languages: Object.fromEntries(LOCALES.map((l) => [hreflangKey(l), `${BASE}${marketingPath(l, path)}`])) };
+}
+
+/** 只有 zh/en 的页面 alternates（模板库：模板数据只有中英双语）。 */
+function bilingualAlternates(path: string) {
+  return {
+    languages: {
+      'zh-CN': `${BASE}${path}`,
+      en: `${BASE}${marketingPath('en', path)}`,
+    },
+  };
+}
 
 // sitemap 走 ISR：1 小时刷一次。爬虫不会每秒访问，不需要 force-dynamic 让 D1 每次硬扛。
 export const revalidate = 3600;
@@ -35,20 +54,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     (latest, item) => maxDate(latest, toDate(item.updatedAt)),
     new Date(0),
   );
+  // 9 语言齐备的营销页（路径 → 优先级/频率）。
+  const marketingPages = [
+    { path: '/', priority: 1, changeFrequency: 'weekly' as const },
+    { path: '/pricing', priority: 0.9, changeFrequency: 'monthly' as const },
+    { path: '/about', priority: 0.6, changeFrequency: 'monthly' as const },
+    { path: '/contact', priority: 0.5, changeFrequency: 'monthly' as const },
+    { path: '/download', priority: 0.7, changeFrequency: 'weekly' as const },
+  ];
   const pages: StaticSitemapPage[] = [
-    { path: '/', priority: 1, changeFrequency: 'weekly', alternates: HOME_ALT },
-    { path: '/pricing', priority: 0.9, changeFrequency: 'monthly', alternates: PRICING_ALT },
-    { path: '/templates', priority: 0.85, changeFrequency: 'weekly', alternates: TEMPLATES_ALT },
-    { path: '/about', priority: 0.6, changeFrequency: 'monthly', alternates: ABOUT_ALT },
-    { path: '/contact', priority: 0.5, changeFrequency: 'monthly', alternates: CONTACT_ALT },
-    { path: '/download', priority: 0.7, changeFrequency: 'weekly', alternates: DOWNLOAD_ALT },
-    // 英文营销页（增量加页时往这里补，并给对应中文页加 alternates）
-    { path: '/en', priority: 1, changeFrequency: 'weekly', alternates: HOME_ALT },
-    { path: '/en/templates', priority: 0.85, changeFrequency: 'weekly', alternates: TEMPLATES_ALT },
-    { path: '/en/download', priority: 0.7, changeFrequency: 'weekly', alternates: DOWNLOAD_ALT },
-    { path: '/en/pricing', priority: 0.9, changeFrequency: 'monthly', alternates: PRICING_ALT },
-    { path: '/en/about', priority: 0.6, changeFrequency: 'monthly', alternates: ABOUT_ALT },
-    { path: '/en/contact', priority: 0.5, changeFrequency: 'monthly', alternates: CONTACT_ALT },
+    // 营销页：每种语言各一条，alternates 互指
+    ...LOCALES.flatMap((locale) =>
+      marketingPages.map((page) => ({
+        path: marketingPath(locale, page.path),
+        priority: page.priority,
+        changeFrequency: page.changeFrequency,
+        alternates: marketingAlternates(page.path),
+      })),
+    ),
+    // 模板库：模板数据只有 zh/en 两套，故只收录这两种语言
+    { path: '/templates', priority: 0.85, changeFrequency: 'weekly', alternates: bilingualAlternates('/templates') },
+    { path: '/en/templates', priority: 0.85, changeFrequency: 'weekly', alternates: bilingualAlternates('/templates') },
     { path: '/posts', priority: 0.7, changeFrequency: 'weekly' },
     ...Object.values(POST_SECTION_META).map((section) => ({
       path: section.path,

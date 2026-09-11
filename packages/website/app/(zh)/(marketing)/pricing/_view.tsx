@@ -14,11 +14,10 @@ import { PricingClient } from './_pricing-client';
 export function PricingView({ locale }: { locale: Locale }) {
   const c = getPricingContent(locale);
   const dict = getDictionary(locale);
-  const altHref = locale === 'zh' ? '/en/pricing' : '/pricing';
 
   return (
     <div className="relative">
-      <Header locale={locale} brand={dict.brand} nav={dict.nav} altHref={altHref} />
+      <Header locale={locale} brand={dict.brand} nav={dict.nav} />
 
       <section className="relative overflow-hidden border-b border-rule">
         <div className="absolute inset-0 bg-sun" aria-hidden />
@@ -74,7 +73,7 @@ export function PricingView({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <Footer dict={dict} locale={locale} altHref={altHref} />
+      <Footer dict={dict} locale={locale} />
     </div>
   );
 }

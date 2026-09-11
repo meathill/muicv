@@ -4,7 +4,8 @@ import { CONTENT_LOCALES, type ContentLocale, type PostSection } from '@muicv/sh
 import { getPostAlternateLanguages, getWebsitePostBySlug, getWebsitePublishedPosts } from '@/lib/cms-content';
 
 import { BLOG_STRINGS, blogUrlPrefix } from '@/app/(zh)/(marketing)/_i18n/blog';
-import { BlogShell } from '@/app/(zh)/(marketing)/_content/blog-shell';
+import { fromContentLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
+import { MarketingShell } from '@/app/(zh)/(marketing)/_content/marketing-shell';
 import { PostDetailView } from '@/app/(zh)/(marketing)/_content/post-detail-view';
 
 export const revalidate = 3600;
@@ -66,8 +67,8 @@ export default async function LocalePostDetailPage({ params }: { params: Promise
   if (!post) notFound();
 
   return (
-    <BlogShell locale={locale}>
+    <MarketingShell locale={fromContentLocale(locale)}>
       <PostDetailView locale={locale} post={post} />
-    </BlogShell>
+    </MarketingShell>
   );
 }

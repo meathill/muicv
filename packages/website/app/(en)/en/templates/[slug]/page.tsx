@@ -69,7 +69,7 @@ export default async function EnTemplateDetailPage({ params }: { params: Promise
   const relatedTemplates = SAMPLE_RESUME_TEMPLATES.filter((item) => item.slug !== template.slug).slice(0, 2);
 
   return (
-    <MarketingShell locale="en" altHref={`/templates/${template.slug}`}>
+    <MarketingShell locale="en">
       <JsonLd data={breadcrumbSchema} />
 
       <JsonLd data={documentSchema} />

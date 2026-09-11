@@ -64,7 +64,7 @@ export default async function TemplatesIndexPage({ searchParams }: { searchParam
   };
 
   return (
-    <MarketingShell locale="zh" altHref="/en/templates">
+    <MarketingShell locale="zh">
       <JsonLd data={breadcrumbSchema} />
 
       <JsonLd data={collectionSchema} />

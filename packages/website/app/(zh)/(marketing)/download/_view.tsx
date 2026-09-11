@@ -26,7 +26,6 @@ export async function DownloadView({ locale }: { locale: Locale }) {
   const release = await fetchLatestRelease();
 
   const selfHref = localizedHref(locale, '/download');
-  const altHref = locale === 'zh' ? '/en/download' : '/download';
   const crumbHome = locale === 'en' ? 'Home' : '首页';
   const crumbSelf = locale === 'en' ? 'Download' : '下载';
 
@@ -45,7 +44,7 @@ export async function DownloadView({ locale }: { locale: Locale }) {
           { name: crumbSelf, url: `${SITE_URL}${selfHref}` },
         ])}
       />
-      <Header locale={locale} brand={dict.brand} nav={dict.nav} altHref={altHref} />
+      <Header locale={locale} brand={dict.brand} nav={dict.nav} />
 
       <main className="mx-auto max-w-3xl px-5 py-14 md:px-8 md:py-20">
         <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-yellow-deep">— {t.eyebrow}</p>
@@ -59,7 +58,7 @@ export async function DownloadView({ locale }: { locale: Locale }) {
         <FirstRunHelp t={t} />
       </main>
 
-      <Footer dict={dict} locale={locale} altHref={altHref} />
+      <Footer dict={dict} locale={locale} />
     </div>
   );
 }

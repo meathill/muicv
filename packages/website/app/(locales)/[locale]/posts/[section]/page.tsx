@@ -4,7 +4,8 @@ import { CONTENT_LOCALES, type ContentLocale, type PostSection } from '@muicv/sh
 import { getWebsitePublishedPosts } from '@/lib/cms-content';
 
 import { BLOG_STRINGS, blogUrlPrefix } from '@/app/(zh)/(marketing)/_i18n/blog';
-import { BlogShell } from '@/app/(zh)/(marketing)/_content/blog-shell';
+import { fromContentLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
+import { MarketingShell } from '@/app/(zh)/(marketing)/_content/marketing-shell';
 import { PostsLayout } from '@/app/(zh)/(marketing)/_content/posts-layout';
 
 export const revalidate = 3600;
@@ -53,8 +54,8 @@ export default async function LocalePostSectionPage({ params }: { params: Promis
   const posts = await getWebsitePublishedPosts(locale);
 
   return (
-    <BlogShell locale={locale}>
+    <MarketingShell locale={fromContentLocale(locale)}>
       <PostsLayout locale={locale} active={section} allPosts={posts} />
-    </BlogShell>
+    </MarketingShell>
   );
 }

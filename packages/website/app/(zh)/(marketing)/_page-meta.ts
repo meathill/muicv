@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import type { Locale } from './_i18n/locale';
+import { EN_ROUTES, LOCALES, LOCALIZED_ROUTES, type Locale, localizedHref } from './_i18n/locale';
 
 const SITE_URL = 'https://muicv.com';
 
@@ -18,8 +18,29 @@ export const DEFAULT_TWITTER_IMAGE = {
   alt: SOCIAL_IMAGE_ALT,
 };
 
-// 双语营销页统一 metadata：canonical 自指 + hreflang 互指 + 完整 openGraph/twitter。
-// title 为纯串，走各自 layout 的模板（zh ' · Mui简历' / en ' · MuiCV'）。首页用 title.absolute 不走这里。
+/** hreflang 的 locale 键：默认语言用 zh-CN，其余与 URL 段同名。 */
+function hreflangKey(locale: Locale): string {
+  return locale === 'zh' ? 'zh-CN' : locale;
+}
+
+/**
+ * 由 LOCALIZED_ROUTES / EN_ROUTES 推导 hreflang：9 语言齐备的页面列全 9 条，
+ * 只有英文版的列 zh/en，都没有的只列默认语言——避免指向 404（对 SEO 有害）。
+ * zh/en 与新语言页共用同一函数，保证各语言页的 hreflang 互指对称。
+ */
+export function alternateLanguages(path: string): Record<string, string> {
+  const base = path.split(/[?#]/)[0] || '/';
+  const matches = (routes: readonly string[]) => routes.some((p) => base === p || base.startsWith(`${p}/`));
+  const locales: Locale[] = matches(LOCALIZED_ROUTES) ? [...LOCALES] : matches(EN_ROUTES) ? ['zh', 'en'] : ['zh'];
+  const languages: Record<string, string> = {};
+  for (const locale of locales) languages[hreflangKey(locale)] = localizedHref(locale, path);
+  return languages;
+}
+
+/**
+ * 营销页统一 metadata：canonical 自指 + hreflang 互指 + 完整 openGraph/twitter。
+ * title 为纯串，走各自 layout 的模板（zh ' · Mui简历' / 其它 ' · MuiCV'）。首页用 title.absolute。
+ */
 export function pageMetadata({
   locale,
   path,
@@ -27,22 +48,22 @@ export function pageMetadata({
   description,
 }: {
   locale: Locale;
-  /** 中文路径，如 '/about'；英文路径自动推导为 '/en' 前缀。 */
+  /** 中文路径，如 '/about'；各语言 URL 由 localizedHref 推导。 */
   path: string;
   title: string;
   description: string;
 }): Metadata {
-  const enPath = path === '/' ? '/en' : `/en${path}`;
-  const canonical = locale === 'en' ? enPath : path;
+  const canonical = localizedHref(locale, path);
+  const languages = { ...alternateLanguages(path), 'x-default': path };
   return {
     title,
     description,
-    alternates: { canonical, languages: { 'zh-CN': path, en: enPath, 'x-default': path } },
+    alternates: { canonical, languages },
     openGraph: {
       type: 'website',
-      siteName: locale === 'en' ? 'MuiCV' : 'Mui简历',
+      siteName: locale === 'zh' ? 'Mui简历' : 'MuiCV',
       url: `${SITE_URL}${canonical}`,
-      locale: locale === 'en' ? 'en_US' : 'zh_CN',
+      locale: locale === 'zh' ? 'zh_CN' : locale,
       title,
       description,
       images: [DEFAULT_OPEN_GRAPH_IMAGE],

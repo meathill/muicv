@@ -1,5 +1,7 @@
 import { CONTENT_LOCALES, contentLocalePrefix, type ContentLocale, type PostSection } from '@muicv/shared';
 
+import { fromContentLocale, localizedHref } from './locale';
+
 /**
  * 博客（posts）的本地化文案与 URL 映射。
  *
@@ -13,18 +15,12 @@ export function blogUrlPrefix(locale: ContentLocale): string {
 }
 
 /**
- * 有本地化营销页的语言（首页 / download / pricing / about / contact）。
- * 目前只有 zh（无前缀）与 en（/en）；其余语言的博客壳需要落到英文页而不是造 404。
- */
-const MARKETING_LOCALES = new Set<ContentLocale>(['zh-CN', 'en']);
-
-/**
- * 营销页链接（首页、下载等）。只有 zh/en 有本地化版本，其它语言回退到英文页，
- * 避免 /ja/download 这类不存在的地址。博客自身路径请用 blogUrlPrefix（全语言都有）。
+ * 营销页链接（首页、下载、定价等）。营销站已 9 语言本地化，直接复用统一的 localizedHref：
+ * 有本地化版本的路径加前缀，只有英文版的（模板库）回退 /en，都没有的透传，不会造 404。
+ * 博客自身路径请用 blogUrlPrefix（9 语言都有）。
  */
 export function marketingHref(locale: ContentLocale, path: string): string {
-  if (MARKETING_LOCALES.has(locale)) return `${contentLocalePrefix(locale)}${path}`;
-  return `/en${path}`;
+  return localizedHref(fromContentLocale(locale), path);
 }
 
 /** HTML lang 属性值。 */
