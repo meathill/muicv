@@ -1,10 +1,10 @@
 'use client';
 
-import { type BillingInterval, type Currency, CN_PACKS, SUBSCRIPTION_PLANS, TOPUP_PACKS } from '@muicv/shared';
+import { type BillingInterval, type Currency, SUBSCRIPTION_PLANS, TOPUP_PACKS } from '@muicv/shared';
 import { useEffect, useState } from 'react';
 
-import { CnPackButton } from '@/components/cn-pack-button';
 import { CurrencyToggle } from '@/components/currency-toggle';
+import { postCurrencyPreference } from '@/lib/currency-client';
 
 import { type Locale, localizedHref } from '../_i18n/locale';
 import { ArrowUpRight, Sparkle } from '../_icons';
@@ -23,24 +23,28 @@ type PricingState = {
   isLoggedIn: boolean;
   hasActiveSub: boolean;
   currency: Currency;
-  cnPackCooldown: { monthly: string | null; yearly: string | null };
 };
 
 /**
  * Pricing 页动态区（客户端）。
  *
- * 页面本体是静态壳（ISR / 构建期预渲染），登录态 / 订阅状态 / 币种 / CN 包 cooldown
- * 由 GET /api/pricing/state 挂载后一次拿齐；interval 只在本地维护并同步到 URL。
+ * 页面本体是静态壳（ISR / 构建期预渲染），登录态 / 订阅状态 / 币种由
+ * GET /api/pricing/state 挂载后一次拿齐；interval 只在本地维护并同步到 URL，
+ * 默认年付（有折扣时先展示更划算的档）。
  * 币种未返回前价格位显示占位符，避免「先 $ 后 ¥」闪烁。
+ *
+ * 人民币不能订阅（Stripe 不支持 CNY recurring），所以订阅卡只用 USD 标价；
+ * 处于 ¥ 视图的登录用户会看到「人民币不支持订阅」提示与一键切回美元的按钮，
+ * 人民币的购买入口只有下方的一次性补充包。
  */
 export function PricingClient({ locale }: { locale: Locale }) {
   const c = getPricingContent(locale);
   const [state, setState] = useState<PricingState | null>(null);
-  const [interval, setBillingInterval] = useState<BillingInterval>('monthly');
+  const [interval, setBillingInterval] = useState<BillingInterval>('yearly');
 
   useEffect(() => {
     const param = new URLSearchParams(window.location.search).get('interval');
-    if (param === 'yearly') setBillingInterval('yearly');
+    if (param === 'monthly') setBillingInterval('monthly');
   }, []);
 
   useEffect(() => {
@@ -57,10 +61,13 @@ export function PricingClient({ locale }: { locale: Locale }) {
   const isLoggedIn = !!state?.isLoggedIn;
   const hasActiveSub = !!state?.hasActiveSub;
   const currency = state?.currency ?? null;
-  const cooldownEnd = state?.cnPackCooldown[interval] ? new Date(state.cnPackCooldown[interval]) : null;
 
   function handleCurrencySwitch(next: Currency) {
     setState((s) => (s ? { ...s, currency: next } : s));
+  }
+
+  function handleSwitchToUsd() {
+    postCurrencyPreference('usd').then(() => handleCurrencySwitch('usd'));
   }
 
   const subTiers: SubTier[] = [
@@ -95,9 +102,9 @@ export function PricingClient({ locale }: { locale: Locale }) {
                 tier={tier}
                 interval={interval}
                 currency={currency}
-                cooldownEnd={cooldownEnd}
                 isLoggedIn={isLoggedIn}
                 hasActiveSub={hasActiveSub}
+                onSwitchToUsd={handleSwitchToUsd}
                 c={c}
                 locale={locale}
               />
@@ -212,28 +219,26 @@ function SubscriptionCard({
   tier,
   interval,
   currency,
-  cooldownEnd,
   isLoggedIn,
   hasActiveSub,
+  onSwitchToUsd,
   c,
   locale,
 }: {
   tier: SubTier;
   interval: BillingInterval;
   currency: Currency | null;
-  cooldownEnd: Date | null;
   isLoggedIn: boolean;
   hasActiveSub: boolean;
+  onSwitchToUsd: () => void;
   c: PricingContent;
   locale: Locale;
 }) {
   const plan = SUBSCRIPTION_PLANS[tier.key];
   const cycle = plan[interval];
-  // CN 视图：用一次性 CN 包替代订阅 SKU。key 形如 'pro-monthly'。
-  const cnPackKey = `${tier.key}-${interval}` as const;
-  const cnPack = CN_PACKS[cnPackKey];
   const tokenLine = interval === 'yearly' ? c.tokenLineYearly : c.tokenLineMonthly;
   const features = [`${tokenLine} ${cycle.tokens.toLocaleString()} tokens`, ...tier.staticFeatures];
+  const isCnyView = currency === 'cny';
 
   return (
     <article
@@ -254,7 +259,7 @@ function SubscriptionCard({
       <div className="mt-5">
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-extrabold text-ink tabular-nums">
-            {currency ? cycle.display[currency] : PRICE_PLACEHOLDER}
+            {currency ? cycle.display.usd : PRICE_PLACEHOLDER}
           </span>
         </div>
         <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-mute">
@@ -262,7 +267,7 @@ function SubscriptionCard({
         </p>
         {interval === 'yearly' && 'savingsLabel' in cycle && (
           <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-yellow-deep">
-            {currency ? cycle.savingsLabel[currency] : PRICE_PLACEHOLDER}
+            {cycle.savingsLabel.usd}
           </p>
         )}
       </div>
@@ -288,18 +293,20 @@ function SubscriptionCard({
         </a>
       )}
       {isLoggedIn && hasActiveSub && <BuyButton kind="portal" label={c.manageSub} primary={!!tier.highlight} />}
-      {isLoggedIn && !hasActiveSub && currency === 'cny' && (
-        <>
-          <CnPackButton
-            pack={cnPackKey}
-            label={`${c.cnBuyPrefix}${cnPack.label}`}
-            cooldownEnd={cooldownEnd}
-            primary={!!tier.highlight}
-          />
-          <p className="mt-2 text-center text-[12px] leading-snug text-mute">{c.cnPackNote(cnPack.cooldownDays)}</p>
-        </>
+      {isLoggedIn && !hasActiveSub && isCnyView && (
+        <div className="press-ink mt-6 flex w-full flex-col gap-2 rounded-xl border-2 border-ink bg-cream px-4 py-2.5">
+          <p className="text-[12px] leading-snug text-ink-soft">{c.cnSubscribeHint}</p>
+          <button
+            type="button"
+            onClick={onSwitchToUsd}
+            className="press inline-flex items-center justify-center gap-1.5 rounded-xl bg-yellow px-4 py-2 text-[14px] font-bold text-ink"
+          >
+            {c.switchToUsd}
+            <ArrowUpRight />
+          </button>
+        </div>
       )}
-      {isLoggedIn && !hasActiveSub && currency !== 'cny' && (
+      {isLoggedIn && !hasActiveSub && !isCnyView && (
         <BuyButton
           kind="subscription"
           plan={tier.key}

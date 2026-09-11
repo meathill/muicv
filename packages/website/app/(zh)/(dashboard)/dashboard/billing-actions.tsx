@@ -5,13 +5,11 @@ import {
   type Currency,
   type SubscriptionPlanKey,
   type TopupPackKey,
-  CN_PACKS,
   SUBSCRIPTION_PLANS,
   TOPUP_PACKS,
 } from '@muicv/shared';
 import { useState } from 'react';
 
-import { CnPackButton } from '@/components/cn-pack-button';
 import { CurrencyToggle } from '@/components/currency-toggle';
 
 /**
@@ -24,23 +22,23 @@ import { CurrencyToggle } from '@/components/currency-toggle';
  *
  * 都返回 hosted URL；无前端 Stripe SDK 依赖（省 80KB bundle）。
  *
- * `currency` 由父级 server component（plans-section）注入，决定订阅卡 / topup 卡上
- * 显示哪一套文案。币种切换 UI 在右上 CurrencyToggle，切换后写 cookie + router.refresh()。
+ * 订阅只卖 USD：人民币视图下订阅按钮置灰并提示改切美元或买补充包
+ * （Stripe 不支持 CNY recurring），人民币的唯一购买入口是补充包。
+ *
+ * `currency` 由父级 server component（plans-section）注入。
+ * 币种切换 UI 在右上 CurrencyToggle，切换后写 cookie + router.refresh()。
  */
 export function BillingActions({
   hasActiveSubscription,
   currency,
-  cnPackMonthlyCooldownEnd,
-  cnPackYearlyCooldownEnd,
 }: {
   hasActiveSubscription: boolean;
   currency: Currency;
-  cnPackMonthlyCooldownEnd: Date | null;
-  cnPackYearlyCooldownEnd: Date | null;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [interval, setInterval] = useState<BillingInterval>('monthly');
+  const isCnyView = currency === 'cny';
 
   async function jumpTo(endpoint: string, body: unknown, busyKey: string) {
     setBusy(busyKey);
@@ -95,7 +93,7 @@ export function BillingActions({
                     : 'text-ink-soft'
                 }`}
               >
-                年付 <span className="ml-0.5 text-[12px] text-yellow-deep">省 ≈20%</span>
+                年付 <span className="ml-0.5 text-[12px] text-yellow-deep">省 ≈9%</span>
               </button>
             </div>
           )}
@@ -103,47 +101,21 @@ export function BillingActions({
         <p className="mt-1 text-[12px] text-ink-soft">
           {hasActiveSubscription
             ? '已订阅；切换档位 / 取消请走"管理订阅"。'
-            : interval === 'yearly'
-              ? '年付：一次性收一年钱，立即到账整年 Token，Token 永不过期。'
-              : '月付：每月自动续 Token。'}
+            : isCnyView
+              ? '人民币不支持订阅（Stripe 限制）。请切换到 $ USD 订阅，或购买下方补充包。'
+              : interval === 'yearly'
+                ? '年付：一次性收一年钱，立即到账约 11 个月用量的 Token，Token 永不过期。'
+                : '月付：每月自动续 Token。'}
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {(['pro', 'max'] as SubscriptionPlanKey[]).map((key) => {
             const plan = SUBSCRIPTION_PLANS[key];
             const cycle = plan[interval];
-            // CN 视图：订阅档以 CN「月包/年包」一次性 SKU 形式出售（绕开 alipay 不能 subscription）。
-            if (currency === 'cny') {
-              const cnPackKey = `${key}-${interval}` as const;
-              const cnPack = CN_PACKS[cnPackKey];
-              const cooldownEnd = interval === 'monthly' ? cnPackMonthlyCooldownEnd : cnPackYearlyCooldownEnd;
-              return (
-                <div
-                  key={key}
-                  className="flex flex-col gap-2 rounded-xl border-2 border-ink bg-cream px-4 py-3 disabled:opacity-50"
-                >
-                  <div className="flex items-center justify-between">
-                    <span>
-                      <span className="block text-[14px] font-extrabold text-ink">{plan.label}</span>
-                      <span className="block font-mono text-[12px] text-mute">
-                        {cycle.tokens.toLocaleString()} tokens / {interval === 'yearly' ? '年' : '月'}
-                      </span>
-                    </span>
-                    <span className="font-mono text-[14px] font-bold tabular-nums text-yellow-deep">
-                      {cycle.display.cny}
-                    </span>
-                  </div>
-                  <CnPackButton pack={cnPackKey} label={`购买 ${cnPack.label}`} cooldownEnd={cooldownEnd} />
-                  <p className="text-[11px] leading-snug text-mute">
-                    国内一次性付费 · 同周期 {cnPack.cooldownDays} 天内限购一次
-                  </p>
-                </div>
-              );
-            }
             return (
               <button
                 key={key}
                 type="button"
-                disabled={busy !== null || hasActiveSubscription}
+                disabled={busy !== null || hasActiveSubscription || isCnyView}
                 onClick={() => jumpTo('/api/checkout', { plan: key, interval }, `plan-${key}-${interval}`)}
                 className="press-ink flex items-center justify-between rounded-xl border-2 border-ink bg-cream px-4 py-3 text-left disabled:opacity-50"
               >
@@ -154,7 +126,7 @@ export function BillingActions({
                   </span>
                 </span>
                 <span className="font-mono text-[14px] font-bold tabular-nums text-yellow-deep">
-                  {cycle.display[currency]}
+                  {cycle.display.usd}
                 </span>
               </button>
             );

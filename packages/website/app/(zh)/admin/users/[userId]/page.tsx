@@ -18,10 +18,13 @@ const LEDGER_TYPE_LABEL: Record<string, string> = {
   signup_bonus: '注册赠送',
   subscription: '订阅续费',
   topup: '补充包',
+  cn_pack: '国内月包/年包（历史）',
   llm: 'LLM 调用',
   pdf_render: 'PDF 渲染',
   jd_fetch: 'JD 抓取',
   stt_transcribe: '语音转写',
+  tts: '语音合成',
+  feedback_reward: '反馈奖励',
   admin_grant: '后台补发',
   admin_deduct: '后台扣款',
 };

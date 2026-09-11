@@ -1,10 +1,10 @@
-import { type LedgerType, displayToMicro } from '@muicv/shared';
+import { displayToMicro } from '@muicv/shared';
 import { eq } from 'drizzle-orm';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type Stripe from 'stripe';
 
 import { getDb, schema } from '@/lib/db';
-import { getStripe, priceIdToCnPackTokens, priceIdToCycleTokens, priceIdToTopupTokens } from '@/lib/stripe';
+import { getStripe, priceIdToCycleTokens, priceIdToTopupTokens } from '@/lib/stripe';
 import { credit } from '@/lib/wallet';
 
 export const dynamic = 'force-dynamic';
@@ -95,55 +95,39 @@ export async function POST(request: Request) {
 }
 
 /**
- * 一次性付款：mode=payment 的 checkout.session.completed。
- * 区分两种 kind：
- *   - 'cn_pack'：CN 月包/年包（绕开 alipay/wechat 不能 recurring 的限制），ledger.type='cn_pack'
- *     —— 该 ledger 行也是 cooldown 判定数据源（lib/cn-pack.ts 查它）。
- *   - 'topup' 或缺省：常规补充包，ledger.type='topup'
+ * 一次性付款：mode=payment 的 checkout.session.completed → 补充包上账。
  *
- * 上账金额走 priceId 反查（不信任 metadata.tokens，可被改）；topup 路径保留 metadata 兜底。
+ * 上账金额走 priceId 反查（不信任 metadata.tokens，可被改）；metadata.tokens 仅作兜底。
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (session.mode !== 'payment') {
-    // 月卡的 checkout.session.completed 也会触发，但月卡上账走 invoice.paid 不走这里
+    // 订阅的 checkout.session.completed 也会触发，但订阅上账走 invoice.paid 不走这里
     return;
   }
   const userId = session.metadata?.userId;
   if (!userId) {
     throw new Error(`checkout.session.completed missing metadata.userId (session=${session.id})`);
   }
-  const kind = session.metadata?.kind;
 
   const stripe = await getStripe();
   const detailed = await stripe.checkout.sessions.retrieve(session.id, { expand: ['line_items'] });
   const item = detailed.line_items?.data?.[0];
   const priceId = typeof item?.price === 'object' && item.price ? item.price.id : null;
 
-  let tokens: number | null = null;
-  let ledgerType: LedgerType = 'topup';
-
-  if (kind === 'cn_pack') {
-    tokens = priceId ? priceIdToCnPackTokens(priceId) : null;
-    if (tokens == null) {
-      throw new Error(`cn_pack checkout price ${priceId} not in cn pack map (session=${session.id})`);
-    }
-    ledgerType = 'cn_pack';
-  } else {
-    tokens = priceId ? priceIdToTopupTokens(priceId) : null;
-    if (tokens == null) {
-      // topup 兜底：metadata 里如果有合法 tokens 数也接受（priceId 失配时不至于卡死）
-      const meta = Number.parseInt(session.metadata?.tokens ?? '', 10);
-      if (Number.isFinite(meta) && meta > 0) tokens = meta;
-    }
-    if (tokens == null) {
-      throw new Error(`checkout.session.completed price ${priceId} not in topup map (session=${session.id})`);
-    }
+  let tokens = priceId ? priceIdToTopupTokens(priceId) : null;
+  if (tokens == null) {
+    // priceId 失配时用 metadata 兜底（不至于卡死上账）
+    const meta = Number.parseInt(session.metadata?.tokens ?? '', 10);
+    if (Number.isFinite(meta) && meta > 0) tokens = meta;
+  }
+  if (tokens == null) {
+    throw new Error(`checkout.session.completed price ${priceId} not in topup map (session=${session.id})`);
   }
 
   await credit(
     userId,
     displayToMicro(tokens),
-    ledgerType,
+    'topup',
     { sessionId: session.id, priceId, pack: session.metadata?.pack ?? null },
     `checkout_${session.id}`,
   );

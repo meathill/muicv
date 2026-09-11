@@ -33,8 +33,10 @@ export type PricingContent = {
   signUpToSubscribe: string;
   manageSub: string;
   subscribeNow: string;
-  cnBuyPrefix: string;
-  cnPackNote: (days: number) => string;
+  // 人民币不能订阅（Stripe 不支持 CNY recurring），¥ 视图下的已登录用户看到这句提示 +
+  // 「改用美元订阅」按钮。
+  cnSubscribeHint: string;
+  switchToUsd: string;
   topupHeading: string;
   topupDesc: string;
   buyNow: string;
@@ -58,7 +60,7 @@ const zh: PricingContent = {
     '注册即送 10,000 tokens（一次性）。不够用了选月付 / 年付订阅，或随时买补充包。Skill 始终免费，BYOK 始终可用。',
   toggleMonthly: '月付',
   toggleYearly: '年付',
-  toggleSavings: '省 ≈17%',
+  toggleSavings: '省 ≈9%',
   free: {
     title: '免费起步',
     sub: '想试一下，先从这开始。',
@@ -72,7 +74,7 @@ const zh: PricingContent = {
     ctaSignedIn: '进入控制台',
     ctaSignedOut: '免费注册领 10K tokens',
   },
-  tokenLineYearly: '一次性发整年',
+  tokenLineYearly: '一次性发约 11 个月用量',
   tokenLineMonthly: '每月自动续',
   tiers: {
     pro: {
@@ -91,8 +93,8 @@ const zh: PricingContent = {
   signUpToSubscribe: '注册后开通',
   manageSub: '管理订阅',
   subscribeNow: '立即订阅',
-  cnBuyPrefix: '购买 ',
-  cnPackNote: (days) => `国内一次性付费 · 同周期 ${days} 天内每位用户限购一次 · token 永不过期`,
+  cnSubscribeHint: '人民币暂不支持订阅（Stripe 限制）。订阅请改用 $ USD，或直接购买下方补充包。',
+  switchToUsd: '改用美元订阅',
   topupHeading: '补充包（一次性买，永不过期）',
   topupDesc: '没准备订阅，或者偶尔超用一次。任何时候都能买。',
   buyNow: '立即购买',
@@ -106,7 +108,7 @@ const zh: PricingContent = {
     },
     {
       q: '月付和年付有什么区别？',
-      a: '价格上年付有约 17% 折扣；token 上年付一次性给你整年用量，付款当天就能集中用。取消订阅后已发的 token 全部保留，永不过期。月付适合先试一试，年付适合确定要长期用。',
+      a: '价格上年付约 9% 折扣；token 上年付一次性给你约 11 个月的量，付款当天就能集中用。取消订阅后已发的 token 全部保留，永不过期。月付适合先试一试，年付适合确定要长期用。',
     },
     {
       q: '订阅和补充包能同时用吗？',
@@ -118,7 +120,7 @@ const zh: PricingContent = {
     },
     {
       q: 'Free 用户每月会自动续 token 吗？',
-      a: '不会。注册时一次性赠送 10,000 tokens，仅此一次。用完为止；之后要继续用，可以买补充包（最便宜 ¥10 = 10K tokens）、订阅月付 / 年付，或绑 BYOK 让 LLM 走自己的 API（PDF / JD 仍按 muicv tokens 扣）。',
+      a: '不会。注册时一次性赠送 10,000 tokens，仅此一次。用完为止；之后要继续用，可以买补充包（最低 ¥12.88 = 140K tokens）、订阅月付 / 年付，或绑 BYOK 让 LLM 走自己的 API（PDF / JD 仍按 muicv tokens 扣）。',
     },
     {
       q: '不满意能退款吗？',
@@ -158,7 +160,7 @@ const en: PricingContent = {
     'Sign up for 10,000 free tokens (one time). When you need more, subscribe monthly or yearly, or buy a top-up pack anytime. Skills are always free, BYOK always available.',
   toggleMonthly: 'Monthly',
   toggleYearly: 'Yearly',
-  toggleSavings: 'save ≈17%',
+  toggleSavings: 'save ≈9%',
   free: {
     title: 'Free to start',
     sub: 'Want to try it? Start here.',
@@ -172,7 +174,7 @@ const en: PricingContent = {
     ctaSignedIn: 'Go to dashboard',
     ctaSignedOut: 'Sign up for 10K free tokens',
   },
-  tokenLineYearly: 'Full year upfront:',
+  tokenLineYearly: 'About 11 months up front:',
   tokenLineMonthly: 'Monthly auto-refill:',
   tiers: {
     pro: {
@@ -194,8 +196,9 @@ const en: PricingContent = {
   signUpToSubscribe: 'Sign up to subscribe',
   manageSub: 'Manage subscription',
   subscribeNow: 'Subscribe',
-  cnBuyPrefix: 'Buy ',
-  cnPackNote: (days) => `One-time payment (China) · one purchase per user per ${days}-day cycle · tokens never expire`,
+  cnSubscribeHint:
+    'Subscriptions are not available in CNY (Stripe limitation). Switch to $ USD to subscribe, or buy a top-up pack below.',
+  switchToUsd: 'Switch to USD',
   topupHeading: 'Top-up packs (one-time, never expire)',
   topupDesc: 'Not ready to subscribe, or an occasional overage. Buy anytime.',
   buyNow: 'Buy now',
@@ -209,7 +212,7 @@ const en: PricingContent = {
     },
     {
       q: "What's the difference between monthly and yearly?",
-      a: 'Yearly is about 17% cheaper, and grants the full year of tokens at once — usable from day one. Cancel and all granted tokens stay, never expiring. Monthly is good to try; yearly is for committing long-term.',
+      a: 'Yearly is about 9% cheaper, and grants roughly 11 months of tokens up front — usable from day one. Cancel and all granted tokens stay, never expiring. Monthly is good to try; yearly is for committing long-term.',
     },
     {
       q: 'Can I use a subscription and top-up packs together?',
@@ -221,7 +224,7 @@ const en: PricingContent = {
     },
     {
       q: 'Do free users get tokens refilled monthly?',
-      a: "No. Sign-up grants 10,000 tokens once, that's it. When it runs out, buy a top-up pack (cheapest ¥10 = 10K tokens), subscribe monthly / yearly, or use BYOK so the LLM runs on your own API (PDF / JD still bill muicv tokens).",
+      a: "No. Sign-up grants 10,000 tokens once, that's it. When it runs out, buy a top-up pack (cheapest $1.88 = 140K tokens), subscribe monthly / yearly, or use BYOK so the LLM runs on your own API (PDF / JD still bill muicv tokens).",
     },
     {
       q: "Refunds if I'm not satisfied?",

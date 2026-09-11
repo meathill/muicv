@@ -4,6 +4,8 @@ import type { Currency } from '@muicv/shared';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { postCurrencyPreference } from '@/lib/currency-client';
+
 /**
  * 展示币种 toggle —— ¥ CN / $ USD 二选一。
  *
@@ -22,12 +24,7 @@ export function CurrencyToggle({ currency, onSwitch }: { currency: Currency; onS
   function switchTo(next: Currency) {
     if (next === currency || requesting !== null) return;
     setRequesting(next);
-    fetch('/api/billing/currency', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ currency: next }),
-    })
-      .then((res) => res.json().catch(() => ({})))
+    postCurrencyPreference(next)
       .then(() => {
         if (onSwitch) {
           onSwitch(next);

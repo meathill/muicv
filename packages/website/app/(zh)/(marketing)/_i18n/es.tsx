@@ -379,7 +379,7 @@ export const content: LocaleContent = {
       'Al registrarte recibes 10.000 tokens gratis (una sola vez). Cuando se te acaben, suscríbete mensual o anualmente, o compra un pack de recarga cuando quieras. Los skills son siempre gratis y BYOK siempre está disponible.',
     toggleMonthly: 'Mensual',
     toggleYearly: 'Anual',
-    toggleSavings: 'ahorra ≈17%',
+    toggleSavings: 'ahorra ≈9%',
     free: {
       title: 'Empieza gratis',
       sub: '¿Quieres probarlo? Empieza por aquí.',
@@ -393,7 +393,7 @@ export const content: LocaleContent = {
       ctaSignedIn: 'Ir al panel',
       ctaSignedOut: 'Regístrate gratis y recibe 10K tokens',
     },
-    tokenLineYearly: 'Todo el año por adelantado:',
+    tokenLineYearly: 'Unos 11 meses por adelantado:',
     tokenLineMonthly: 'Recarga mensual automática:',
     tiers: {
       pro: {
@@ -415,9 +415,9 @@ export const content: LocaleContent = {
     signUpToSubscribe: 'Suscríbete tras registrarte',
     manageSub: 'Gestionar suscripción',
     subscribeNow: 'Suscribirme',
-    cnBuyPrefix: 'Comprar ',
-    cnPackNote: (days) =>
-      `Pago puntual (China) · una compra por usuario cada ciclo de ${days} días · los tokens nunca caducan`,
+    cnSubscribeHint:
+      'Las suscripciones no están disponibles en CNY (limitación de Stripe). Cambia a $ USD para suscribirte o compra un pack de recarga abajo.',
+    switchToUsd: 'Cambiar a USD',
     topupHeading: 'Packs de recarga (pago puntual, sin caducidad)',
     topupDesc: 'No quieres suscribirte o solo te pasaste una vez. Cómpralos cuando quieras.',
     buyNow: 'Comprar ahora',
@@ -431,7 +431,7 @@ export const content: LocaleContent = {
       },
       {
         q: '¿Cuál es la diferencia entre el pago mensual y el anual?',
-        a: 'El anual tiene cerca de un 17% de descuento; además, entrega de una vez los tokens de todo el año, así que puedes usarlos desde el día del pago. Si cancelas, todos los tokens otorgados se conservan y nunca caducan. El mensual va bien para probar y el anual para comprometerse a largo plazo.',
+        a: 'El anual tiene cerca de un 9% de descuento; además, entrega de una vez unos 11 meses de tokens, así que puedes usarlos desde el día del pago. Si cancelas, todos los tokens otorgados se conservan y nunca caducan. El mensual va bien para probar y el anual para comprometerse a largo plazo.',
       },
       {
         q: '¿Puedo usar la suscripción y los packs de recarga a la vez?',
@@ -443,7 +443,7 @@ export const content: LocaleContent = {
       },
       {
         q: '¿Los usuarios Free reciben tokens cada mes?',
-        a: 'No. Al registrarte recibes 10.000 tokens una sola vez, y ya está. Cuando se acaben, puedes comprar un pack de recarga (el más barato, ¥10 = 10K tokens), suscribirte mensual o anualmente, o usar BYOK para que el LLM funcione con tu propia API (PDF / JD siguen descontando tokens de muicv).',
+        a: 'No. Al registrarte recibes 10.000 tokens una sola vez, y ya está. Cuando se acaben, puedes comprar un pack de recarga (el más barato, ¥12.88 = 140K tokens), suscribirte mensual o anualmente, o usar BYOK para que el LLM funcione con tu propia API (PDF / JD siguen descontando tokens de muicv).',
       },
       {
         q: '¿Hay reembolso si no quedo satisfecho?',
@@ -491,10 +491,10 @@ export const content: LocaleContent = {
             </li>
             <li>
               <strong>Suscripción</strong>: Pro / Max mensual o anual, con recarga automática de tokens cada periodo; el
-              anual entrega todo el año de una vez, con ≈17% de descuento
+              anual entrega unos 11 meses de una vez, con ≈9% de descuento
             </li>
             <li>
-              <strong>Packs de recarga</strong>: compra puntual de 10K / 35K / 130K tokens, cuando quieras
+              <strong>Packs de recarga</strong>: compra puntual de 140K / 480K / 1.75M tokens, cuando quieras
             </li>
             <li>
               <strong>BYOK</strong>: conecta la dirección y la clave de tu propia API en el panel para que el LLM use tu
@@ -508,7 +508,7 @@ export const content: LocaleContent = {
           .
         </>
       ),
-      text: 'Un único monedero de tokens: al registrarte recibes 10.000 tokens una sola vez, sin caducidad; suscripciones Pro / Max mensuales o anuales con recarga automática de tokens cada periodo, el anual con ≈17% de descuento; packs de recarga puntuales de 10K / 35K / 130K tokens; BYOK conecta tu propia clave de API para que el LLM use tu saldo. Los servicios en la nube (exportar a PDF, buscar empleo, etc.) se cobran por token; consulta los detalles en la página de precios.',
+      text: 'Un único monedero de tokens: al registrarte recibes 10.000 tokens una sola vez, sin caducidad; suscripciones Pro / Max mensuales o anuales con recarga automática de tokens cada periodo, el anual con ≈9% de descuento; packs de recarga puntuales de 140K / 480K / 1.75M tokens; BYOK conecta tu propia clave de API para que el LLM use tu saldo. Los servicios en la nube (exportar a PDF, buscar empleo, etc.) se cobran por token; consulta los detalles en la página de precios.',
     },
     {
       q: '¿Qué es BYOK?',

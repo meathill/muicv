@@ -11,7 +11,7 @@
  *
  * 计费：LLM 按 model 分价（见 LLM_PRICING），prompt / completion 分两列；功能门（PDF / JD）按固定显示 token 扣账。
  *
- * 锚点：1 显示 token ≈ $1e-5（从 Pro 套餐反推：500k / $4.99）。Xiaomi 价以 ¥7/USD 折算到 USD 后再算 rate。
+ * 锚点：1 显示 token ≈ $1e-5（从 Pro 套餐反推：500k / $4.88）。上游价以 ¥7/USD 折算到 USD 后再算 rate。
  *
  * 注册赠送 SIGNUP_BONUS 走 lazy init（第一次读 tokenBalance 时 INSERT OR IGNORE），
  * 不依赖 Better Auth 的 user.create hook（OpenNext 上 hook 踩坑多）。
@@ -305,6 +305,10 @@ export function normalizeReasoningEffort(value: unknown): ReasoningEffort {
 /**
  * 支持的展示币种。**结算币种 = Stripe Price 的 currency**（每个 price 一个 currency），
  * 本枚举只控制 UI 文案 + 选哪个 priceId 进 Checkout，不直接进 Stripe 调用。
+ *
+ * 注意：人民币**不能用于订阅**——Stripe 本账户不支持 CNY recurring（Alipay 进不了
+ * subscription mode，WeChat Pay 全平台不支持 recurring）。¥ CN 只用于一次性补充包
+ * （微信 / 支付宝 / 卡）。订阅只卖 USD。
  */
 export type Currency = 'usd' | 'cny';
 
@@ -312,63 +316,63 @@ export type Currency = 'usd' | 'cny';
  * 订阅档位：每个 cycle（月付每月 / 年付每年）自动续 tokens。
  * 年付 = Stripe 一年 invoice 一次，invoice.paid 时一次性发 yearly.tokens（标准 SaaS 做法）。
  *
- * tokens 字段单位：**显示 token**（webhook 入账时 displayToMicro 转 μ 后调 credit）。同档 USD / CNY token 数相同。
+ * tokens 字段单位：**显示 token**（webhook 入账时 displayToMicro 转 μ 后调 credit）。
+ *
+ * **订阅只卖 USD**。人民币不能走订阅（Stripe 本账户不支持 CNY recurring），
+ * ¥ CN 用户只能买 TOPUP_PACKS 补充包。详见 Currency 类型注释。
  *
  * 数据来源 / 维护：
  *   - tokens / display：本文件硬编码，调价时改这里 + Stripe Dashboard 同步
  *   - Stripe price ID：在 packages/website/lib/stripe-prices.ts 的常量表里给
- *     （结构 plan × interval × currency，详见 lib/stripe.ts 的 priceIdToCycleTokens）
- *   - savingsLabel：年付的折扣展示文案，纯 UI 用，按币种分别给
+ *     （结构 plan × interval，USD only，详见 lib/stripe.ts 的 priceIdToCycleTokens）
+ *   - savingsLabel：年付的折扣展示文案，纯 UI 用
  *
- * **设计原则（issue #4 重定价，2026-05-08）**：订阅基本贴成本（月付微利、年付微亏），
- * 利润中心放在 TOPUP_PACKS。年付亏的部分等于「为留客户付的市场费」。
+ * **设计原则（issue #4 重定价，2026-05-08；2026-09 年付降 token）**：订阅基本贴成本
+ * （月付微利、年付微亏），利润中心放在 TOPUP_PACKS。订阅折扣的本质是赌用户不会把额度
+ * 用完，不追求「满载保本」。
  *
- * **满载毛利率**（按 token 全部用完最坏情况估算）：
+ * **年付 = 付 10 个月的钱、约 11 个月用量**（月付 × 11 量）：
+ * 年付售价 = 月付 × 10；token ≈ 月付 × 11 → 每 token 单价省 ≈ 9%。
+ * （2026-09 前是 ×12 量 = 单价省 17%，满载亏 11~14%；收回到 ×11 后满载只亏 2~8%。）
+ *
+ * **满载毛利率**（按 token 全部用完的最坏情况估算，**未计 Stripe 手续费**）：
  * 锚点 1 显示 token = $1e-5；token 价格 = 上游 × 1.1；
  * 余额面值 = tokens × $1e-5；上游成本 = 面值 / 1.1；毛利 = 售价 - 上游成本。
  *
- * USD 档：
- *   | 档位        | 售价     | tokens | 面值     | 上游成本 | 满载毛利   | 毛利率   |
- *   | ---------- | -------- | ------ | -------- | -------- | --------- | -------- |
- *   | Pro 月付   | $4.88    | 500k   | $5.00    | $4.55    | +$0.33    | +6.8%    |
- *   | Pro 年付   | $48.88   | 6M     | $60.00   | $54.55   | -$5.67    | -11.6%   |
- *   | Max 月付   | $15.88   | 1.7M   | $17.00   | $15.45   | +$0.43    | +2.7%    |
- *   | Max 年付   | $158.88  | 20M    | $200.00  | $181.82  | -$22.94   | -14.4%   |
+ * 注意这只是「满载用光」的理论下限：Stripe 手续费（约 2.9% + $0.30/笔，海外卡更高）
+ * 会让实际毛利再降约 9 个点（Pro 月付规模），Pro 月付满载实为微亏。真正健康的利润
+ * 来自 TOPUP_PACKS。
  *
- * CNY 档（售价 = USD × 6.8 → 整数 + .88；结算 FX 仍按 ¥7/$，等于让利 ~2.9%）：
- *   | 档位        | 售价 ¥    | 售价 $   | 上游 $   | 满载毛利 $ | 毛利率   |
- *   | ---------- | -------- | -------- | -------- | --------- | -------- |
- *   | Pro 月付   | ¥33.88   | $4.84    | $4.55    | +$0.30    | +6.1%    |
- *   | Pro 年付   | ¥332.88  | $47.55   | $54.55   | -$6.99    | -14.7%   |
- *   | Max 月付   | ¥107.88  | $15.41   | $15.45   | -$0.04    | -0.3%（贴成本）|
- *   | Max 年付   | ¥1080.88 | $154.41  | $181.82  | -$27.41   | -17.8%   |
- *
- * 年付 = 月付 × 10 价 ≈ 月付 × 12 token：「10 个月的钱买 12 个月的量」，单价省 ≈ 17%。
- * Max 年付 token 砍到 20M（严格 12 倍是 20.4M）让数字 round + 少亏 2%。
+ *   | 档位      | 售价     | tokens  | 面值     | 上游成本 | 满载毛利 | 毛利率 | tokens 单价 |
+ *   | --------- | -------- | ------- | -------- | -------- | -------- | ------ | ----------- |
+ *   | Pro 月付  | $4.88    | 500k    | $5.00    | $4.55    | +$0.33   | +6.8%  | $9.76/M     |
+ *   | Pro 年付  | $48.88   | 5.5M    | $55.00   | $50.00   | -$1.12   | -2.3%  | $8.89/M     |
+ *   | Max 月付  | $15.88   | 1.7M    | $17.00   | $15.45   | +$0.43   | +2.7%  | $9.34/M     |
+ *   | Max 年付  | $158.88  | 18.8M   | $188.00  | $170.91  | -$12.03  | -7.6%  | $8.45/M     |
  */
 export const SUBSCRIPTION_PLANS = {
   pro: {
     label: 'Pro',
     monthly: {
       tokens: 500_000,
-      display: { usd: '$4.88 / 月', cny: '¥33.88 / 月' },
+      display: { usd: '$4.88 / 月' },
     },
     yearly: {
-      tokens: 6_000_000,
-      display: { usd: '$48.88 / 年', cny: '¥332.88 / 年' },
-      savingsLabel: { usd: '相当于 $4.07 / 月，省 17%', cny: '相当于 ¥27.74 / 月，省 17%' },
+      tokens: 5_500_000,
+      display: { usd: '$48.88 / 年' },
+      savingsLabel: { usd: '相当于 $4.07 / 月，省 ≈9%' },
     },
   },
   max: {
     label: 'Max',
     monthly: {
       tokens: 1_700_000,
-      display: { usd: '$15.88 / 月', cny: '¥107.88 / 月' },
+      display: { usd: '$15.88 / 月' },
     },
     yearly: {
-      tokens: 20_000_000,
-      display: { usd: '$158.88 / 年', cny: '¥1080.88 / 年' },
-      savingsLabel: { usd: '相当于 $13.24 / 月，省 17%', cny: '相当于 ¥90.07 / 月，省 17%' },
+      tokens: 18_800_000,
+      display: { usd: '$158.88 / 年' },
+      savingsLabel: { usd: '相当于 $13.24 / 月，省 ≈9%' },
     },
   },
 } as const;
@@ -417,6 +421,9 @@ export function getPlanLabel(plan: string | null | undefined): string {
  *   | large   | ¥135.88  | $19.41   | $15.91   | +$3.50    | +18.0%   |
  *
  * 阶梯参考：Pro 月付 $9.76/M，Max 月付 $9.34/M（topup 永远贵于订阅）。
+ *
+ * 2026-09 起人民币不能订阅（只卖补充包），CN 用户的唯一购买入口就是本档（¥ 价）。
+ * 本档是平台的利润中心，也是唯一扛得住 Stripe 手续费的一档。
  */
 export const TOPUP_PACKS = {
   small: { tokens: 140_000, display: { usd: '$1.88', cny: '¥12.88' } },
@@ -426,60 +433,14 @@ export const TOPUP_PACKS = {
 
 export type TopupPackKey = keyof typeof TOPUP_PACKS;
 
-/**
- * CN 用户的「月包 / 年包」一次性 SKU。
- *
- * 为什么存在：WeChat Pay 不支持 recurring（Stripe 全平台限制），Alipay 在本账户也被
- * Stripe 拒绝进 subscription mode。所以把 Pro/Max × 月/年 4 个订阅档做成一次性付款，
- * 走 topup 路径（mode=payment）+ WeChat/Alipay/Card 三方支付，靠 cooldownDays 闸门
- * 实现「一个周期只能买一次」的订阅感。
- *
- * token 量 = 对应订阅档（SUBSCRIPTION_PLANS.pro.monthly.tokens 等）。永不过期，立即到账。
- * cooldownDays = 「周期」长度；同周期全锁（详见 lib/cn-pack.ts 的 getCnPackCooldownEnd）：
- *   买任意月包 → 30 天内不能再买任何月包（但能买年包）
- *   买任意年包 → 365 天内不能再买任何年包
- *
- * 没有自动续费 / 到期提醒（不是订阅）。退款不退 token（与 USD topup 现状一致）。
- */
-export const CN_PACKS = {
-  'pro-monthly': {
-    tokens: SUBSCRIPTION_PLANS.pro.monthly.tokens,
-    cooldownDays: 30,
-    label: 'Pro 月包',
-    display: { cny: '¥33.88' },
-  },
-  'pro-yearly': {
-    tokens: SUBSCRIPTION_PLANS.pro.yearly.tokens,
-    cooldownDays: 365,
-    label: 'Pro 年包',
-    display: { cny: '¥332.88' },
-  },
-  'max-monthly': {
-    tokens: SUBSCRIPTION_PLANS.max.monthly.tokens,
-    cooldownDays: 30,
-    label: 'Max 月包',
-    display: { cny: '¥107.88' },
-  },
-  'max-yearly': {
-    tokens: SUBSCRIPTION_PLANS.max.yearly.tokens,
-    cooldownDays: 365,
-    label: 'Max 年包',
-    display: { cny: '¥1080.88' },
-  },
-} as const;
-
-export type CnPackKey = keyof typeof CN_PACKS;
-export type CnPackPeriod = 'monthly' | 'yearly';
-
-/** CN 包的 period（同周期全锁需要据此判定）。key 命名形如 '<tier>-<period>'。 */
-export function cnPackPeriod(k: CnPackKey): CnPackPeriod {
-  return k.endsWith('-monthly') ? 'monthly' : 'yearly';
-}
-
 export type LedgerType =
   | 'signup_bonus'
   | 'subscription'
   | 'topup'
+  /**
+   * 历史遗留：2026-09 前的「CN 月包/年包」（人民币一次性付款绕过 Stripe recurring 限制）。
+   * 该产品已下线，新流水不会再产生；保留枚举值仅为让历史 ledger 行仍能正确映射类型与文案。
+   */
   | 'cn_pack'
   | 'llm'
   | 'pdf_render'

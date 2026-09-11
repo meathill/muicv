@@ -20,11 +20,25 @@ import {
   normalizeModel,
   normalizeReasoningEffort,
   resolveModelAlias,
+  SUBSCRIPTION_PLANS,
   SUPPORTED_LLM_MODELS,
   TOKEN_PRECISION,
+  TOPUP_PACKS,
   TTS_MAX_TEXT_CHARS,
   TTS_RATE_PER_CHAR,
 } from '../src/pricing.ts';
+
+/** 从 display 文案里抠出数字：'$4.88 / 月' → 4.88。 */
+function parseUsd(display: string): number {
+  const m = display.match(/([\d.]+)/);
+  assert.ok(m, `无法从 ${display} 解析美元金额`);
+  return Number(m[1]);
+}
+
+/** USD / 1M 显示 token 的单价。 */
+function usdPerMillion(usd: number, tokens: number): number {
+  return usd / (tokens / 1_000_000);
+}
 
 describe('Pricing', () => {
   describe('precision helpers', () => {
@@ -280,6 +294,65 @@ describe('Pricing', () => {
       // 5_000 μ = 0.5 display token
       const err = insufficientBalanceError(5_000);
       assert.ok(err.error.message.includes('0.5 tokens'), `expected '0.5 tokens' in message: ${err.error.message}`);
+    });
+  });
+
+  describe('订阅 / 补充包定价', () => {
+    it('订阅只卖 USD（人民币不能订阅）', () => {
+      for (const tier of ['pro', 'max'] as const) {
+        assert.deepEqual(Object.keys(SUBSCRIPTION_PLANS[tier].monthly.display), ['usd']);
+        assert.deepEqual(Object.keys(SUBSCRIPTION_PLANS[tier].yearly.display), ['usd']);
+        assert.deepEqual(Object.keys(SUBSCRIPTION_PLANS[tier].yearly.savingsLabel), ['usd']);
+      }
+    });
+
+    it('年付发「约 11 个月用量」，不是整年 12 倍（2026-09 降 token 后）', () => {
+      const pro = SUBSCRIPTION_PLANS.pro;
+      const max = SUBSCRIPTION_PLANS.max;
+      // 比 10 倍多、比 12 倍少 —— 既保住年付折扣，又不做「10 个月的钱买 12 个月的量」
+      assert.ok(pro.yearly.tokens > pro.monthly.tokens * 10, 'Pro 年付应多于 10 倍月付量');
+      assert.ok(pro.yearly.tokens < pro.monthly.tokens * 12, 'Pro 年付不应再有整年 12 倍量');
+      assert.ok(max.yearly.tokens > max.monthly.tokens * 10, 'Max 年付应多于 10 倍月付量');
+      assert.ok(max.yearly.tokens < max.monthly.tokens * 12, 'Max 年付不应再有整年 12 倍量');
+    });
+
+    it('年付每 token 比月付便宜，但折扣不超过 15%（避免重回满载大亏）', () => {
+      for (const tier of ['pro', 'max'] as const) {
+        const plan = SUBSCRIPTION_PLANS[tier];
+        const monthlyPerM = usdPerMillion(parseUsd(plan.monthly.display.usd), plan.monthly.tokens);
+        const yearlyPerM = usdPerMillion(parseUsd(plan.yearly.display.usd), plan.yearly.tokens);
+        assert.ok(yearlyPerM < monthlyPerM, `${tier} 年付单价应低于月付`);
+        assert.ok(
+          yearlyPerM >= monthlyPerM * 0.85,
+          `${tier} 年付折扣不应超过 15%（实际 ${yearlyPerM}/${monthlyPerM}）`,
+        );
+      }
+    });
+
+    it('补充包买得越多单价越低，但永远比订阅贵（引导走订阅）', () => {
+      const packs = (['small', 'medium', 'large'] as const).map((k) =>
+        usdPerMillion(parseUsd(TOPUP_PACKS[k].display.usd), TOPUP_PACKS[k].tokens),
+      );
+      // 单价阶梯递减：small > medium > large
+      assert.ok(packs[0] > packs[1], `small(${packs[0]}) 应贵于 medium(${packs[1]})`);
+      assert.ok(packs[1] > packs[2], `medium(${packs[1]}) 应贵于 large(${packs[2]})`);
+
+      // 最便宜的补充包依然贵于最便宜的订阅（订阅月付里单价最低的是 Max）
+      const cheapestSub = Math.min(
+        usdPerMillion(parseUsd(SUBSCRIPTION_PLANS.pro.monthly.display.usd), SUBSCRIPTION_PLANS.pro.monthly.tokens),
+        usdPerMillion(parseUsd(SUBSCRIPTION_PLANS.max.monthly.display.usd), SUBSCRIPTION_PLANS.max.monthly.tokens),
+        usdPerMillion(parseUsd(SUBSCRIPTION_PLANS.pro.yearly.display.usd), SUBSCRIPTION_PLANS.pro.yearly.tokens),
+        usdPerMillion(parseUsd(SUBSCRIPTION_PLANS.max.yearly.display.usd), SUBSCRIPTION_PLANS.max.yearly.tokens),
+      );
+      assert.ok(packs[2] > cheapestSub, `最便宜补充包 large(${packs[2]}) 应贵于最便宜订阅(${cheapestSub})`);
+    });
+
+    it('补充包 CNY 价存在（人民币唯一购买入口），且 USD/CNY 同档 token 数一致', () => {
+      for (const key of ['small', 'medium', 'large'] as const) {
+        assert.ok(TOPUP_PACKS[key].display.usd, `${key} 缺 usd 价`);
+        assert.ok(TOPUP_PACKS[key].display.cny, `${key} 缺 cny 价（CN 用户唯一入口）`);
+        assert.ok(TOPUP_PACKS[key].tokens > 0);
+      }
     });
   });
 });

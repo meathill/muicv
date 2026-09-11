@@ -1,5 +1,4 @@
 import { type BillingInterval, type SubscriptionPlanKey, SUBSCRIPTION_PLANS } from '@muicv/shared';
-import type Stripe from 'stripe';
 
 import { getRequestCurrency } from '@/lib/region';
 import { getCurrentSession } from '@/lib/session';
@@ -12,6 +11,9 @@ export const dynamic = 'force-dynamic';
  *
  * Body: { plan: 'pro' | 'max', interval: 'monthly' | 'yearly' }
  * 返回：{ url } —— 前端 location.href = url 跳到 Stripe hosted Checkout
+ *
+ * 只卖 USD：currency='cny' 直接 400（Stripe 本账户不支持 CNY recurring），
+ * 引导 CN 用户切美元订阅或买补充包（/api/topup）。
  *
  * mode='subscription'，metadata.kind='subscription' 用于 webhook 区分一次性补充包。
  * 年付 = Stripe 一年 invoice 一次，invoice.paid 时一次性发整年 token。
@@ -40,12 +42,24 @@ export async function POST(request: Request) {
   }
 
   const currency = getRequestCurrency(request);
+  // 人民币不能订阅：Stripe 本账户不支持 CNY recurring（Alipay 进不了 subscription mode，
+  // WeChat Pay 全平台不支持 recurring）。CN 用户只能买一次性补充包（TOPUP_PACKS，微信/支付宝/卡）。
+  if (currency === 'cny') {
+    return Response.json(
+      {
+        error: 'cny-subscription-unsupported',
+        message: '人民币暂不支持订阅（Stripe 限制）。请切换为 $ USD 订阅，或改为购买补充包。',
+      },
+      { status: 400 },
+    );
+  }
+
   const customerId = await getOrCreateStripeCustomer({
     userId: session.user.id,
     email: session.user.email,
     name: session.user.name,
   });
-  const priceId = planKeyToPriceId(plan as SubscriptionPlanKey, interval as BillingInterval, currency);
+  const priceId = planKeyToPriceId(plan as SubscriptionPlanKey, interval as BillingInterval);
   const stripe = await getStripe();
   const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'https://muicv.com';
 
@@ -53,18 +67,6 @@ export async function POST(request: Request) {
     interval === 'monthly'
       ? SUBSCRIPTION_PLANS[plan as SubscriptionPlanKey].monthly.tokens
       : SUBSCRIPTION_PLANS[plan as SubscriptionPlanKey].yearly.tokens;
-
-  // CN 用户订阅暂只能走 card —— Stripe 在我们这个账户硬拒绝 Alipay 进 subscription mode
-  // （WeChat Pay 全平台都不支持 recurring）。这意味着 CN 用户当前实际无法走通订阅
-  // （这正是本 PR 起因：CN 用户卡被拒）。下一步：做月包/年包一次性 SKU 走 topup 路径（mode=payment）
-  // 才能让 CN 用户真正用上 WeChat/Alipay 续 Pro/Max 级别 token。详见 commit 内 TODO。
-  const cnyOverrides: Partial<Stripe.Checkout.SessionCreateParams> =
-    currency === 'cny'
-      ? {
-          payment_method_types: ['card'],
-          locale: 'zh',
-        }
-      : {};
 
   const checkout = await stripe.checkout.sessions.create({
     mode: 'subscription',
@@ -74,7 +76,6 @@ export async function POST(request: Request) {
     cancel_url: `${baseUrl}/dashboard?checkout=cancel`,
     allow_promotion_codes: true,
     billing_address_collection: 'auto',
-    ...cnyOverrides,
     metadata: {
       kind: 'subscription',
       userId: session.user.id,

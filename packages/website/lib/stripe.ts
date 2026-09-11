@@ -1,10 +1,8 @@
 import {
   type BillingInterval,
-  type CnPackKey,
   type Currency,
   type SubscriptionPlanKey,
   type TopupPackKey,
-  CN_PACKS,
   SUBSCRIPTION_PLANS,
   TOPUP_PACKS,
 } from '@muicv/shared';
@@ -14,8 +12,6 @@ import Stripe from 'stripe';
 
 import { getDb, schema } from './db';
 import {
-  CN_PACK_PRICE_META,
-  STRIPE_CN_PACK_PRICES,
   STRIPE_SUBSCRIPTION_PRICES,
   STRIPE_TOPUP_PRICES,
   SUBSCRIPTION_PRICE_META,
@@ -45,11 +41,11 @@ export async function getStripe(): Promise<Stripe> {
 }
 
 /**
- * 订阅 plan + interval + currency → Stripe price id（读 lib/stripe-prices.ts 常量）。
- * 同 plan 同 interval 的 USD / CNY 在 Stripe 里是两个独立 price 对象，token 数相同。
+ * 订阅 plan + interval → Stripe price id（读 lib/stripe-prices.ts 常量）。
+ * 订阅只卖 USD（人民币不能 recurring，见 stripe-prices.ts 注释），故不需要 currency 维度。
  */
-export function planKeyToPriceId(plan: SubscriptionPlanKey, interval: BillingInterval, currency: Currency): string {
-  return STRIPE_SUBSCRIPTION_PRICES[plan][interval][currency];
+export function planKeyToPriceId(plan: SubscriptionPlanKey, interval: BillingInterval): string {
+  return STRIPE_SUBSCRIPTION_PRICES[plan][interval];
 }
 
 export function topupPackToPriceId(pack: TopupPackKey, currency: Currency): string {
@@ -58,7 +54,7 @@ export function topupPackToPriceId(pack: TopupPackKey, currency: Currency): stri
 
 /**
  * Stripe price id → 一个 cycle 上账的 token 数（月付每月，年付每年一次性）。
- * webhook 处理 invoice.paid 时按这个上账。USD 与 CNY 同档返同 token。
+ * webhook 处理 invoice.paid 时按这个上账。
  * priceId 不在表里就返 null（可能是被人在 Stripe 后台手动绑了未知 price，需告警）。
  */
 export function priceIdToCycleTokens(priceId: string): number | null {
@@ -67,7 +63,7 @@ export function priceIdToCycleTokens(priceId: string): number | null {
   return SUBSCRIPTION_PLANS[meta.plan][meta.interval].tokens;
 }
 
-/** Stripe price id → ('pro'|'max', 'monthly'|'yearly')。订阅状态卡显示"年付/月付"用，币种不区分。 */
+/** Stripe price id → ('pro'|'max', 'monthly'|'yearly')。订阅状态卡显示"年付/月付"用。 */
 export function priceIdToPlanInterval(
   priceId: string,
 ): { plan: SubscriptionPlanKey; interval: BillingInterval } | null {
@@ -84,23 +80,6 @@ export function priceIdToTopupTokens(priceId: string): number | null {
   const meta = TOPUP_PRICE_META.get(priceId);
   if (!meta) return null;
   return TOPUP_PACKS[meta.pack].tokens;
-}
-
-/** CN 月包/年包 key → Stripe price id（live one-time CNY）。 */
-export function cnPackToPriceId(pack: CnPackKey): string {
-  return STRIPE_CN_PACK_PRICES[pack];
-}
-
-/** Stripe price id → CnPackKey；不在表里返 null（用于 webhook 反查）。 */
-export function priceIdToCnPack(priceId: string): CnPackKey | null {
-  return CN_PACK_PRICE_META.get(priceId)?.pack ?? null;
-}
-
-/** CN 月包/年包 price id → token 数（同档对应 SUBSCRIPTION_PLANS 的 cycle tokens）。 */
-export function priceIdToCnPackTokens(priceId: string): number | null {
-  const pack = priceIdToCnPack(priceId);
-  if (!pack) return null;
-  return CN_PACKS[pack].tokens;
 }
 
 /**

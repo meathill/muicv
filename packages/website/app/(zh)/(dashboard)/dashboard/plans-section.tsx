@@ -2,7 +2,6 @@ import { microToDisplay } from '@muicv/shared';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 
-import { getCnPackCooldownEnd } from '@/lib/cn-pack';
 import { getDb, schema } from '@/lib/db';
 import { getRequestCurrency } from '@/lib/region';
 import { getCurrentSession } from '@/lib/session';
@@ -15,9 +14,13 @@ const LEDGER_TYPE_LABEL: Record<string, string> = {
   signup_bonus: '注册赠送',
   subscription: '订阅续费',
   topup: '补充包',
+  cn_pack: '国内月包/年包（历史）',
   llm: '大语言模型调用',
   pdf_render: 'PDF 渲染',
   jd_fetch: '岗位抓取',
+  stt_transcribe: '语音转写',
+  tts: '语音合成',
+  feedback_reward: '反馈奖励',
   admin_grant: '后台补发',
   admin_deduct: '后台扣款',
 };
@@ -79,11 +82,6 @@ export async function PlansSection() {
 
   const ledger = await listLedger(userId, { limit: 15 });
   const currency = getRequestCurrency({ headers: await headers() });
-  // CN 视图：订阅卡走「月包/年包」，server 端预查 cooldown 后透传给 client。
-  const [cnPackMonthlyCooldown, cnPackYearlyCooldown] =
-    currency === 'cny'
-      ? await Promise.all([getCnPackCooldownEnd(userId, 'monthly'), getCnPackCooldownEnd(userId, 'yearly')])
-      : [null, null];
 
   return (
     <section className="rounded-xl border-2 border-ink bg-cream p-6 shadow-[0_4px_0_0_var(--color-ink-line)]">
@@ -122,12 +120,7 @@ export async function PlansSection() {
       )}
 
       <div className="mt-6">
-        <BillingActions
-          hasActiveSubscription={hasActive}
-          currency={currency}
-          cnPackMonthlyCooldownEnd={cnPackMonthlyCooldown}
-          cnPackYearlyCooldownEnd={cnPackYearlyCooldown}
-        />
+        <BillingActions hasActiveSubscription={hasActive} currency={currency} />
       </div>
 
       <div className="mt-8 border-t border-rule pt-6">

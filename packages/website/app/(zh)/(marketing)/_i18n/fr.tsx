@@ -379,7 +379,7 @@ export const content: LocaleContent = {
       "10,000 tokens offerts à l'inscription (une seule fois). Quand vous en manquez, choisissez un abonnement mensuel ou annuel, ou achetez un pack de recharge à tout moment. Les Skills sont toujours gratuits, BYOK toujours disponible.",
     toggleMonthly: 'Mensuel',
     toggleYearly: 'Annuel',
-    toggleSavings: 'économisez ≈17%',
+    toggleSavings: 'économisez ≈9%',
     free: {
       title: 'Commencer gratuitement',
       sub: "Envie d'essayer ? Commencez ici.",
@@ -393,7 +393,7 @@ export const content: LocaleContent = {
       ctaSignedIn: 'Accéder au tableau de bord',
       ctaSignedOut: 'Créer un compte et recevoir 10K tokens gratuits',
     },
-    tokenLineYearly: "Toute une année d'avance :",
+    tokenLineYearly: "Environ 11 mois d'avance :",
     tokenLineMonthly: 'Rechargé chaque mois :',
     tiers: {
       pro: {
@@ -415,9 +415,9 @@ export const content: LocaleContent = {
     signUpToSubscribe: "Inscription requise pour s'abonner",
     manageSub: "Gérer l'abonnement",
     subscribeNow: "S'abonner",
-    cnBuyPrefix: 'Acheter ',
-    cnPackNote: (days) =>
-      `Paiement unique (Chine) · un achat par utilisateur et par cycle de ${days} jours · tokens sans expiration`,
+    cnSubscribeHint:
+      'Les abonnements ne sont pas disponibles en CNY (limitation Stripe). Passez à $ USD pour vous abonner, ou achetez un pack de recharge ci-dessous.',
+    switchToUsd: 'Passer en USD',
     topupHeading: 'Packs de recharge (achat unique, sans expiration)',
     topupDesc: 'Pas prêt à vous abonner, ou un dépassement occasionnel ? Achetez quand vous voulez.',
     buyNow: 'Acheter maintenant',
@@ -431,7 +431,7 @@ export const content: LocaleContent = {
       },
       {
         q: 'Quelle différence entre mensuel et annuel ?',
-        a: "L'annuel est environ 17% moins cher et accorde toute l'année de tokens d'un coup — utilisable dès le premier jour. En cas de résiliation, tous les tokens accordés sont conservés et n'expirent jamais. Le mensuel convient pour essayer, l'annuel pour s'engager dans la durée.",
+        a: "L'annuel est environ 9% moins cher et accorde environ 11 mois de tokens d'un coup — utilisable dès le premier jour. En cas de résiliation, tous les tokens accordés sont conservés et n'expirent jamais. Le mensuel convient pour essayer, l'annuel pour s'engager dans la durée.",
       },
       {
         q: 'Peut-on utiliser un abonnement et des packs de recharge en même temps ?',
@@ -443,7 +443,7 @@ export const content: LocaleContent = {
       },
       {
         q: 'Les utilisateurs gratuits reçoivent-ils des tokens chaque mois ?',
-        a: "Non. L'inscription accorde 10,000 tokens une seule fois, c'est tout. Une fois épuisés, achetez un pack de recharge (le moins cher : ¥10 = 10K tokens), prenez un abonnement mensuel / annuel, ou utilisez BYOK pour que le LLM tourne sur votre propre API (PDF / JD restent facturés en tokens muicv).",
+        a: "Non. L'inscription accorde 10,000 tokens une seule fois, c'est tout. Une fois épuisés, achetez un pack de recharge (le moins cher : ¥12.88 = 140K tokens), prenez un abonnement mensuel / annuel, ou utilisez BYOK pour que le LLM tourne sur votre propre API (PDF / JD restent facturés en tokens muicv).",
       },
       {
         q: 'Remboursement possible si je ne suis pas satisfait ?',
@@ -491,10 +491,10 @@ export const content: LocaleContent = {
             </li>
             <li>
               <strong>Abonnement</strong> : Pro / Max mensuel ou annuel, tokens rechargés automatiquement à chaque
-              période ; l'annuel accorde toute l'année d'un coup, environ 17% de réduction
+              période ; l'annuel accorde environ 11 mois d'un coup, environ 9% de réduction
             </li>
             <li>
-              <strong>Packs de recharge</strong> : achetez 10K / 35K / 130K tokens en une fois, quand vous voulez
+              <strong>Packs de recharge</strong> : achetez 140K / 480K / 1.75M tokens en une fois, quand vous voulez
             </li>
             <li>
               <strong>BYOK</strong> : renseignez votre URL d'API et votre clé dans la console pour que le LLM utilise
@@ -508,7 +508,7 @@ export const content: LocaleContent = {
           pour le détail.
         </>
       ),
-      text: "Un seul portefeuille de tokens : 10,000 tokens offerts une fois à l'inscription, sans expiration ; abonnement Pro / Max mensuel ou annuel avec recharge automatique des tokens chaque période, environ 17% de réduction en annuel ; packs de recharge de 10K / 35K / 130K tokens en une fois ; BYOK permet de brancher votre propre clé d'API pour que le LLM utilise votre solde. Les services cloud (export PDF, recherche de postes, etc.) sont facturés au token, voir la page des tarifs pour le détail.",
+      text: "Un seul portefeuille de tokens : 10,000 tokens offerts une fois à l'inscription, sans expiration ; abonnement Pro / Max mensuel ou annuel avec recharge automatique des tokens chaque période, environ 9% de réduction en annuel ; packs de recharge de 140K / 480K / 1.75M tokens en une fois ; BYOK permet de brancher votre propre clé d'API pour que le LLM utilise votre solde. Les services cloud (export PDF, recherche de postes, etc.) sont facturés au token, voir la page des tarifs pour le détail.",
     },
     {
       q: "Qu'est-ce que le BYOK ?",

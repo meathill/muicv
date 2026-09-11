@@ -378,7 +378,7 @@ export const content: LocaleContent = {
       'Bei der Registrierung gibt es einmalig 10.000 Tokens gratis. Reicht es nicht, wähle ein Monats- oder Jahresabo oder kaufe jederzeit ein Top-up-Paket. Skills sind immer kostenlos, BYOK immer verfügbar.',
     toggleMonthly: 'Monatlich',
     toggleYearly: 'Jährlich',
-    toggleSavings: '≈17 % sparen',
+    toggleSavings: '≈9 % sparen',
     free: {
       title: 'Kostenlos starten',
       sub: 'Du willst es ausprobieren? Dann fang hier an.',
@@ -392,7 +392,7 @@ export const content: LocaleContent = {
       ctaSignedIn: 'Zum Dashboard',
       ctaSignedOut: 'Kostenlos registrieren und 10K Tokens sichern',
     },
-    tokenLineYearly: 'Ganzes Jahr im Voraus:',
+    tokenLineYearly: 'Ca. 11 Monate im Voraus:',
     tokenLineMonthly: 'Monatlich automatisch:',
     tiers: {
       pro: {
@@ -414,9 +414,9 @@ export const content: LocaleContent = {
     signUpToSubscribe: 'Nach Registrierung abschließen',
     manageSub: 'Abo verwalten',
     subscribeNow: 'Jetzt abonnieren',
-    cnBuyPrefix: 'Kaufen: ',
-    cnPackNote: (days) =>
-      `Einmalige Zahlung (China) · ein Kauf pro Nutzer pro ${days}-Tage-Zyklus · Tokens verfallen nie`,
+    cnSubscribeHint:
+      'Abos sind in CNY nicht verfügbar (Stripe-Einschränkung). Wechsle zu $ USD zum Abonnieren oder kaufe unten ein Top-up-Paket.',
+    switchToUsd: 'Zu USD wechseln',
     topupHeading: 'Top-up-Pakete (einmalig kaufen, verfallen nie)',
     topupDesc: 'Kein Abo nötig, oder nur gelegentlich Mehrverbrauch. Jederzeit kaufbar.',
     buyNow: 'Jetzt kaufen',
@@ -430,7 +430,7 @@ export const content: LocaleContent = {
       },
       {
         q: 'Worin unterscheiden sich monatliche und jährliche Zahlung?',
-        a: 'Jährlich ist rund 17 % günstiger; die Tokens gibt es dann auf einen Schlag fürs ganze Jahr und du kannst sie ab dem Zahltag konzentriert nutzen. Nach einer Kündigung bleiben alle bereits gewährten Tokens erhalten und verfallen nie. Monatlich eignet sich zum Ausprobieren, jährlich für die langfristige Nutzung.',
+        a: 'Jährlich ist rund 9 % günstiger; die Tokens gibt es dann auf einen Schlag für etwa 11 Monate und du kannst sie ab dem Zahltag konzentriert nutzen. Nach einer Kündigung bleiben alle bereits gewährten Tokens erhalten und verfallen nie. Monatlich eignet sich zum Ausprobieren, jährlich für die langfristige Nutzung.',
       },
       {
         q: 'Kann ich Abo und Top-up-Pakete gleichzeitig nutzen?',
@@ -442,7 +442,7 @@ export const content: LocaleContent = {
       },
       {
         q: 'Bekomme ich als Free-Nutzer monatlich Tokens nachgefüllt?',
-        a: 'Nein. Bei der Registrierung gibt es einmalig 10.000 Tokens, mehr nicht. Wenn sie aufgebraucht sind, kannst du ein Top-up-Paket kaufen (am günstigsten ¥10 = 10K Tokens), ein Monats- / Jahresabo abschließen oder BYOK einbinden und das LLM über deine eigene API laufen lassen (PDF / JD werden weiterhin mit muicv-Tokens berechnet).',
+        a: 'Nein. Bei der Registrierung gibt es einmalig 10.000 Tokens, mehr nicht. Wenn sie aufgebraucht sind, kannst du ein Top-up-Paket kaufen (am günstigsten ¥12.88 = 140K Tokens), ein Monats- / Jahresabo abschließen oder BYOK einbinden und das LLM über deine eigene API laufen lassen (PDF / JD werden weiterhin mit muicv-Tokens berechnet).',
       },
       {
         q: 'Gibt es eine Rückerstattung, wenn ich unzufrieden bin?',
@@ -491,10 +491,10 @@ export const content: LocaleContent = {
             </li>
             <li>
               <strong>Abo</strong>: Pro / Max monatlich oder jährlich, Tokens werden pro Periode automatisch aufgeladen;
-              jährlich gibt die ganze Jahresmenge auf einmal, ca. 17 % Rabatt
+              jährlich gibt etwa 11 Monate auf einmal, ca. 9 % Rabatt
             </li>
             <li>
-              <strong>Top-up-Pakete</strong>: einmalig 10K / 35K / 130K Tokens kaufen, jederzeit
+              <strong>Top-up-Pakete</strong>: einmalig 140K / 480K / 1.75M Tokens kaufen, jederzeit
             </li>
             <li>
               <strong>BYOK</strong>: eigene API-Adresse und Key in der Konsole hinterlegen, das LLM nutzt dein Guthaben;
@@ -509,7 +509,7 @@ export const content: LocaleContent = {
           .
         </>
       ),
-      text: 'Ein einheitliches Token-Guthaben: bei der Registrierung einmalig 10.000 Tokens gratis, verfallen nie; Abos Pro / Max monatlich oder jährlich, Tokens werden pro Periode automatisch aufgeladen, jährlich ca. 17 % Rabatt; Top-up-Pakete einmalig 10K / 35K / 130K Tokens; BYOK bindet einen eigenen API-Key ein, damit das LLM dein Guthaben nutzt. Cloud-Dienste (PDF-Export, Stellensuche usw.) werden nach Token abgerechnet, Details auf der Preisseite.',
+      text: 'Ein einheitliches Token-Guthaben: bei der Registrierung einmalig 10.000 Tokens gratis, verfallen nie; Abos Pro / Max monatlich oder jährlich, Tokens werden pro Periode automatisch aufgeladen, jährlich ca. 9 % Rabatt; Top-up-Pakete einmalig 140K / 480K / 1.75M Tokens; BYOK bindet einen eigenen API-Key ein, damit das LLM dein Guthaben nutzt. Cloud-Dienste (PDF-Export, Stellensuche usw.) werden nach Token abgerechnet, Details auf der Preisseite.',
     },
     {
       q: 'Was ist BYOK?',

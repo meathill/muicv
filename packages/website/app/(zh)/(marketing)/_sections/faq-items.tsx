@@ -32,10 +32,10 @@ const FAQ_ITEMS_ZH: FaqItem[] = [
             <strong>注册一次性赠送 10,000 tokens</strong>，永不过期，用完为止
           </li>
           <li>
-            <strong>订阅</strong>：Pro / Max 月付或年付，按周期自动续 token；年付一次发整年用量，约 17% 折扣
+            <strong>订阅</strong>：Pro / Max 月付或年付，按周期自动续 token；年付一次发约 11 个月用量，约 9% 折扣
           </li>
           <li>
-            <strong>补充包</strong>：一次性买 10K / 35K / 130K tokens，随用随买
+            <strong>补充包</strong>：一次性买 140K / 480K / 1.75M tokens，随用随买
           </li>
           <li>
             <strong>BYOK</strong>：在控制台绑你自己的 API 地址和 key，LLM 走你余额；PDF / JD 仍按 muicv tokens 扣
@@ -48,7 +48,7 @@ const FAQ_ITEMS_ZH: FaqItem[] = [
         。
       </>
     ),
-    text: '统一 token 钱包：注册一次性赠送 10,000 tokens，永不过期；订阅 Pro / Max 月付或年付，按周期自动续 token，年付约 17% 折扣；补充包一次性买 10K / 35K / 130K tokens；BYOK 可绑自己的 API key 让 LLM 走你余额。云端服务（导出 PDF、寻找岗位等）按 token 扣费，具体看定价页。',
+    text: '统一 token 钱包：注册一次性赠送 10,000 tokens，永不过期；订阅 Pro / Max 月付或年付，按周期自动续 token，年付约 9% 折扣；补充包一次性买 140K / 480K / 1.75M tokens；BYOK 可绑自己的 API key 让 LLM 走你余额。云端服务（导出 PDF、寻找岗位等）按 token 扣费，具体看定价页。',
   },
   {
     q: '什么是 BYOK？',
@@ -143,11 +143,11 @@ const FAQ_ITEMS_EN: FaqItem[] = [
             <strong>Sign up and get 10,000 tokens once</strong>, no expiry, until used up
           </li>
           <li>
-            <strong>Subscription</strong>: Pro / Max monthly or yearly, auto-refilled each period; yearly grants the
-            full year at once, about 17% off
+            <strong>Subscription</strong>: Pro / Max monthly or yearly, auto-refilled each period; yearly grants about
+            11 months at once, about 9% off
           </li>
           <li>
-            <strong>Top-up packs</strong>: buy 10K / 35K / 130K tokens one-off, anytime
+            <strong>Top-up packs</strong>: buy 140K / 480K / 1.75M tokens one-off, anytime
           </li>
           <li>
             <strong>BYOK</strong>: bind your own API endpoint and key in the console so the LLM runs on your balance;
@@ -161,7 +161,7 @@ const FAQ_ITEMS_EN: FaqItem[] = [
         for details.
       </>
     ),
-    text: 'A single token wallet: sign up and get 10,000 tokens once, no expiry; Pro / Max subscriptions bill monthly or yearly and auto-refill each period (yearly about 17% off); top-up packs buy 10K / 35K / 130K tokens one-off; BYOK lets you bind your own API key so the LLM runs on your balance. Cloud features (PDF export, job search, etc.) bill by token. See the pricing page for details.',
+    text: 'A single token wallet: sign up and get 10,000 tokens once, no expiry; Pro / Max subscriptions bill monthly or yearly and auto-refill each period (yearly about 9% off); top-up packs buy 140K / 480K / 1.75M tokens one-off; BYOK lets you bind your own API key so the LLM runs on your balance. Cloud features (PDF export, job search, etc.) bill by token. See the pricing page for details.',
   },
   {
     q: 'What is BYOK?',

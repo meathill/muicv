@@ -381,7 +381,7 @@ const pricing: PricingContent = {
     'Đăng ký nhận ngay 10.000 token (một lần). Khi cần thêm, chọn gói tháng / năm, hoặc mua gói nạp thêm bất cứ lúc nào. Skill luôn miễn phí, BYOK luôn khả dụng.',
   toggleMonthly: 'Theo tháng',
   toggleYearly: 'Theo năm',
-  toggleSavings: 'tiết kiệm ≈17%',
+  toggleSavings: 'tiết kiệm ≈9%',
   free: {
     title: 'Bắt đầu miễn phí',
     sub: 'Muốn thử một chút thì bắt đầu từ đây.',
@@ -395,7 +395,7 @@ const pricing: PricingContent = {
     ctaSignedIn: 'Vào bảng điều khiển',
     ctaSignedOut: 'Đăng ký miễn phí nhận 10K token',
   },
-  tokenLineYearly: 'Phát một lần cho cả năm',
+  tokenLineYearly: 'Phát một lần khoảng 11 tháng',
   tokenLineMonthly: 'Tự động gia hạn mỗi tháng',
   tiers: {
     pro: {
@@ -417,9 +417,9 @@ const pricing: PricingContent = {
   signUpToSubscribe: 'Đăng ký rồi mở gói',
   manageSub: 'Quản lý đăng ký',
   subscribeNow: 'Đăng ký ngay',
-  cnBuyPrefix: 'Mua ',
-  cnPackNote: (days) =>
-    `Thanh toán một lần (Trung Quốc) · mỗi người dùng mua một lần trong ${days} ngày cùng chu kỳ · token không bao giờ hết hạn`,
+  cnSubscribeHint:
+    'Gói đăng ký không hỗ trợ CNY (giới hạn của Stripe). Chuyển sang $ USD để đăng ký, hoặc mua gói nạp thêm bên dưới.',
+  switchToUsd: 'Chuyển sang USD',
   topupHeading: 'Gói nạp thêm (mua một lần, không hết hạn)',
   topupDesc: 'Chưa muốn đăng ký, hoặc thỉnh thoảng dùng quá. Mua lúc nào cũng được.',
   buyNow: 'Mua ngay',
@@ -433,7 +433,7 @@ const pricing: PricingContent = {
     },
     {
       q: 'Gói tháng và gói năm khác nhau thế nào?',
-      a: 'Về giá, gói năm rẻ hơn khoảng 17%; về token, gói năm phát một lần cho cả năm, dùng được tập trung ngay từ ngày thanh toán. Hủy đăng ký vẫn giữ toàn bộ token đã phát, không bao giờ hết hạn. Gói tháng phù hợp để thử trước, gói năm phù hợp khi chắc chắn dùng lâu dài.',
+      a: 'Về giá, gói năm rẻ hơn khoảng 9%; về token, gói năm phát một lần khoảng 11 tháng, dùng được tập trung ngay từ ngày thanh toán. Hủy đăng ký vẫn giữ toàn bộ token đã phát, không bao giờ hết hạn. Gói tháng phù hợp để thử trước, gói năm phù hợp khi chắc chắn dùng lâu dài.',
     },
     {
       q: 'Có thể dùng đồng thời đăng ký và gói nạp thêm không?',
@@ -445,7 +445,7 @@ const pricing: PricingContent = {
     },
     {
       q: 'Người dùng Free có được tự động gia hạn token mỗi tháng không?',
-      a: 'Không. Khi đăng ký tặng một lần 10.000 token, chỉ vậy thôi. Dùng đến hết thì có thể mua gói nạp thêm (rẻ nhất ¥10 = 10K token), đăng ký gói tháng / năm, hoặc gắn BYOK để LLM dùng API của bạn (PDF / JD vẫn trừ token muicv).',
+      a: 'Không. Khi đăng ký tặng một lần 10.000 token, chỉ vậy thôi. Dùng đến hết thì có thể mua gói nạp thêm (rẻ nhất ¥12.88 = 140K token), đăng ký gói tháng / năm, hoặc gắn BYOK để LLM dùng API của bạn (PDF / JD vẫn trừ token muicv).',
     },
     {
       q: 'Không hài lòng có được hoàn tiền không?',
@@ -493,10 +493,10 @@ const faq: FaqItem[] = [
           </li>
           <li>
             <strong>Đăng ký gói</strong>: Pro / Max theo tháng hoặc năm, tự động gia hạn token theo chu kỳ; gói năm phát
-            một lần cho cả năm, giảm khoảng 17%
+            một lần khoảng 11 tháng, giảm khoảng 9%
           </li>
           <li>
-            <strong>Gói nạp thêm</strong>: mua một lần 10K / 35K / 130K token, cần là mua
+            <strong>Gói nạp thêm</strong>: mua một lần 140K / 480K / 1.75M token, cần là mua
           </li>
           <li>
             <strong>BYOK</strong>: gắn địa chỉ API và key của bạn trong bảng điều khiển, LLM dùng số dư của bạn; PDF /
@@ -510,7 +510,7 @@ const faq: FaqItem[] = [
         .
       </>
     ),
-    text: 'Ví token thống nhất: đăng ký tặng một lần 10.000 token, không bao giờ hết hạn; đăng ký gói Pro / Max theo tháng hoặc năm, tự động gia hạn token theo chu kỳ, gói năm giảm khoảng 17%; gói nạp thêm mua một lần 10K / 35K / 130K token; BYOK cho phép gắn API key của bạn để LLM dùng số dư của bạn. Các dịch vụ cloud (xuất PDF, tìm vị trí...) trừ phí theo token, xem cụ thể ở trang bảng giá.',
+    text: 'Ví token thống nhất: đăng ký tặng một lần 10.000 token, không bao giờ hết hạn; đăng ký gói Pro / Max theo tháng hoặc năm, tự động gia hạn token theo chu kỳ, gói năm giảm khoảng 9%; gói nạp thêm mua một lần 140K / 480K / 1.75M token; BYOK cho phép gắn API key của bạn để LLM dùng số dư của bạn. Các dịch vụ cloud (xuất PDF, tìm vị trí...) trừ phí theo token, xem cụ thể ở trang bảng giá.',
   },
   {
     q: 'BYOK là gì?',

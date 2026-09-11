@@ -377,7 +377,7 @@ export const content: LocaleContent = {
       'Ganhe 10.000 tokens ao se registrar (uma vez). Quando acabar, assine o plano mensal ou anual, ou compre um pacote a qualquer momento. As skills são sempre gratuitas e o BYOK está sempre disponível.',
     toggleMonthly: 'Mensal',
     toggleYearly: 'Anual',
-    toggleSavings: 'economize ≈17%',
+    toggleSavings: 'economize ≈9%',
     free: {
       title: 'Comece de graça',
       sub: 'Quer testar? Comece por aqui.',
@@ -391,7 +391,7 @@ export const content: LocaleContent = {
       ctaSignedIn: 'Ir para o painel',
       ctaSignedOut: 'Cadastre-se e ganhe 10K tokens',
     },
-    tokenLineYearly: 'Ano inteiro de uma vez:',
+    tokenLineYearly: 'Cerca de 11 meses de uma vez:',
     tokenLineMonthly: 'Renovação automática mensal:',
     tiers: {
       pro: {
@@ -413,9 +413,9 @@ export const content: LocaleContent = {
     signUpToSubscribe: 'Cadastre-se para assinar',
     manageSub: 'Gerenciar assinatura',
     subscribeNow: 'Assinar',
-    cnBuyPrefix: 'Comprar ',
-    cnPackNote: (days) =>
-      `Pagamento avulso (China) · uma compra por usuário a cada ciclo de ${days} dias · tokens nunca expiram`,
+    cnSubscribeHint:
+      'Assinaturas não estão disponíveis em CNY (limitação do Stripe). Mude para $ USD para assinar ou compre um pacote avulso abaixo.',
+    switchToUsd: 'Mudar para USD',
     topupHeading: 'Pacotes avulsos (compra única, nunca expiram)',
     topupDesc: 'Não quer assinar agora ou só passou do limite uma vez. Compre quando quiser.',
     buyNow: 'Comprar agora',
@@ -429,7 +429,7 @@ export const content: LocaleContent = {
       },
       {
         q: 'Qual a diferença entre mensal e anual?',
-        a: 'O anual é cerca de 17% mais barato e concede o ano inteiro de tokens de uma vez — usável desde o primeiro dia. Ao cancelar, todos os tokens concedidos permanecem, sem expirar. O mensal é bom para testar; o anual, para quem quer se comprometer a longo prazo.',
+        a: 'O anual é cerca de 9% mais barato e concede cerca de 11 meses de tokens de uma vez — usável desde o primeiro dia. Ao cancelar, todos os tokens concedidos permanecem, sem expirar. O mensal é bom para testar; o anual, para quem quer se comprometer a longo prazo.',
       },
       {
         q: 'Posso usar assinatura e pacotes avulsos juntos?',
@@ -441,7 +441,7 @@ export const content: LocaleContent = {
       },
       {
         q: 'Usuários gratuitos recebem tokens renovados todo mês?',
-        a: 'Não. O cadastro concede 10.000 tokens uma única vez. Quando acabar, compre um pacote avulso (o mais barato é ¥10 = 10K tokens), assine mensal / anual ou use o BYOK para o LLM rodar na sua própria API (PDF / JD continuam debitando tokens do muicv).',
+        a: 'Não. O cadastro concede 10.000 tokens uma única vez. Quando acabar, compre um pacote avulso (o mais barato é ¥12.88 = 140K tokens), assine mensal / anual ou use o BYOK para o LLM rodar na sua própria API (PDF / JD continuam debitando tokens do muicv).',
       },
       {
         q: 'E se eu não gostar, tem reembolso?',
@@ -489,10 +489,10 @@ export const content: LocaleContent = {
             </li>
             <li>
               <strong>Assinatura</strong>: Pro / Max, mensal ou anual, com renovação automática de tokens a cada
-              período; o anual concede o ano inteiro de uma vez, cerca de 17% de desconto
+              período; o anual concede cerca de 11 meses de uma vez, cerca de 9% de desconto
             </li>
             <li>
-              <strong>Pacotes avulsos</strong>: compre 10K / 35K / 130K tokens avulsos, quando quiser
+              <strong>Pacotes avulsos</strong>: compre 140K / 480K / 1.75M tokens avulsos, quando quiser
             </li>
             <li>
               <strong>BYOK</strong>: vincule sua própria API e chave no console para o LLM usar seu saldo; PDF / JD
@@ -506,7 +506,7 @@ export const content: LocaleContent = {
           .
         </>
       ),
-      text: 'Uma carteira única de tokens: 10.000 tokens de presente no cadastro, sem validade; assinaturas Pro / Max mensal ou anual com renovação automática de tokens a cada período, anual com cerca de 17% de desconto; pacotes avulsos de 10K / 35K / 130K tokens; o BYOK permite vincular sua própria chave de API para o LLM usar seu saldo. Serviços na nuvem (exportar PDF, buscar vagas, etc.) são cobrados por token — veja a página de preços.',
+      text: 'Uma carteira única de tokens: 10.000 tokens de presente no cadastro, sem validade; assinaturas Pro / Max mensal ou anual com renovação automática de tokens a cada período, anual com cerca de 9% de desconto; pacotes avulsos de 140K / 480K / 1.75M tokens; o BYOK permite vincular sua própria chave de API para o LLM usar seu saldo. Serviços na nuvem (exportar PDF, buscar vagas, etc.) são cobrados por token — veja a página de preços.',
     },
     {
       q: 'O que é BYOK?',
