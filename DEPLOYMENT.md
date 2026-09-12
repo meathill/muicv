@@ -199,7 +199,7 @@ Worker name `muicv-web`。承载：
 
 - D1：`MUICV_DB`，database `muicv`（和 `packages/api` 共用同一个 D1）
 - KV：`MUICV_KV`
-- R2：`NEXT_INC_CACHE_R2_BUCKET`（bucket `site-cache`）—— OpenNext ISR 缓存
+- R2：当前不绑定 OpenNext ISR 缓存（临时停用；恢复时再绑定 `site-cache`）
 - Self service binding：`WORKER_SELF_REFERENCE`
 - Vars：`BETTER_AUTH_URL`（生产 `https://muicv.com`，本地 `.dev.vars` 改）
 
@@ -392,7 +392,7 @@ Worker name `muicv-cms`。承载：
 - `/api/*`：Payload REST / GraphQL API
 - D1：`MUICV_CMS_DB` binding 指向现有 database `muicv`
 - R2：`MUICV_CMS_MEDIA` binding 指向现有 bucket `muicv`
-- OpenNext cache：`NEXT_INC_CACHE_R2_BUCKET` 复用现有 bucket `site-cache`
+- OpenNext cache：CMS 不启用 ISR，不绑定 `site-cache`
 
 首次部署前不新建 D1 / R2，只需要确认 `packages/cms/wrangler.jsonc` 里的 id / bucket name
 与 `packages/website`、`packages/api` 保持一致。然后配置 Payload secret：

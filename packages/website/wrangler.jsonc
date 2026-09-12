@@ -37,13 +37,7 @@
   "placement": {
     "mode": "smart"
   },
-  // NEXT_INC_CACHE_R2_BUCKET 是 OpenNext 必需；MUICV_RESUME_BLOB 跟 packages/api 共享。
   "r2_buckets": [
-    {
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "site-cache",
-      "preview_bucket_name": "site-cache"
-    },
     {
       "binding": "MUICV_RESUME_BLOB",
       "bucket_name": "muicv"

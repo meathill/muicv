@@ -11,7 +11,7 @@
 - **内容消费统一走 Payload**：`packages/shared/src/content-types.ts` 只放内容契约类型和 section metadata（原 `content-registry.ts` 的内联 seed 已随博客迁移删除），不再有静态兜底。website、api、app 通过 `@muicv/shared` 的 CMS helpers 读取 Payload；CMS 不可用时返回空内容，避免假装已发布。
 - **第三方官方 skill 默认先做来源索引**：例如腾讯招聘官方校招 skill，Mui 只登记公开来源和边界说明，不复制 `SKILL.md`，不托管安装包，不给竞品导流。无法确认能稳定接入前，不写“在 MuiCV 使用 / 安装 / 接入”的文案；app catalog 打开 MuiCV 自有详情页，由详情页说明当前是否仅为来源索引。
 - **自有/明确可分发 skill 才能安装**：`distributionMode='hosted' | 'external_direct'` 之后才允许 app 做真正安装；`built_in` 只展示“已内置”。
-- **Payload 独立 Worker，复用存储**：`packages/cms` 单独跑 `cms.muicv.com`，不嵌进 `packages/website`；但 D1 复用现有 `muicv`，R2 media 复用现有 `muicv` bucket，OpenNext cache 复用 `site-cache`。原因是早期内容量小，单独建库建桶会增加运维成本。
+- **Payload 独立 Worker，复用存储**：`packages/cms` 单独跑 `cms.muicv.com`，不嵌进 `packages/website`；D1 复用现有 `muicv`，R2 media 复用现有 `muicv` bucket；CMS 不启用 OpenNext ISR cache。
 - **CMS 数据分层**：`posts` 管 `/posts/<section>/<slug>`，`skillExtensions` 管 `/skills/<slug>` 和 app catalog，`changelog` 管产品更新，`media` 走 R2；Payload 自己维护表和 migration，不混入现有手写业务表。
 - **CMS build 期不用真实 binding**：`payload.config.ts` 在 `NEXT_PHASE='phase-production-build'` 时使用 runtime-only 占位 binding，避免 Next build 的多个 route worker 同时启动 Miniflare D1 造成 SQLite lock；运行时仍由 `getCloudflareContext()` 读取真实 D1/R2。
 - **CMS admin 必须使用 Payload RootLayout**：`packages/cms/app/layout.tsx` 要包 `@payloadcms/next/layouts` 的 `RootLayout` 并传入 `handleServerFunctions` / `importMap`。普通 Next layout 会让 admin 的 `PageConfigProvider` 拿不到 `ConfigProvider`，`/admin/create-first-user` 会报 `Cannot destructure property 'config' ... as it is undefined`。
@@ -105,7 +105,7 @@
 - `worker-configuration.d.ts`（14k+ 行，wrangler 自动生成）不要 review、不要手改；
   跑 `pnpm --filter @muicv/website cf-typegen` 重新生成即可。
 - 本地开发两套：`pnpm dev` 是纯 Next.js，最快；`pnpm dev:cf` 走 Wrangler，更贴近生产 Worker 行为。
-- **缓存栈（2026-08，issue #14）**：`open-next.config.ts` = R2 incremental cache + regional cache（long-lived）+ DO Queue + `enableCacheInterception`。
+- **缓存栈（2026-08，issue #14）**：website 当前临时关闭 R2 incremental cache，保留 DO Queue + `enableCacheInterception`；恢复任务计划于 2026-09-20 提醒复原 R2 + regional cache。
   - **时间型 revalidation（posts / sitemap 的 `revalidate=3600`）必须有 DO Queue**（`NEXT_CACHE_DO_QUEUE` binding + `new_sqlite_classes: ["DOQueueHandler"]` migration）才会后台排队执行——之前只配了 R2 没配 queue，revalidate 实际没生效。
   - 刻意不加 tag cache / cache purge：站点不用 `revalidateTag` / `revalidatePath`，按需失效链路用不到。
   - `deploy` 命令会跑 `populateCache` 把构建期预渲染数据写进 R2，所以纯静态页（如 pricing）改内容 = 部署即生效，不需要 revalidate 兜底。（这是 deploy 命令的机制说明；日常不要手动跑，见本节第 1 条——自动部署走的是同一套构建。）
@@ -121,7 +121,7 @@
 > BreadcrumbList）、metadata API、动态 OG 图、GA4 + Web Vitals 上报、HTTP 安全 headers。
 > 这里只记关键决策和踩坑，常规 Next.js metadata API 不重复。
 
-- **首页禁 `force-dynamic`，走 ISR**：登录态徽章拆到 `<Header>` 客户端 `useSession`，主体内容静态化，命中 OpenNext R2 ISR 缓存。改造前 force-dynamic 让所有访问都打 D1 + Better Auth，TTFB 拉爆。`sitemap.ts` 同步 `revalidate = 3600`。
+- **首页禁 `force-dynamic`，保留 ISR 语义**：登录态徽章拆到 `<Header>` 客户端 `useSession`，主体内容静态化；R2 ISR 当前临时停用，恢复后继续使用该缓存链路。`sitemap.ts` 同步 `revalidate = 3600`。
 - **website 读 CMS 内容走 `force-cache`**：`packages/website/lib/cms-content.ts` 给 shared CMS helper 传缓存模式，让首页 / 文章 / skill / changelog 按各自 `revalidate` 刷新。API 内容端点不传该选项，继续沿用 shared 默认 `no-store`，避免公开 API 返回旧内容。
 - **动态 OG（per-post / per-skill）—— Satori 在 edge runtime 的字体踩坑**：
   - Satori（next/og 内部）只认 **TTF / OTF / WOFF**，**不认 WOFF2**：WOFF2 需要 brotli 解压，Satori 没带；用 WOFF2 渲染时抛异常 → CF Worker 直接 1101。

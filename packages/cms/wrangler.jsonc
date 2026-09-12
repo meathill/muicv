@@ -31,11 +31,6 @@
   },
   "r2_buckets": [
     {
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "site-cache",
-      "preview_bucket_name": "site-cache"
-    },
-    {
       "binding": "MUICV_CMS_MEDIA",
       "bucket_name": "muicv"
     }
