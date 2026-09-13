@@ -12,7 +12,7 @@ import type { ArtifactRef, AttachmentRef, ChatMessageFeedback, ToolCallRecord } 
 import { ArtifactCard } from './artifact-card';
 import { AttachmentChip } from './chat-attachment-chip';
 import { MessageFeedbackBar } from './chat-message-feedback';
-import { ChatQuestionCard } from './chat-question-card';
+import { ChatQuestionGroup } from './chat-question-card';
 import { stripAttachmentFooter } from './chat-utils';
 import { ConfirmDialog } from './confirm-dialog';
 import { ForkConversationDialog } from './fork-conversation-dialog';
@@ -59,7 +59,7 @@ export function MessageBubble({
 
   // 工件按 source 分两类：read = 过程参考资料（折叠到操作组里）/ write = 最终产物（显眼卡片）
   const readRefs = artifacts?.filter((a) => a.source === 'read') ?? [];
-  const writeRefs = artifacts?.filter((a) => a.source === 'write') ?? [];
+  const writeRefs = artifacts?.filter((a) => a.source === 'write' && a.kind !== 'resume-preview') ?? [];
 
   // 工具调用分离：普通工具收进 OpsGroup，ask_question 单独作为交互卡片突出展示
   const questionCalls = toolCalls?.filter((c) => c.name === 'ask_question') ?? [];
@@ -98,13 +98,7 @@ export function MessageBubble({
               <MarkdownView source={displayContent} className="text-ink-soft" onPathClick={onPathClick} />
             ))}
 
-          {hasQuestions && (
-            <div className="space-y-2 pt-1">
-              {questionCalls.map((q) => (
-                <ChatQuestionCard key={q.id} call={q} />
-              ))}
-            </div>
-          )}
+          {hasQuestions && <ChatQuestionGroup calls={questionCalls} />}
 
           {hasAttachments && (
             <div className="flex flex-wrap gap-1.5 pt-1">

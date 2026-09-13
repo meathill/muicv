@@ -3,9 +3,19 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { app, BrowserWindow, protocol } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol, shell } from 'electron';
+import Store from 'electron-store';
 
 import { handleDeepLink, registerScheme, setMainWindowGetter } from './deep-link.ts';
+import {
+  decidePair,
+  setBridgeJobHandlers,
+  setBridgeNotifier,
+  setTokenPersist,
+  startExtensionBridge,
+} from './extension-bridge.ts';
+import { contributeJob, getJob, ingestCapturedJd, startGenerate } from './extension-jobs.ts';
+
 import { registerAgentConversationIpc } from './ipc/agent-conversation.ts';
 import { registerAudioPreviewIpc } from './ipc/audio-preview.ts';
 import { registerConfigProfileIpc } from './ipc/config-profile.ts';
@@ -87,6 +97,20 @@ function createWindow() {
       // viewer 不接管）。开 plugins:true 让 PDF 直接在 iframe 渲染。
       plugins: true,
     },
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https:') || url.startsWith('http:')) {
+      void shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url.startsWith('https:') || url.startsWith('http:')) {
+      event.preventDefault();
+      void shell.openExternal(url);
+    }
   });
 
   if (isDev && process.env.ELECTRON_RENDERER_URL) {
@@ -189,6 +213,23 @@ app.whenReady().then(() => {
   }
 
   createWindow();
+
+  const pairStore = new Store<{ tokens: string[] }>({ name: 'muicv-extension', defaults: { tokens: [] } });
+  setTokenPersist({
+    load: () => pairStore.get('tokens') ?? [],
+    save: (tokens) => pairStore.set('tokens', tokens),
+  });
+  setBridgeNotifier((channel, payload) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+  });
+  setBridgeJobHandlers({
+    ingest: ingestCapturedJd,
+    get: getJob,
+    contribute: contributeJob,
+    generate: startGenerate,
+  });
+  ipcMain.handle('extension:pairDecide', (_e, nonce: string, approved: boolean) => decidePair(nonce, approved));
+  startExtensionBridge();
 
   // 自动更新：注册 IPC + 事件监听；延迟 10s 触发首次检查，让登录 / OAuth /
   // workspace 加载先跑完。dev 模式下 setupUpdater 内部直接 short-circuit。

@@ -16,14 +16,13 @@
 
 .page {
   width: 794px;
-  height: 1123px;
+  min-height: 1123px;
   background: #ffffff;
   color: #1a1a1a;
   font-family: var(--font-sans);
   font-size: 12px;
   line-height: 1.5;
   position: relative;
-  overflow: hidden;
   font-feature-settings:
     "tnum" 1,
     "kern" 1;
@@ -48,6 +47,17 @@
 .page h4 {
   margin: 0;
   font-weight: inherit;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+.page header {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.page li,
+.page p {
+  orphans: 2;
+  widows: 2;
 }
 .page a {
   color: inherit;

@@ -188,12 +188,6 @@ export function buildApiTools(config: AppConfig, emitArtifact?: ArtifactEmitter)
       if (!body.url || !body.token) {
         return 'muicv /preview 响应缺少 url/token';
       }
-      emitArtifact?.({
-        kind: 'resume-preview',
-        path: body.url,
-        title: '在线预览',
-        source: 'write',
-      });
       return `预览已生成：${body.url}（初始模板 ${body.template ?? initialTemplate}）。请用户打开链接，在网页里挑模板并下载 PDF。`;
     },
   });

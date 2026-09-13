@@ -1,8 +1,37 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-08-27
+最后更新：2026-09-14
 
 ## 当前进行中
+
+### 插队任务：浏览器扩展（采集 JD → 匹配/生成 → 社区贡献）
+
+目标：用户在招聘页点一下，把 JD 交给桌面端判断是否适合投；合适则生成针对性简历。
+主动贡献的 JD 进入可搜索社区，首次去重入库奖励 token。
+
+- [x] 切片 A：扩展采集闭环（抽取器 + 页内提示条 + 本机 HTTP 配对 + 写 `targets/`）
+- [x] 切片 B：结构化 match + 绿自动 generate + 状态轮询
+- [x] 切片 C：社区表 / contribute API / 奖励 / 公开 `/jobs` / dashboard / admin 下架
+- [x] 单测 + format + typecheck；DEV_NOTE 记 bridge 端口 / 奖励口径
+
+---
+
+
+### 插队任务：修复对话链接打开、去除预览卡片、多页简历预览与 PDF 导出截断
+
+目标：
+1. 对话中的链接（包括裸 URL）自动转为超链接，点击直接在默认浏览器中打开。
+2. 消息下方不再列出「在线预览」工件卡片，避免冗余。
+3. 解决多页简历在预览与 PDF 导出中因模板固定高度与 overflow: hidden 导致只显示 1 页被截断的问题。
+
+- [x] packages/app: markdown-view 支持裸 URL 自动转换为链接，并在容器层拦截点击调用 shell.openExternal 打开
+- [x] packages/app: Electron main 注册 setWindowOpenHandler 与 will-navigate 保障外链打开
+- [x] packages/app: 移除 create_resume_preview 的 emitArtifact 调用，并在 chat-message-bubble 过滤 resume-preview
+- [x] packages/website: 修改 template-base.module.css 将 height: 1123px; overflow: hidden; 改为 min-height: 1123px; 并增加分页保护样式
+- [x] packages/website: 在 templates.module.css 补充各项卡片的 break-inside: avoid; page-break-inside: avoid;
+- [x] 编写测试用例并全绿
+- [x] 代码格式化与构建校验
+
 
 > 已完成的插队任务（设置页三分组重构 / 腾讯校招内容降级 / Changelog 工作流 / Payload
 > 用户 API Key / Skill 目录 + Payload CMS / 腾讯校招内容落地 / Issue 11 首页移动端

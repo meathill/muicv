@@ -1396,3 +1396,29 @@
 .t6__inline b {
   font-weight: 600;
 }
+
+/* ─────────────────────────────────────────
+   Print & multi-page pagination protection
+   ───────────────────────────────────────── */
+.t1__expRow,
+.t1__projCard,
+.t1__eduRow,
+.t2__expRow,
+.t2__projRow,
+.t2__eduRow,
+.t3__expRow,
+.t3__projRow,
+.t3__eduRow,
+.t3__sideSec,
+.t4__expRow,
+.t4__projCard,
+.t4__eduRow,
+.t5__expRow,
+.t5__projCard,
+.t5__eduRow,
+.t6__expRow,
+.t6__pubRow,
+.t6__eduRow {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
