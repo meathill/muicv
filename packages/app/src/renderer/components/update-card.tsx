@@ -28,6 +28,7 @@ export function UpdateCard() {
   // 发生错误时触发 Toast 提醒，并在 8 秒后自动收敛回 idle，避免在侧边栏常驻占用空间
   useEffect(() => {
     if (status.phase === 'error') {
+      console.error('[updater error]', status.message);
       toast.warning(formatUpdaterError(status.message), '软件更新');
       const timer = setTimeout(() => {
         setStatus({ phase: 'idle' });

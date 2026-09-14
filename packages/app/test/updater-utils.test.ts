@@ -29,3 +29,14 @@ test('formatUpdaterError: 网络故障转化为连网排查提示', () => {
 test('formatUpdaterError: 权限问题转化为权限提示', () => {
   assert.equal(formatUpdaterError('EACCES: permission denied, open /tmp/update.pkg'), '更新安装权限不足');
 });
+
+test('formatUpdaterError: 代码签名不匹配转化为手动下载提示', () => {
+  assert.equal(
+    formatUpdaterError('Code signature verification failed: code failed to satisfy specified code requirement(s)'),
+    '应用签名不一致，请手动下载覆盖安装',
+  );
+  assert.equal(
+    formatUpdaterError('Could not verify code signature of downloaded bundle'),
+    '应用签名不一致，请手动下载覆盖安装',
+  );
+});

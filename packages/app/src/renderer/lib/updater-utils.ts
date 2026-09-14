@@ -37,6 +37,16 @@ export function formatUpdaterError(raw?: string): string {
     return '更新安装权限不足';
   }
 
+  // 代码签名不匹配（例如开发版签名的应用尝试升级到正式发布版）
+  if (
+    lower.includes('code signature') ||
+    lower.includes('code requirement') ||
+    lower.includes('signature verification') ||
+    lower.includes('codesign')
+  ) {
+    return '应用签名不一致，请手动下载覆盖安装';
+  }
+
   // 提取首行并去除 URL 与 HTTP 响应状态码等脏串
   const firstLine = raw.split('\n')[0]?.trim() ?? '';
   const cleaned = firstLine

@@ -72,6 +72,7 @@ function setupAutoUpdaterEvents(): void {
   });
 
   autoUpdater.on('error', (err) => {
+    console.error('[updater] autoUpdater error:', err);
     broadcast({
       phase: 'error',
       message: err?.message ?? String(err),
@@ -122,9 +123,17 @@ export function setupUpdater(getMainWindow: () => BrowserWindow | null): void {
 
   ipcMain.handle('updater:quitAndInstall', () => {
     if (currentStatus.phase !== 'ready') return;
-    // isSilent=false：让 NSIS / pkg installer 该弹界面就弹，避免静默卡住。
-    // isForceRunAfter=true：安装完自动重启 app，符合「立即重启」按钮语义。
-    autoUpdater.quitAndInstall(false, true);
+    try {
+      // isSilent=false：让 NSIS / pkg installer 该弹界面就弹，避免静默卡住。
+      // isForceRunAfter=true：安装完自动重启 app，符合「立即重启」按钮语义。
+      autoUpdater.quitAndInstall(false, true);
+    } catch (err) {
+      console.error('[updater] quitAndInstall error:', err);
+      broadcast({
+        phase: 'error',
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
   });
 
   // 应用退出前清理定时器
