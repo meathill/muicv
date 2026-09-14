@@ -1,10 +1,11 @@
-import type { PostSection } from '@muicv/shared';
+import type { ContentLocale, PostSection } from '@muicv/shared';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPostAlternateLanguages, getWebsitePostBySlug, getWebsitePublishedPosts } from '@/lib/cms-content';
 
 import { MarketingShell } from '../../../_content/marketing-shell';
 import { PostDetailView } from '../../../_content/post-detail-view';
+import { fromContentLocale } from '../../../_i18n/locale';
 
 export const revalidate = 3600;
 
@@ -47,8 +48,12 @@ export default async function PostDetailPage({ params }: { params: Promise<Param
   const post = await getWebsitePostBySlug('zh-CN', resolvedParams.section, resolvedParams.slug);
   if (!post) notFound();
 
+  // 语言切换器只显示真实有译文的语言，避免链到不存在的 /<locale>/posts/... 404。
+  const languages = await getPostAlternateLanguages(post.section, post.slug);
+  const availableLocales = (Object.keys(languages) as ContentLocale[]).map(fromContentLocale);
+
   return (
-    <MarketingShell>
+    <MarketingShell availableLocales={availableLocales}>
       <PostDetailView locale="zh-CN" post={post} />
     </MarketingShell>
   );

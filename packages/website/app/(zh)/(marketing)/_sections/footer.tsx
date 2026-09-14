@@ -7,7 +7,16 @@ import { zh } from '../_i18n/zh';
 import { PawIcon } from '../_icons';
 import { LangSwitch } from './lang-switch';
 
-export function Footer({ dict = zh, locale = 'zh' }: { dict?: Dictionary; locale?: Locale } = {}) {
+export function Footer({
+  dict = zh,
+  locale = 'zh',
+  availableLocales,
+}: {
+  dict?: Dictionary;
+  locale?: Locale;
+  /** 有译文的语言子集（文章详情页透传；不传则显示全部 9 语言）。 */
+  availableLocales?: readonly Locale[] | undefined;
+} = {}) {
   const t = dict.footer;
   return (
     <footer className="bg-paper">
@@ -38,7 +47,7 @@ export function Footer({ dict = zh, locale = 'zh' }: { dict?: Dictionary; locale
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 text-[12px] text-mute md:flex-row md:items-center md:justify-between md:px-8">
           <div className="flex flex-wrap items-center gap-4">
             <span>{t.copyright}</span>
-            <LangSwitch locale={locale} />
+            <LangSwitch locale={locale} availableLocales={availableLocales} />
           </div>
           <div className="flex flex-wrap items-center justify-end gap-4">
             <span className="font-mono text-[12px] uppercase tracking-wider">{t.madeIn}</span>

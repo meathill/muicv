@@ -65,8 +65,12 @@ export default async function LocalePostDetailPage({ params }: { params: Promise
   const post = await getWebsitePostBySlug(locale, section, slug);
   if (!post) notFound();
 
+  // 语言切换器只显示真实有译文的语言，避免链到不存在的 /<locale>/posts/... 404。
+  const languages = await getPostAlternateLanguages(post.section, post.slug);
+  const availableLocales = (Object.keys(languages) as ContentLocale[]).map(fromContentLocale);
+
   return (
-    <MarketingShell locale={fromContentLocale(locale)}>
+    <MarketingShell locale={fromContentLocale(locale)} availableLocales={availableLocales}>
       <PostDetailView locale={locale} post={post} />
     </MarketingShell>
   );

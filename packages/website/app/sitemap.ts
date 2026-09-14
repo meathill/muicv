@@ -2,6 +2,7 @@ import { CONTENT_LOCALES, contentLocalePrefix, POST_SECTION_META, SAMPLE_RESUME_
 import type { MetadataRoute } from 'next';
 import { LOCALES, type Locale } from '@/app/(zh)/(marketing)/_i18n/locale';
 import { getWebsitePublishedChangelog, getWebsitePublishedPosts, getWebsitePublishedSkills } from '@/lib/cms-content';
+import { postAlternateLanguages } from '@/lib/post-alternates';
 
 const BASE = 'https://muicv.com';
 
@@ -50,6 +51,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ]),
     ),
   ) as Partial<Record<(typeof CONTENT_LOCALES)[number], typeof postsZh>>;
+  // 文章译文存在性总表：alternates 过滤与 <loc> 收录都从这里判定，保证一致。
+  const postsByLocale = { 'zh-CN': postsZh, ...localizedPosts };
   const changelogLastModified = changelog.reduce<Date>(
     (latest, item) => maxDate(latest, toDate(item.updatedAt)),
     new Date(0),
@@ -125,12 +128,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
   });
   const postAlternatesFor = (section: string, slug: string) => ({
-    languages: Object.fromEntries(
-      CONTENT_LOCALES.map((locale) => [
-        locale,
-        `${contentLocalePrefix(locale)}/posts/${section}/${encodeURIComponent(slug)}`,
-      ]),
-    ),
+    // 只列真实有译文的语言（与 head hreflang 同规则），且必须是绝对 URL；
+    // 不存在的语言列了就是 sitemap feeding 404。
+    languages: postAlternateLanguages(postsByLocale, section, slug, BASE),
   });
   const contentPages = [
     ...templatePages,

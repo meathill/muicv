@@ -26,6 +26,7 @@ pnpm install
 | `packages/app` | 纯逻辑 helper（chat-utils / 附件解析 / 滑动窗口 history / slash-command / filler-count / 扩展 bridge 协议）；**不**测 React 组件和 IPC | attachments / chat-utils / filler-count / history / slash-command / extension-bridge |
 | `packages/extension` | JD 抽取器 + html→markdown；不测真实招聘站 | extractors |
 | `packages/cms` | Payload admin / migrations 暂以 build + 手测为主 | 待补 |
+| `packages/website` | 纯逻辑 helper（post alternates 过滤）；**不**测 React 组件 | post-alternates |
 
 只跑某个包：
 

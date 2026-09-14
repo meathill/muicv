@@ -10,6 +10,7 @@ import {
   fetchCmsSkillBySlug,
   type PostSection,
 } from '@muicv/shared';
+import { postAlternateLanguages } from './post-alternates';
 
 const WEBSITE_CMS_CACHE = 'force-cache' as const;
 
@@ -42,18 +43,17 @@ export function getWebsitePublishedChangelog() {
  * 某篇文章在各语言下真实存在的 URL 映射（用于 hreflang / sitemap alternates）。
  * 只收录确实有译文的语言——不存在的语言链过去是 404，对 SEO 有害。
  * 各语言的列表页有 ISR force-cache，这里并行取一次即可。
+ * 规则实现见 postAlternateLanguages（与 sitemap 共用）。
  */
 export async function getPostAlternateLanguages(section: PostSection, slug: string): Promise<Record<string, string>> {
   const lists = await Promise.all(
     CONTENT_LOCALES.map(async (locale) => [locale, await getWebsitePublishedPosts(locale)] as const),
   );
-  const languages: Record<string, string> = {};
-  for (const [locale, posts] of lists) {
-    if (posts.some((post) => post.section === section && post.slug === slug)) {
-      languages[locale] = `${contentLocalePrefix(locale)}/posts/${section}/${slug}`;
-    }
-  }
-  return languages;
+  const postsByLocale = Object.fromEntries(lists) as Record<
+    ContentLocale,
+    Awaited<ReturnType<typeof getWebsitePublishedPosts>>
+  >;
+  return postAlternateLanguages(postsByLocale, section, slug, '');
 }
 
 /** 文章列表页（含分类页）在各语言下都存在，hreflang 直接按 locale 拼。 */

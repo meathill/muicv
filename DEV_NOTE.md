@@ -66,7 +66,13 @@
 - **hreflang 从路由白名单推导**：`pageMetadata` / `alternateLanguages`（`_page-meta.ts`）按
   `LOCALIZED_ROUTES` / `EN_ROUTES` 决定列几种语言，zh/en 与新语言页共用同一函数，保证互指对称。
   文章详情页则用 `getPostAlternateLanguages()` 只列**确实有译文**的语言（按 slug 查各语言），
-  避免指向 404。sitemap 里的 alternates 同源同规则。
+  避免指向 404。sitemap 里的 alternates 同源同规则（`lib/post-alternates.ts` 的
+  `postAlternateLanguages()`，head 传相对 base、sitemap 传绝对域名；2026-09 修过一次
+  sitemap 无条件列全 9 语言 + 相对 URL 的 bug，Ahrefs 报 56 个 `/:locale/posts/*` 404）。
+- **详情页语言切换器只显示有译文的语言**：`localizedHref` 只知道“某类路径”的白名单，
+  不知道“某篇文章”是否有译文——详情页由服务端从 `getPostAlternateLanguages()` 推导
+  `availableLocales` 经 `MarketingShell → Footer → LangSwitch` 透传；列表页 / 营销页不传
+  （默认全量）。缺译文不跳中文原文、不 301，保持 404 自然消退（软 404 比硬 404 更伤）。
 - **博客与营销页共用 `MarketingShell`**：语言切换器（`LangSwitch`）已升级为 9 语言选择器，
   用 `usePathname()` 推导当前页各语言 URL 并自动回退，Footer 恒显示——所以页面不再传 `altHref`
   （该参数已删除）。早期博客用过独立的 `BlogShell`，营销站本地化完成后已合并删除。

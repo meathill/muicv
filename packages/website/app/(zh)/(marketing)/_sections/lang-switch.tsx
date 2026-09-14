@@ -53,12 +53,23 @@ function stripLocalePrefix(pathname: string): string {
 
 /**
  * 语言选择器。用原生 `<details>` 做下拉（不需要 JS 状态），
- * 每项指向当前页面在对应语言下的 URL（由 usePathname + localizedHref 推导，
- * 未本地化的路径会自动回退，不会造 404）。
+ * 每项指向当前页面在对应语言下的 URL（由 usePathname + localizedHref 推导）。
+ *
+ * 注意：localizedHref 只知道“某类路径是否有本地化版本”（白名单），不知道
+ * “某篇文章是否有译文”——文章详情页必须由服务端传 availableLocales（从
+ * getPostAlternateLanguages 推导），否则会链到不存在的译文 404。
+ * 列表页 / 营销页不传（默认全量 9 语言）。
  */
-export function LangSwitch({ locale }: { locale: Locale }) {
+export function LangSwitch({
+  locale,
+  availableLocales,
+}: {
+  locale: Locale;
+  availableLocales?: readonly Locale[] | undefined;
+}) {
   const pathname = usePathname() ?? '/';
   const basePath = stripLocalePrefix(pathname);
+  const targets = availableLocales ?? LOCALES;
 
   return (
     <details className="group relative inline-block">
@@ -70,7 +81,7 @@ export function LangSwitch({ locale }: { locale: Locale }) {
         </span>
       </summary>
       <ul className="absolute bottom-full left-0 z-40 mb-1 min-w-[140px] rounded-md border-2 border-rule bg-cream p-1 shadow-lg">
-        {LOCALES.map((target) => (
+        {targets.map((target) => (
           <li key={target}>
             <a
               href={localizedHref(target, basePath)}

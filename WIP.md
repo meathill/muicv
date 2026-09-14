@@ -4,6 +4,20 @@
 
 ## 当前进行中
 
+### 插队任务：修复 Ahrefs 报的 56 个 `/:locale/posts/*` 404（2026-09-14）
+
+sitemap alternates 无条件列全 9 语言（含不存在的译文，且是相对 URL）+ 页脚
+LangSwitch 给详情页直出 8 条坏链。修法：`lib/post-alternates.ts` 纯函数统一规则
+（head/sitemap 共用），详情页透传 `availableLocales` 只显示有译文的语言；缺译文
+保持 404 自然消退，不 301。
+
+- [x] sitemap alternates 只列真实译文 + 绝对 URL
+- [x] 详情页切换器过滤 + `test/post-alternates.test.ts` 6 用例全绿
+- [x] format + `tsc --noEmit` + `website build`（构建产物已验：坏 alternates/坏链消失）
+- [x] push（aa2e675）后自动部署，线上已验：sitemap 坏 alternates 与页脚坏链消失
+- [x] IndexNow 提交 121 个 URL 已接受
+- [ ] **用户**：GSC 重交 sitemap → Ahrefs 重新 audit（56 条随重抓自然消除）
+
 ### 插队任务：浏览器扩展（采集 JD → 匹配/生成 → 社区贡献）
 
 目标：用户在招聘页点一下，把 JD 交给桌面端判断是否适合投；合适则生成针对性简历。
