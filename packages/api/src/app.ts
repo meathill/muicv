@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { optionalApiKey, requireApiKey } from './middleware/api-key.ts';
+import { handleJobsCommunityGet, handleJobsCommunityList, handleJobsContribute } from './routes/community-jd.ts';
 import {
   handleChangelog,
   handlePostDetail,
@@ -97,6 +98,9 @@ app.get('/', (c) =>
       'GET /upload/media/history（列当前用户最近附件上传）',
       'DELETE /upload/media（删除当前用户所有云端媒体）',
       'POST /jobs/fetch',
+      'POST /jobs/contribute（贡献 JD 到社区，首次去重奖励 token）',
+      'GET /jobs/community（公开搜索社区 JD）',
+      'GET /jobs/community/:id',
       'POST /audio/transcribe（multipart/form-data，字段 file）',
       'POST /audio/tts（JSON：text/voice/style，返回 audio/wav）',
       'POST /waitlist',
@@ -207,6 +211,9 @@ app.delete('/upload/media', requireApiKey, handleDeleteAllMedia);
  * POST /jobs/fetch —— 用 Browser Rendering 抓 JD 转 markdown。详见 src/routes/jobs.ts。
  */
 app.post('/jobs/fetch', requireApiKey, handleJobsFetch);
+app.post('/jobs/contribute', requireApiKey, handleJobsContribute);
+app.get('/jobs/community', handleJobsCommunityList);
+app.get('/jobs/community/:id', handleJobsCommunityGet);
 
 /**
  * POST /audio/transcribe —— STT 转写（issue #1 M1）。

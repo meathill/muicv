@@ -13,7 +13,7 @@ export const metadata: Metadata = soloPageMetadata({
 
 export const revalidate = 3600;
 
-const EFFECTIVE_DATE = '2026-04-30';
+const EFFECTIVE_DATE = '2026-09-13';
 
 export default function TermsPage() {
   return (
@@ -80,6 +80,12 @@ export default function TermsPage() {
             你通过本服务上传、输入或生成的简历素材、岗位信息、文档等内容（"用户内容"）所有权归你本人。
             为提供服务所必需，你授予我们一项有限的、非独占的、免费的、全球范围内的许可，
             用于存储、传输、处理、显示用户内容，<strong>仅限于为你提供本服务的目的</strong>。
+          </P>
+          <P>
+            你主动把招聘岗位描述（JD）贡献到社区岗位库时，视为授予我们一项非独占、可转授权、全球范围内的许可，
+            用于公开展示、索引、搜索，以及供其他用户导入到自己的 Mui简历桌面端进行匹配。
+            你应确保贡献的内容来自你正在浏览的公开页面，且不故意提交虚假或侵权材料。 权利人可通过 hello@muicv.com
+            申请下架；下架后不追回已发放的 token 奖励。 社区 JD 不保证时效与准确性，投递前请核对原招聘页。
           </P>
           <P>
             许可在你删除内容或注销账户后即时终止（除适用法律或本条款另有约定的情形外）。

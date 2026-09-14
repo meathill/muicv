@@ -23,7 +23,8 @@ pnpm install
 |---|---|---|
 | `packages/shared` | pricing / format / resume-sync / hsm-client / muirouter-oauth + smoke（核心跨端工具） | format / hsm-client / muirouter-oauth / pricing / resume-sync / smoke |
 | `packages/api` | Hono `app.request()` 测路由、CORS 白名单、api-key middleware、wallet 扣账原子性、llm 用量统计、transcribe | llm-usage / routes / transcribe / wallet |
-| `packages/app` | 纯逻辑 helper（chat-utils / 附件解析 / 滑动窗口 history / slash-command / filler-count）；**不**测 React 组件和 IPC | attachments / chat-utils / filler-count / history / slash-command |
+| `packages/app` | 纯逻辑 helper（chat-utils / 附件解析 / 滑动窗口 history / slash-command / filler-count / 扩展 bridge 协议）；**不**测 React 组件和 IPC | attachments / chat-utils / filler-count / history / slash-command / extension-bridge |
+| `packages/extension` | JD 抽取器 + html→markdown；不测真实招聘站 | extractors |
 | `packages/cms` | Payload admin / migrations 暂以 build + 手测为主 | 待补 |
 
 只跑某个包：

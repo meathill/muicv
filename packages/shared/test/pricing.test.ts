@@ -146,6 +146,17 @@ describe('Pricing', () => {
         assert.equal(normalizeModel(id), id);
       }
     });
+
+    it('LLM_DISPLAY_META：每个支持的模型都有展示元数据且价格文案正确', () => {
+      for (const id of SUPPORTED_LLM_MODELS) {
+        const meta = LLM_DISPLAY_META[id];
+        assert.ok(meta, `${id} 应该在 LLM_DISPLAY_META 中存在`);
+        assert.ok(meta.inputPrice, `${id} 应该有 inputPrice`);
+        assert.ok(meta.outputPrice, `${id} 应该有 outputPrice`);
+      }
+      assert.equal(LLM_DISPLAY_META['mimo-v2.5'].inputPrice, '$0.08 / 1M');
+      assert.equal(LLM_DISPLAY_META['mimo-v2.5'].outputPrice, '$2.00 / 1M');
+    });
   });
 
   describe('capability flags', () => {

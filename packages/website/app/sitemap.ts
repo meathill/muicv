@@ -76,6 +76,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/templates', priority: 0.85, changeFrequency: 'weekly', alternates: bilingualAlternates('/templates') },
     { path: '/en/templates', priority: 0.85, changeFrequency: 'weekly', alternates: bilingualAlternates('/templates') },
     { path: '/posts', priority: 0.7, changeFrequency: 'weekly' },
+    { path: '/jobs', priority: 0.6, changeFrequency: 'daily' },
     ...Object.values(POST_SECTION_META).map((section) => ({
       path: section.path,
       priority: section.path === '/posts/jobs' ? 0.8 : 0.55,

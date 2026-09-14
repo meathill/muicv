@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { AppShell } from './components/app-shell';
 import { AppSkeleton } from './components/app-skeleton';
+import { ExtensionBridgeHost } from './components/extension-bridge-host';
 import { LoginView } from './components/login-view';
 import { ToastContainer } from './components/toast-container';
 import { bootstrap, useAppStore } from './lib/store';
@@ -19,6 +20,7 @@ export function App() {
       <>
         <AppSkeleton />
         <ToastContainer />
+        <ExtensionBridgeHost />
       </>
     );
   }
@@ -29,6 +31,7 @@ export function App() {
       <div className="flex h-screen flex-col bg-cream">
         <LoginView />
         <ToastContainer />
+        <ExtensionBridgeHost />
       </div>
     );
   }
@@ -37,6 +40,7 @@ export function App() {
     <>
       <AppShell />
       <ToastContainer />
+      <ExtensionBridgeHost />
     </>
   );
 }

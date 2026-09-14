@@ -38,3 +38,4 @@ env.d.ts
 worker-configuration.d.ts
 .claude
 .claude-plugin
+packages/extension/*.zip

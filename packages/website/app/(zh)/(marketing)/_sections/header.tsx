@@ -10,6 +10,7 @@ const DEFAULT_BRAND: Dictionary['brand'] = { name: 'Mui简历', by: 'by Mui 🐾
 const DEFAULT_NAV: Dictionary['nav'] = {
   links: [
     { label: '模板', href: '/templates' },
+    { label: '岗位库', href: '/jobs' },
     { label: '文章', href: '/posts/jobs' },
     { label: 'Skill', href: '/skills' },
     { label: '价格', href: '/pricing' },

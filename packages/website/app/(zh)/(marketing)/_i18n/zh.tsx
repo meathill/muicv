@@ -8,6 +8,7 @@ export const zh: Dictionary = {
   nav: {
     links: [
       { label: '模板', href: '/templates' },
+      { label: '岗位库', href: '/jobs' },
       { label: '文章', href: '/posts/jobs' },
       { label: 'Skill', href: '/skills' },
       { label: '价格', href: '/pricing' },
@@ -28,6 +29,7 @@ export const zh: Dictionary = {
           { label: '简历模板', href: '/templates' },
           { label: '定价', href: '/pricing' },
           { label: '桌面 app', href: '/download' },
+          { label: '岗位库', href: '/jobs' },
           { label: 'Skill 目录', href: '/skills' },
           { label: '控制台', href: '/dashboard' },
         ],

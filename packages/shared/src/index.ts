@@ -7,6 +7,7 @@ export * from './domain/sample-templates.ts';
 export * from './domain/template-resume.ts';
 export * from './format.ts';
 export * from './hsm-client.ts';
+export * from './jd.ts';
 export * from './muirouter-oauth.ts';
 export * from './pricing.ts';
 export * from './resume-sync.ts';

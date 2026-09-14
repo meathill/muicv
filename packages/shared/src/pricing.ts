@@ -76,6 +76,15 @@ export const FEEDBACK_COMMENT_MIN_CHARS = 50;
 export const FEEDBACK_COMMENT_MAX_CHARS = 2000;
 
 /**
+ * 社区 JD 贡献奖励：同一 urlHash / contentHash 首次入库发一次。
+ * 2000 显示 token ≈ $0.02，低于评论奖励、高于点赞，避免变成刷帖机。
+ */
+export const JD_CONTRIBUTE_REWARD = 2000;
+
+/** 每个用户每个自然日（UTC）最多发奖次数。超出仍可贡献但不发奖、直接 429。 */
+export const JD_CONTRIBUTE_DAILY_CAP = 8;
+
+/**
  * 平台 LLM 上游标识。**查表分流**的唯一依据，routes/llm.ts 据此选 base + secret。
  *   - openai：GPT-5.6 家族直连 api.openai.com（premium 升级档）
  *   - opencode-go：OpenCode Go 包月订阅（https://opencode.ai/zen/go），文字主力 +
@@ -232,7 +241,7 @@ export const LLM_DISPLAY_META: Record<
   'mimo-v2.5': {
     label: 'MiMo v2.5',
     vendor: 'opencode-go',
-    inputPrice: '$0.80 / 1M',
+    inputPrice: '$0.08 / 1M',
     outputPrice: '$2.00 / 1M',
     hint: '推荐 · 全模态 · 支持语音 · 可做模拟语音面试',
     supportsVision: false,
@@ -449,7 +458,8 @@ export type LedgerType =
   | 'tts'
   | 'admin_grant'
   | 'admin_deduct'
-  | 'feedback_reward';
+  | 'feedback_reward'
+  | 'jd_contribute';
 
 /**
  * LLM 上游用量 → μtoken 实扣金额。

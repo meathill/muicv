@@ -20,6 +20,12 @@
 - 理解保险 skill：五险一金、年轻人的第一份保险等
 - offer 分析 skill：解读 offer letter（薪资结构、期权、福利、竞业条款等），横向对比多个 offer，给出风险点和谈判建议
 
+## 浏览器扩展
+
+- Chrome Web Store 上架（图标、隐私政策、审核材料）
+- Firefox 适配（协议已预留 `moz-extension://`）
+- 站点 DOM 改版后补抽取器（脉脉 / Workday / 牛客等目前走 JSON-LD 通用解析）
+
 ## 待复现 / 跨平台
 
 - **Windows 下下载 whisper 出错**：本期已把 install.ts 的 fetch / sha256 / pipeline 错误细化成 URL + 阶段 + cause 链（v0.4.0），等用户提供新的详细错误日志再针对性修。

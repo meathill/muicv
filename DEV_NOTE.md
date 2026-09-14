@@ -2,9 +2,18 @@
 
 长期开发知识沉淀。记录决策依据、踩坑、框架/基建知识，避免日后重复。
 
-最后更新：2026-09-11
+最后更新：2026-09-13
 
 ---
+
+## 浏览器扩展（采集 JD）
+
+- 扩展不持有 `mui_` key。Chrome MV3 content script 抽 DOM，background 把 `CapturedJd` POST 到桌面端 loopback。
+- 桌面端 `127.0.0.1:29876-29880`，health 响应带 `magic: muicv-extension-bridge`。CORS 只放行 `chrome-extension://` / `moz-extension://`。
+- 配对：`POST /pair/begin` → renderer 确认 → pairing token 写入 electron-store `muicv-extension`。重启后 token 仍有效。
+- 匹配是一次 JSON LLM 调用（`DEFAULT_LLM_MODEL`），**不**新开 `/jobs/match` Worker，也不把整份素材库上云。
+- 社区表 `communityJd` + FTS5，migration `0017_community_jd.sql`。贡献奖励 `JD_CONTRIBUTE_REWARD=2000`，日封顶 8，ledger type `jd_contribute`，ledgerId = 行 id。
+- `/jobs/fetch` 仍给 skill / CLI 用；扩展路径不扣 `JD_FETCH_COST`。
 
 ## 内容中心 / Skill 目录 / Payload CMS（Phase 17）
 

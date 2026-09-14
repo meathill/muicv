@@ -289,6 +289,20 @@ test('POST /jobs/fetch url 不是 http(s) → 400', async () => {
   assert.equal(res.status, 400);
 });
 
+test('POST /jobs/contribute 缺 Authorization → 401', async () => {
+  const res = await app.request(
+    '/jobs/contribute',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ capturedJd: { url: 'https://x.com', markdown: 'x' } }),
+    },
+    mockEnv(),
+    ctx,
+  );
+  assert.equal(res.status, 401);
+});
+
 test('POST /jobs/fetch 缺 Authorization → 401', async () => {
   const res = await app.request(
     '/jobs/fetch',

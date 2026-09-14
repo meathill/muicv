@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Mui简历",
+  "version": "0.1.0",
+  "description": "把当前招聘页的 JD 发给 Mui简历桌面端，判断是否适合投，并生成针对性简历。",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Mui简历"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "activeTab", "alarms"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.zhipin.com/*",
+        "https://www.zhipin.com/*",
+        "https://*.zhaopin.com/*",
+        "https://*.liepin.com/*",
+        "https://*.lagou.com/*",
+        "https://*.51job.com/*",
+        "https://*.linkedin.com/*",
+        "https://*.indeed.com/*",
+        "https://*.greenhouse.io/*",
+        "https://job-boards.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://jobs.ashbyhq.com/*",
+        "https://*.ashbyhq.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

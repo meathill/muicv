@@ -178,6 +178,10 @@ export async function handleDeepLink(url: string): Promise<void> {
     await handleMuirouterLinked(parsed);
   } else if (action === 'set-default-template') {
     handleSetDefaultTemplate(parsed);
+  } else if (action === 'extension-wake') {
+    /* 只把窗口提到前台，下面统一 focus */
+  } else if (action === 'import-jd') {
+    await handleImportCommunityJd(parsed);
   } else {
     console.warn('[deep-link] unknown action', url);
     return;
@@ -233,6 +237,40 @@ async function handleMuirouterLinked(parsed: URL): Promise<void> {
  * 攻击面有限（只改本地 active profile 配置），不防 CSRF，但严格校验 template 合法。
  * 没激活 profile 时直接忽略并提示 renderer（让 UI 引导用户先选档案）。
  */
+async function handleImportCommunityJd(parsed: URL): Promise<void> {
+  const id = parsed.searchParams.get('id');
+  if (!id) return;
+  const { ingestCapturedJd } = await import('./extension-jobs.ts');
+  const cfg = getConfig();
+  try {
+    const res = await fetch(`${cfg.muicvApiBase.replace(/\/$/, '')}/jobs/community/${encodeURIComponent(id)}`);
+    if (!res.ok) return;
+    const row = (await res.json()) as {
+      canonicalUrl?: string;
+      sourceSite?: string;
+      title?: string | null;
+      company?: string | null;
+      location?: string | null;
+      employmentType?: string | null;
+      markdown?: string;
+    };
+    if (typeof row.markdown !== 'string' || !row.canonicalUrl) return;
+    await ingestCapturedJd({
+      url: row.canonicalUrl,
+      canonicalUrl: row.canonicalUrl,
+      sourceSite: (row.sourceSite as 'generic') ?? 'generic',
+      title: row.title ?? null,
+      company: row.company ?? null,
+      location: row.location ?? null,
+      employmentType: row.employmentType ?? null,
+      markdown: row.markdown,
+      extractedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('[deep-link] import-jd failed', err);
+  }
+}
+
 function handleSetDefaultTemplate(parsed: URL): void {
   const template = parsed.searchParams.get('template');
   if (!template || !isTemplateId(template)) {

@@ -309,6 +309,29 @@ export const photoUpload = sqliteTable('photoUpload', {
  * 聊天附件通用媒体上传审计（packages/api/POST /upload/media 写入）。
  * 对话正文不上传；这里只记录已经落到 R2 的图片 / PDF / 音频 / 文档 URL。
  */
+/**
+ * 社区 JD。业务写入走 packages/api POST /jobs/contribute；
+ * 网站公开列表 / dashboard / admin 直读 D1。
+ */
+export const communityJd = sqliteTable('communityJd', {
+  id: text('id').primaryKey(),
+  canonicalUrl: text('canonicalUrl').notNull(),
+  urlHash: text('urlHash').notNull().unique(),
+  contentHash: text('contentHash').notNull(),
+  sourceSite: text('sourceSite').notNull(),
+  title: text('title'),
+  company: text('company'),
+  location: text('location'),
+  employmentType: text('employmentType'),
+  markdown: text('markdown').notNull(),
+  contributorUserId: text('contributorUserId')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  status: text('status').notNull(),
+  createdAt: integer('createdAt').notNull(),
+  updatedAt: integer('updatedAt').notNull(),
+});
+
 export const mediaUpload = sqliteTable('mediaUpload', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: text('userId')

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mui简历</title>
+    <style>
+      :root {
+        --cream: #fdfaf2;
+        --paper: #f6efde;
+        --ink: #3a2e23;
+        --ink-soft: #5a4938;
+        --mute: #766852;
+        --yellow: #e6c34a;
+        --rule: #e0d3b8;
+        --radius: 6px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        width: 320px;
+        font: 14px/1.5 Nunito, "PingFang SC", "Hiragino Sans GB", sans-serif;
+        color: var(--ink);
+        background: var(--cream);
+      }
+      header {
+        padding: 12px 14px 8px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .eyebrow {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #b3851c;
+        margin: 0 0 4px;
+      }
+      h1 { font-size: 16px; margin: 0; }
+      main { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+      .card {
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background: var(--paper);
+        padding: 10px 12px;
+      }
+      .mute { color: var(--mute); font-size: 12px; }
+      .status { font-size: 12px; }
+      button {
+        appearance: none;
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background: var(--yellow);
+        color: var(--ink);
+        font: 700 14px/1 Nunito, sans-serif;
+        padding: 8px 12px;
+        cursor: pointer;
+        box-shadow: 0 3px 0 0 var(--ink);
+      }
+      button:active { transform: translateY(2px); box-shadow: 0 1px 0 0 var(--ink); }
+      button.ghost { background: var(--cream); }
+      button:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+      .row { display: flex; gap: 8px; }
+      .row button { flex: 1; }
+      a { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="eyebrow">Mui简历</p>
+      <h1>发给桌面端</h1>
+    </header>
+    <main>
+      <div class="card">
+        <div id="pair" class="status">正在连接桌面端…</div>
+      </div>
+      <div class="card">
+        <div id="page" class="status mute">当前页尚未识别为岗位。</div>
+      </div>
+      <div class="row">
+        <button id="capture" type="button" disabled>发给 Mui简历</button>
+        <button id="contribute" class="ghost" type="button" disabled>贡献给社区</button>
+      </div>
+      <p class="mute" id="hint">贡献不会自动勾选。桌面端没开时会先排队。</p>
+    </main>
+    <script src="./popup.js"></script>
+  </body>
+</html>

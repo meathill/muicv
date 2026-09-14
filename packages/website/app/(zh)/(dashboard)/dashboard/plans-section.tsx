@@ -20,6 +20,7 @@ const LEDGER_TYPE_LABEL: Record<string, string> = {
   stt_transcribe: '语音转写',
   tts: '语音合成',
   feedback_reward: '反馈奖励',
+  jd_contribute: '贡献岗位',
   admin_grant: '后台补发',
   admin_deduct: '后台扣款',
 };

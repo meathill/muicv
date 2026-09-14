@@ -1,5 +1,5 @@
+import type { ExtensionJobState } from '@muicv/shared';
 import { contextBridge, ipcRenderer } from 'electron';
-
 import type {
   AgentChunk,
   AppConfig,
@@ -209,6 +209,23 @@ const api: RendererApi = {
       const listener = (_e: Electron.IpcRendererEvent, ev: WhisperProgressEvent) => handler(ev);
       ipcRenderer.on('whisperEngine:progress', listener);
       return () => ipcRenderer.removeListener('whisperEngine:progress', listener);
+    },
+  },
+  extension: {
+    pairDecide: (nonce: string, approved: boolean) =>
+      ipcRenderer.invoke('extension:pairDecide', nonce, approved) as Promise<boolean>,
+    onPairRequest: (handler: (payload: { nonce: string }) => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, payload: { nonce: string }) => handler(payload);
+      ipcRenderer.on('extension:pairRequest', listener);
+      return () => ipcRenderer.removeListener('extension:pairRequest', listener);
+    },
+    onJob: (handler: (payload: ExtensionJobState & { title?: string; company?: string }) => void) => {
+      const listener = (
+        _e: Electron.IpcRendererEvent,
+        payload: ExtensionJobState & { title?: string; company?: string },
+      ) => handler(payload);
+      ipcRenderer.on('extension:job', listener);
+      return () => ipcRenderer.removeListener('extension:job', listener);
     },
   },
   speech: {

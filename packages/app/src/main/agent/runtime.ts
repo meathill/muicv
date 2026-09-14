@@ -28,6 +28,7 @@ import {
   streamIdleTimeoutMsForModel,
 } from './stream-helpers.ts';
 import { type ArtifactEmitter, buildFileTools } from './tools.ts';
+import { buildWebTools } from './web-tools.ts';
 
 const activeRuns = new Map<string, AbortController>();
 
@@ -85,6 +86,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   const tools = [
     ...buildFileTools(config.workspaceDir, emitArtifact),
     ...buildApiTools(config, emitArtifact),
+    ...buildWebTools(config),
     ...buildSyncTools(config),
     ...buildSttTools(config, sender),
     ...buildQuestionTools((waiting) => {

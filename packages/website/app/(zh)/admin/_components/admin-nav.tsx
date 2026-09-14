@@ -3,6 +3,7 @@ import Link from 'next/link';
 const TABS: { href: string; label: string; matchPrefix: string }[] = [
   { href: '/admin/users', label: '用户', matchPrefix: '/admin/users' },
   { href: '/admin/grants', label: '赠予记录', matchPrefix: '/admin/grants' },
+  { href: '/admin/jobs', label: '社区岗位', matchPrefix: '/admin/jobs' },
 ];
 
 export function AdminNav({ active }: { active: string }) {

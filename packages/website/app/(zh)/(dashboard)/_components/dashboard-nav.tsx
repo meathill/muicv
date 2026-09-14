@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/muirouter', label: '自带 API', hint: 'muirouter' },
   { href: '/dashboard/sync', label: '云同步', hint: '素材库快照' },
   { href: '/dashboard/previews', label: '在线预览', hint: '可分享链接' },
+  { href: '/dashboard/jobs', label: '我贡献的岗位', hint: '社区 JD' },
   { href: '/dashboard/pricing', label: '订阅 / 充值', hint: '月卡 + 补充包' },
 ];
 
