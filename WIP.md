@@ -1,8 +1,21 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-09-14
+最后更新：2026-09-23
 
 ## 当前进行中
+
+### 模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）
+
+- [x] `packages/shared/src/pricing.ts`：4 模型表（v2.6-flash 默认 / deepseek 保留 / gpt-6-luna/sol）+ alias 全链 + displayMeta（v2.6 开 vision+audio，mimo 价格不动）
+- [x] app 注释/文案同步（store 迁移 / runtime / chat-utils / recorder / types）+ api `llm.ts` 头注释
+- [x] 测试同步：shared pricing / api routes / app history-alias-endpoint-reasoning
+- [x] 文档：DEPLOYMENT / DEV_NOTE / WIP
+- [x] 文案全扫（重点 app）：chat-utils / runtime / recorder / types / audio-preview / scripts/verify-mimo-audio 已同步；选择器与设置页表驱动自动生效；muirouter 侧独立域不动
+- [x] `pnpm -r test` 全绿（shared 107 / api 142 / app 199）+ `format` + app `typecheck` + api dry-run + app build
+- [ ] 有 key 时跑 `scripts/opencode-go-probe.ts` 实探 `mimo-v2.6-flash` 在目录里
+- [x] 博客已发布（用户后台直发，线上 200 确认：`/posts/product/gpt-6-sol-luna-mimo-v2-6-flash`）；草稿 md 与一次性发布脚本已清理；IndexNow 122 个 URL 已提交
+- [x] 博客表格渲染修复（2026-09-24）：`marked` 能解析 GFM 表格，但 `.prose-mui` 缺表格样式导致无框挤作一团；`globals.css` 补 table/thead/th/td 样式（沿用 admin 表格同款 fluff 表头 + rule 边框 + paper 斑马纹），website build + dev 实拍验证通过
+- [ ] **用户**：`wrangler secret` 无需新增（复用 OPENCODE_GO / OPENAI），部署 api + 发版 app
 
 ### 插队任务：修复 Ahrefs 报的 56 个 `/:locale/posts/*` 404（2026-09-14）
 

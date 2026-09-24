@@ -306,6 +306,34 @@ body {
   font-family: var(--font-mono);
   font-size: 0.9em;
 }
+/* marked 输出的 GFM 表格：跟站内 admin 表格同款（fluff 表头 + rule 边框），移动端靠换行收纳。 */
+.prose-mui table {
+  width: 100%;
+  margin: 0 0 1.2em;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.7;
+  background: var(--color-cream);
+  border: 2px solid var(--color-rule-strong);
+}
+.prose-mui thead {
+  background: var(--color-fluff);
+}
+.prose-mui th,
+.prose-mui td {
+  padding: 8px 12px;
+  border: 1px solid var(--color-rule);
+  text-align: left;
+  vertical-align: top;
+}
+.prose-mui thead th {
+  border-bottom: 2px solid var(--color-rule-strong);
+  color: var(--color-ink);
+  font-weight: 800;
+}
+.prose-mui tbody tr:nth-child(even) {
+  background: var(--color-paper);
+}
 
 /* "press" 阴影工具类，可加到任意元素上 */
 .press {

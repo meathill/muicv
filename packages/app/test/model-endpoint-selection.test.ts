@@ -16,10 +16,10 @@ const baseConfig: AppConfig = {
   customLlmKey: null,
 };
 
-test('modelSupportsVision: deepseek-v4.1-flash 原生多模态支持 vision，mimo-v2.5 不支持', () => {
+test('modelSupportsVision: deepseek-v4.1-flash 与 mimo-v2.6-flash 均原生多模态支持 vision', () => {
   assert.equal(modelSupportsVision('deepseek-v4.1-flash'), true);
-  assert.equal(modelSupportsVision('mimo-v2.5'), false);
-  assert.equal(modelSupportsVision('gpt-5.6-luna'), true);
+  assert.equal(modelSupportsVision('mimo-v2.6-flash'), true);
+  assert.equal(modelSupportsVision('gpt-6-luna'), true);
 });
 
 test('默认模型不再按本轮是否带图切换：deepseek-v4.1-flash 原生吃图', () => {
@@ -33,7 +33,7 @@ test('旧 id 经 alias 收敛到 deepseek-v4.1-flash（含已移除的视觉实�
   assert.equal(resolveModelAlias('deepseek-v4-flash-vision-exp'), 'deepseek-v4.1-flash');
 });
 
-test('selectOpenAIAPI: deepseek-v4.1-flash 走 chat_completions，gpt-5.6-luna 走 responses', () => {
+test('selectOpenAIAPI: deepseek-v4.1-flash 走 chat_completions，gpt-6-luna 走 responses', () => {
   assert.equal(selectOpenAIAPI(baseConfig, 'deepseek-v4.1-flash'), 'chat_completions');
-  assert.equal(selectOpenAIAPI(baseConfig, 'gpt-5.6-luna'), 'responses');
+  assert.equal(selectOpenAIAPI(baseConfig, 'gpt-6-luna'), 'responses');
 });

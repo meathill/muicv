@@ -58,7 +58,7 @@ type StoredShape = {
   activeProfileId: string | null;
   muicvApiBase: string;
   defaultModel: string;
-  /** reasoning effort 力度档（GPT-5.6 系生效），非法值读盘时 normalize。 */
+  /** reasoning effort 力度档（GPT-6 系生效），非法值读盘时 normalize。 */
   llmReasoningEffort: ReasoningEffort;
   /** safeStorage 加密后的 muicv API key（mui_...） */
   muicvApiKeyCipher: string | null;
@@ -111,9 +111,15 @@ const store = new Store<LegacyShape>({
     },
     '0.5.3': (s) => {
       const current = s.get('defaultModel') as string | undefined;
-      // 兼容历史老版本（如 mimo-v2.5 / 已下架 gpt-5.4 / 表外旧默认）：
+      // 兼容历史老版本（如 mimo-v2.5 / mimo-v2.5-pro / 已下架 gpt-5.x / 表外旧默认）：
       // 若原默认模型为旧默认或已下架模型，自动迁移到当前默认模型
-      if (!current || current === 'mimo-v2.5' || current === 'mimo-v2.5-pro' || !isSupportedLlmModel(current)) {
+      if (
+        !current ||
+        current === 'mimo-v2.5' ||
+        current === 'mimo-v2.5-pro' ||
+        current === 'deepseek-v4-flash' ||
+        !isSupportedLlmModel(current)
+      ) {
         s.set('defaultModel', DEFAULT_CONFIG.defaultModel);
       }
       if (!s.has('llmReasoningEffort')) {
@@ -160,7 +166,7 @@ export function getConfig(): AppConfig {
   const profiles = (store.get('profiles') as Profile[]).map(normalizeProfile);
   const activeProfileId = store.get('activeProfileId');
   // 自带 endpoint 且配有 key 时为自定义模式；
-  // 无论是平台还是自定义，历史别名（如 mimo-v2.5-pro / gpt-5.4 / gpt-5.5）都自动升级收敛，避免 400 unsupported_model；
+  // 无论是平台还是自定义，历史别名（如 mimo-v2.5 / gpt-5.6-* / gpt-5.4 / gpt-5.5）都自动升级收敛，避免 400 unsupported_model；
   // 平台模式下未登记的未知 id 进一步静默回退到默认，不打扰用户。
   const customLlmBase = store.get('customLlmBase');
   const customLlmKey = decrypt(store.get('customLlmKeyCipher'));

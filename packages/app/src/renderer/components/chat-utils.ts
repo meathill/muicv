@@ -66,9 +66,9 @@ const KIND_LABEL: Record<AttachmentKind, string> = {
  * - PDF / DOCX：已经在 main 进程提取出 sidecar，明确告知 agent 走哪个 .txt
  * - 图像：分支处理——
  *     supportsVision=true：本条消息已经把图 base64 进 input_image，agent 直接看图
- *     supportsVision=false：模型看不到图（如 mimo 系），请用户用文字描述图片内容
+ *     supportsVision=false：模型看不到图（如自带 endpoint 的纯文本档），请用户用文字描述图片内容
  *   两种情况下 agent 都**禁止 read_file 二进制图片**——会拿到一堆乱码。
- *   默认模型 V4.1 Flash 原生多模态，恒为 true；该分支仅为 mimo 等纯文本档保留。
+ *   平台 4 模型全员原生多模态，恒为 true；false 分支仅为 BYOK 未知模型保留。
  *   简历用的证件照上传走"预览 drawer → 上传头像"UI 路径，agent 不参与。
  */
 export function formatAttachmentsFooter(
@@ -86,7 +86,7 @@ export function formatAttachmentsFooter(
     if (r.kind === 'audio') {
       return opts.supportsAudioInput
         ? `${head}，已随消息附音频，模型直接听原音，不要 read_file）`
-        : `${head}，当前模型不支持音频，请切到 mimo-v2.5 再发，或先做语音转写。不要 read_file）`;
+        : `${head}，当前模型不支持音频，请切到 mimo-v2.6-flash 再发，或先做语音转写。不要 read_file）`;
     }
     return r.textPath ? `${head}，已提取文本：${r.textPath}）` : `${head}）`;
   });

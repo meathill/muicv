@@ -24,7 +24,7 @@ import { isThinkingModeModel, loggingFetch } from './reasoning-capture.ts';
  *     双向透传依赖 chat_completions SSE 解析，见 reasoning-capture.ts）
  *   - 自带 customLlmBase 的第三方 OpenAI 兼容代理（Groq/Together 等） →
  *     chat_completions（这些代理普遍没实现 /v1/responses）
- *   - 其余（含 OpenAI gpt-5.x 等 reasoning 模型） → responses
+ *   - 其余（含 OpenAI gpt-6 等 reasoning 模型） → responses
  *     （function tools + reasoning_effort 在 chat_completions 端会被官方 400 拒绝）
  */
 let configuredKey: string | null = null;

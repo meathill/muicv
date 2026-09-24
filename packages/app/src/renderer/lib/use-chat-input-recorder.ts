@@ -11,7 +11,7 @@ type Opts = {
   pendingCursorRef: RefObject<number | null>;
   onMicError: (message: string) => void;
   /**
-   * 当前模型是否原生听音频（mimo-v2.5 全模态）。true 时麦克风按下走 recordAndAttach
+   * 当前模型是否原生听音频（mimo-v2.6-flash 全模态）。true 时麦克风按下走 recordAndAttach
    * 把 wav 落 inbox/ 当 audio 附件，跳过 Whisper STT；false 时走老的 recordAndTranscribe。
    */
   audioPassthrough?: boolean;
@@ -128,7 +128,7 @@ export function useChatInputRecorder(opts: Opts): {
         const outcome = await window.muicv.audio.recordAndAttach({ profileId, durationLimitSec: 180 });
         if (outcome.ok) {
           addAttachment(outcome.ref);
-          setInfo('已录入语音附件，直接发送让模型听原音（mimo-v2.5 全模态）');
+          setInfo('已录入语音附件，直接发送让模型听原音（mimo-v2.6-flash 全模态）');
         } else if (outcome.reason !== 'cancel') {
           opts.onMicError(outcome.message);
         }

@@ -52,7 +52,7 @@ export type AppConfig = {
   defaultModel: string;
   /**
    * reasoning effort 力度（low/medium/high/xhigh，默认 xhigh）。
-   * 仅对 modelSupportsReasoningEffort() 为 true 的模型生效（当前 GPT-5.6 家族），
+   * 仅对 modelSupportsReasoningEffort() 为 true 的模型生效（当前 GPT-6 家族），
    * responses 端注入 `reasoning: { effort }`、chat_completions 端 `reasoning_effort`。
    */
   llmReasoningEffort: ReasoningEffort;
@@ -484,7 +484,7 @@ export type AudioRecordOutcome =
     };
 
 /**
- * mimo-v2.5 全模态分支：录音直接落盘当 audio 附件，跳过 STT 的回执。
+ * mimo-v2.6-flash 全模态分支：录音直接落盘当 audio 附件，跳过 STT 的回执。
  * 成功 = 拿到 AttachmentRef（kind='audio'），renderer push 到 pendingAttachments。
  * 失败比 AudioRecordOutcome 多 'recording-error'，区别于"录音 OK 但转写失败"。
  */
@@ -861,7 +861,7 @@ export type RendererApi = {
     /** chatbox 麦克风按钮：renderer 主动触发一次录音 → 转写。 */
     recordAndTranscribe(opts: { durationLimitSec?: number }): Promise<AudioRecordOutcome>;
     /**
-     * mimo-v2.5 全模态分支：录一段 → 直接落 inbox/ 当 audio 附件（不做 Whisper STT）。
+     * mimo-v2.6-flash 全模态分支：录一段 → 直接落 inbox/ 当 audio 附件（不做 Whisper STT）。
      * 成功时返回的 AttachmentRef.kind === 'audio'，调用方应推入 pendingAttachments，
      * 让发送时走 input_audio content block。
      */

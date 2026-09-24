@@ -873,6 +873,15 @@ $10/月订阅）提供 ~25 个开源模型的 OpenAI 兼容 REST（`https://open
 边际成本≈0。量大之后计划切 **zen** 按量付费——切回时只需改 `shared/pricing.ts` 各条的
 `upstream` + `api/routes/llm.ts` 的 base/key 映射，路由本身已是表驱动，没有前缀 if。
 
+**模型换代（2026-09-23）：默认切 `mimo-v2.6-flash`，GPT-6 Sol/Luna 上线，Terra 下线**
+
+- 新默认 `mimo-v2.6-flash`@oc-go：原生全模态（图文音视频直通），1M context，工具调用强。价格沿用 v2.5（input 0.008 / output 0.2，显示价 $0.08/$2.00 不变），用户无感。`supportsVision` 从 false 改为 true（v2.5 怕误发图炸 400 而关闭，v2.6 官方确认原生 vision）。
+- `deepseek-v4.1-flash` 保留为包月主力（唯一保留的旧模型）。
+- GPT-6（2026-09-22 发布）：`gpt-6-sol`（$2/$0.2/$10，rate 0.2/0.02/1.0）、`gpt-6-luna`（$0.10/$0.01/$0.50，rate 0.01/0.001/0.05），永久价。GPT-6 家族无 Terra，老 `gpt-5.6-terra` alias 并入 `gpt-6-sol`（价格最接近）。
+- alias 全链：`mimo-v2.5(-pro)`→`mimo-v2.6-flash`；`gpt-5.6-luna`→`gpt-6-luna`；`gpt-5.6-sol/terra`、`gpt-5.4/5.5`→`gpt-6-sol`。老用户不断流。
+- reasoning effort 仍是 UI 四档（low~xhigh，默认 xhigh），GPT-6 原生支持 none~max，我方四档是其子集，无需扩档。
+- `getModelBudget` 不变：mimo 系 800k，其余 204.8k（GPT-6 虽有 1M context，仍按 256k 保守值防历史爆炸）。
+
 **最终矩阵**：默认文本 `deepseek-v4.1-flash`@oc-go（原生多模态，2026-09 从 `deepseek-v4-flash`
 升级）；语音理解 `mimo-v2.5`@oc-go（同 id 从 Xiaomi
 直连迁过来，价格不变用户无感）；升级档 `gpt-5.6-luna/terra/sol`@OpenAI（luna 是便宜档
@@ -905,7 +914,7 @@ TTS 在用。
   （需 `OPENCODE_GO_API_KEY`），别再跳过。
   （2026-09 复查：该 id 上游已上线且多模态，遂正式落表为默认。）
 
-**GPT-5.6 家族（Sol/Terra/Luna）**：OpenAI 2026 推出的三档变体，走 `/v1/responses`，
+**GPT-6 家族（Sol/Luna，2026-09-22 发布；5.6 已下线）**：OpenAI 三档变体 Astra/Sol/Luna 中的后两者，走 `/v1/responses`，
 reasoning.effort 支持 none..max 六级；平台 UI 只放 low/medium/high/xhigh（默认 xhigh）。
 effort 由 app 端 Agent.modelSettings.providerData 注入：responses 用 `reasoning:{effort}`、
 chat_completions 用平铺 `reasoning_effort`，字段名随 `configureLlmForRun` 选定的端点形态切换。
@@ -918,7 +927,7 @@ assistant 角色放待合成文本（放 user 不合成）、user 角色可选�
 TTS_RATE_PER_CHAR），账单在小米控制台可看。
 
 **语音链路全景**（别混淆）：STT 转写 = Cloudflare Workers AI Whisper（AI binding，不花钱在
-大模型侧）；对话音频直通 = mimo-v2.5@oc-go input_audio（scripts/verify-mimo-audio.ts 验过）；
+大模型侧）；对话音频直通 = mimo-v2.6-flash@oc-go input_audio（前代 v2.5 由 scripts/verify-mimo-audio.ts 验过，v2.6 官方全模态延续）；
 朗读/TTS = /audio/tts → 小米直连。
 
 **已知技术债**：packages/api 没有 typecheck script，手跑 `tsc --noEmit` 有 ~38 行存量报错

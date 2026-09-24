@@ -25,9 +25,8 @@ import type { AttachmentRef, ChatMessage } from '../../shared/types.ts';
 const DEFAULT_CONTEXT_LIMIT = 256_000;
 
 /**
- * mimo 系列 context window 上限。Xiaomi v2.5 降价后取消了 256K 阶梯计价，
- * 全 context（最高 1M）统一价，所以让 mimo 吃满 1M。
- * 见 https://platform.xiaomimimo.com/docs/zh-CN/news/v2.5-price-update
+ * mimo 系列 context window 上限。Xiaomi v2.6 全模态 1M context，
+ * 全 context 统一价，所以让 mimo 吃满 1M。
  */
 const MIMO_CONTEXT_LIMIT = 1_000_000;
 
@@ -66,7 +65,7 @@ export function getModelBudget(modelId: string): number {
 export type ImageReader = (ref: AttachmentRef) => Promise<string | null>;
 export type AudioReader = (ref: AttachmentRef) => Promise<string | null>;
 
-/** mimo-v2.5 / mimo-v2-omni 原生听音支持的容器格式，对应上游 input_audio.format。 */
+/** mimo-v2.6-flash 原生听音支持的容器格式，对应上游 input_audio.format。 */
 type AudioFormat = 'wav' | 'mp3' | 'flac' | 'm4a' | 'ogg';
 
 const AUDIO_FORMAT_BY_MIME: Record<string, AudioFormat> = {

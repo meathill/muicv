@@ -66,20 +66,14 @@ describe('Pricing', () => {
   });
 
   describe('LLM_PRICING table', () => {
-    it('包含 5 个支持的 model（声明顺序 = UI 展示顺序，默认在前）', () => {
-      assert.deepEqual(SUPPORTED_LLM_MODELS, [
-        'deepseek-v4.1-flash',
-        'mimo-v2.5',
-        'gpt-5.6-luna',
-        'gpt-5.6-terra',
-        'gpt-5.6-sol',
-      ]);
+    it('包含 4 个支持的 model（声明顺序 = UI 展示顺序，默认在前）', () => {
+      assert.deepEqual(SUPPORTED_LLM_MODELS, ['mimo-v2.6-flash', 'deepseek-v4.1-flash', 'gpt-6-luna', 'gpt-6-sol']);
     });
 
-    it('upstream 归属：文本主力与语音理解走 OpenCode Go，GPT 升级档走 OpenAI', () => {
+    it('upstream 归属：默认全模态与包月主力走 OpenCode Go，GPT 升级档走 OpenAI', () => {
+      assert.equal(LLM_PRICING['mimo-v2.6-flash'].upstream, 'opencode-go');
       assert.equal(LLM_PRICING['deepseek-v4.1-flash'].upstream, 'opencode-go');
-      assert.equal(LLM_PRICING['mimo-v2.5'].upstream, 'opencode-go');
-      for (const id of ['gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol']) {
+      for (const id of ['gpt-6-luna', 'gpt-6-sol']) {
         assert.equal(LLM_PRICING[id].upstream, 'openai');
       }
     });
@@ -97,9 +91,14 @@ describe('Pricing', () => {
     });
 
     it('isSupportedLlmModel 正/负样本（含已下架旧 id）', () => {
+      assert.equal(isSupportedLlmModel('mimo-v2.6-flash'), true);
       assert.equal(isSupportedLlmModel('deepseek-v4.1-flash'), true);
-      assert.equal(isSupportedLlmModel('mimo-v2.5'), true);
-      assert.equal(isSupportedLlmModel('gpt-5.6-luna'), true);
+      assert.equal(isSupportedLlmModel('gpt-6-luna'), true);
+      assert.equal(isSupportedLlmModel('gpt-6-sol'), true);
+      assert.equal(isSupportedLlmModel('mimo-v2.5'), false); // 已下架，通过 alias 兼容
+      assert.equal(isSupportedLlmModel('gpt-5.6-luna'), false); // 已下架，通过 alias 兼容
+      assert.equal(isSupportedLlmModel('gpt-5.6-terra'), false); // 已下架，通过 alias 兼容
+      assert.equal(isSupportedLlmModel('gpt-5.6-sol'), false); // 已下架，通过 alias 兼容
       assert.equal(isSupportedLlmModel('deepseek-v4-flash'), false); // 已下架，通过 alias 兼容
       assert.equal(isSupportedLlmModel('deepseek-v4-flash-vision-exp'), false); // 已下架，通过 alias 兼容
       assert.equal(isSupportedLlmModel('mimo-v2.5-pro'), false); // 已下架，通过 alias 兼容
@@ -111,11 +110,15 @@ describe('Pricing', () => {
     it('resolveModelAlias：已下架别名映射到目标兼容模型，其他模型原样返回', () => {
       assert.equal(resolveModelAlias('deepseek-v4-flash'), 'deepseek-v4.1-flash');
       assert.equal(resolveModelAlias('deepseek-v4-flash-vision-exp'), 'deepseek-v4.1-flash');
-      assert.equal(resolveModelAlias('mimo-v2.5-pro'), 'deepseek-v4.1-flash');
-      assert.equal(resolveModelAlias('gpt-5.4'), 'gpt-5.6-sol');
-      assert.equal(resolveModelAlias('gpt-5.5'), 'gpt-5.6-sol');
-      assert.equal(resolveModelAlias('deepseek-v4.1-flash'), 'deepseek-v4.1-flash');
-      assert.equal(resolveModelAlias('gpt-5.6-luna'), 'gpt-5.6-luna');
+      assert.equal(resolveModelAlias('mimo-v2.5-pro'), 'mimo-v2.6-flash');
+      assert.equal(resolveModelAlias('mimo-v2.5'), 'mimo-v2.6-flash');
+      assert.equal(resolveModelAlias('gpt-5.6-luna'), 'gpt-6-luna');
+      assert.equal(resolveModelAlias('gpt-5.6-sol'), 'gpt-6-sol');
+      assert.equal(resolveModelAlias('gpt-5.6-terra'), 'gpt-6-sol');
+      assert.equal(resolveModelAlias('gpt-5.4'), 'gpt-6-sol');
+      assert.equal(resolveModelAlias('gpt-5.5'), 'gpt-6-sol');
+      assert.equal(resolveModelAlias('mimo-v2.6-flash'), 'mimo-v2.6-flash');
+      assert.equal(resolveModelAlias('gpt-6-luna'), 'gpt-6-luna');
       assert.equal(resolveModelAlias('unknown-model'), 'unknown-model');
       assert.equal(resolveModelAlias(null), null);
       assert.equal(resolveModelAlias(undefined), undefined);
@@ -125,16 +128,20 @@ describe('Pricing', () => {
       assert.ok(SUPPORTED_LLM_MODELS.includes(DEFAULT_LLM_MODEL), `DEFAULT_LLM_MODEL=${DEFAULT_LLM_MODEL} 未注册`);
     });
 
-    it('DEFAULT_LLM_MODEL 是 deepseek-v4.1-flash（OpenCode Go 包月供给的多模态省成本默认）', () => {
-      assert.equal(DEFAULT_LLM_MODEL, 'deepseek-v4.1-flash');
+    it('DEFAULT_LLM_MODEL 是 mimo-v2.6-flash（OpenCode Go 包月供给的全模态默认）', () => {
+      assert.equal(DEFAULT_LLM_MODEL, 'mimo-v2.6-flash');
     });
 
     it('normalizeModel：别名模型映射到对应兼容模型，未知模型静默回退到默认', () => {
       assert.equal(normalizeModel('deepseek-v4-flash'), 'deepseek-v4.1-flash');
       assert.equal(normalizeModel('deepseek-v4-flash-vision-exp'), 'deepseek-v4.1-flash');
-      assert.equal(normalizeModel('mimo-v2.5-pro'), 'deepseek-v4.1-flash');
-      assert.equal(normalizeModel('gpt-5.4'), 'gpt-5.6-sol');
-      assert.equal(normalizeModel('gpt-5.5'), 'gpt-5.6-sol');
+      assert.equal(normalizeModel('mimo-v2.5-pro'), 'mimo-v2.6-flash');
+      assert.equal(normalizeModel('mimo-v2.5'), 'mimo-v2.6-flash');
+      assert.equal(normalizeModel('gpt-5.6-luna'), 'gpt-6-luna');
+      assert.equal(normalizeModel('gpt-5.6-sol'), 'gpt-6-sol');
+      assert.equal(normalizeModel('gpt-5.6-terra'), 'gpt-6-sol');
+      assert.equal(normalizeModel('gpt-5.4'), 'gpt-6-sol');
+      assert.equal(normalizeModel('gpt-5.5'), 'gpt-6-sol');
       assert.equal(normalizeModel('foo'), DEFAULT_LLM_MODEL);
       assert.equal(normalizeModel(null), DEFAULT_LLM_MODEL);
       assert.equal(normalizeModel(undefined), DEFAULT_LLM_MODEL);
@@ -154,25 +161,24 @@ describe('Pricing', () => {
         assert.ok(meta.inputPrice, `${id} 应该有 inputPrice`);
         assert.ok(meta.outputPrice, `${id} 应该有 outputPrice`);
       }
-      assert.equal(LLM_DISPLAY_META['mimo-v2.5'].inputPrice, '$0.08 / 1M');
-      assert.equal(LLM_DISPLAY_META['mimo-v2.5'].outputPrice, '$2.00 / 1M');
+      assert.equal(LLM_DISPLAY_META['mimo-v2.6-flash'].inputPrice, '$0.08 / 1M');
+      assert.equal(LLM_DISPLAY_META['mimo-v2.6-flash'].outputPrice, '$2.00 / 1M');
     });
   });
 
   describe('capability flags', () => {
-    it('modelSupportsAudioInput 只对 mimo-v2.5（全模态）为 true', () => {
-      assert.equal(modelSupportsAudioInput('mimo-v2.5'), true);
+    it('modelSupportsAudioInput 只对 mimo-v2.6-flash（全模态）为 true', () => {
+      assert.equal(modelSupportsAudioInput('mimo-v2.6-flash'), true);
       assert.equal(modelSupportsAudioInput('deepseek-v4.1-flash'), false);
-      assert.equal(modelSupportsAudioInput('gpt-5.6-luna'), false);
+      assert.equal(modelSupportsAudioInput('gpt-6-luna'), false);
       assert.equal(modelSupportsAudioInput('unknown-model'), false);
     });
 
-    it('modelSupportsVision：GPT-5.6 系与 deepseek-v4.1-flash 原生 vision；mimo 关闭', () => {
-      assert.equal(modelSupportsVision('gpt-5.6-luna'), true);
-      assert.equal(modelSupportsVision('gpt-5.6-terra'), true);
-      assert.equal(modelSupportsVision('gpt-5.6-sol'), true);
+    it('modelSupportsVision：GPT-6 系、deepseek-v4.1-flash 与 mimo-v2.6-flash 均原生 vision', () => {
+      assert.equal(modelSupportsVision('gpt-6-luna'), true);
+      assert.equal(modelSupportsVision('gpt-6-sol'), true);
       assert.equal(modelSupportsVision('deepseek-v4.1-flash'), true);
-      assert.equal(modelSupportsVision('mimo-v2.5'), false);
+      assert.equal(modelSupportsVision('mimo-v2.6-flash'), true);
       assert.equal(modelSupportsVision('unknown-model'), false);
     });
 
@@ -183,12 +189,11 @@ describe('Pricing', () => {
       assert.equal(modelSupportsToolCalls('brand-new-model'), true);
     });
 
-    it('modelSupportsReasoningEffort 只有 GPT-5.6 家族可调', () => {
-      assert.equal(modelSupportsReasoningEffort('gpt-5.6-luna'), true);
-      assert.equal(modelSupportsReasoningEffort('gpt-5.6-terra'), true);
-      assert.equal(modelSupportsReasoningEffort('gpt-5.6-sol'), true);
+    it('modelSupportsReasoningEffort 只有 GPT-6 家族可调', () => {
+      assert.equal(modelSupportsReasoningEffort('gpt-6-luna'), true);
+      assert.equal(modelSupportsReasoningEffort('gpt-6-sol'), true);
       assert.equal(modelSupportsReasoningEffort('deepseek-v4.1-flash'), false);
-      assert.equal(modelSupportsReasoningEffort('mimo-v2.5'), false);
+      assert.equal(modelSupportsReasoningEffort('mimo-v2.6-flash'), false);
       assert.equal(modelSupportsReasoningEffort('unknown-model'), false);
     });
 
@@ -204,40 +209,40 @@ describe('Pricing', () => {
   });
 
   describe('computeLlmCharge', () => {
-    it('gpt-5.6-luna：1k input + 1k output', () => {
-      // (1000 × 0.02 + 1000 × 0.12) × 1.1 × 10_000 = 140 × 1.1 × 10_000 = 1_540_000
-      const cost = computeLlmCharge('gpt-5.6-luna', 1000, 1000);
-      assert.equal(cost, Math.ceil(140 * LLM_RATIO * TOKEN_PRECISION));
+    it('gpt-6-luna：1k input + 1k output', () => {
+      // (1000 × 0.01 + 1000 × 0.05) × 1.1 × 10_000 = 60 × 1.1 × 10_000 = 660_000
+      const cost = computeLlmCharge('gpt-6-luna', 1000, 1000);
+      assert.equal(cost, Math.ceil(60 * LLM_RATIO * TOKEN_PRECISION));
     });
 
-    it('gpt-5.6-luna：纯 input', () => {
-      // 1000 × 0.02 × 1.1 × 10_000 = 220_000
-      const cost = computeLlmCharge('gpt-5.6-luna', 1000, 0);
-      assert.equal(cost, Math.ceil(20 * LLM_RATIO * TOKEN_PRECISION));
+    it('gpt-6-luna：纯 input', () => {
+      // 1000 × 0.01 × 1.1 × 10_000 = 110_000
+      const cost = computeLlmCharge('gpt-6-luna', 1000, 0);
+      assert.equal(cost, Math.ceil(10 * LLM_RATIO * TOKEN_PRECISION));
     });
 
-    it('gpt-5.6-terra：input + output 不对称', () => {
-      // 100 × 0.2 + 200 × 1.2 = 20 + 240 = 260 显示 token
-      const cost = computeLlmCharge('gpt-5.6-terra', 100, 200);
-      assert.equal(cost, Math.ceil(260 * LLM_RATIO * TOKEN_PRECISION));
+    it('gpt-6-sol：input + output 不对称', () => {
+      // 100 × 0.2 + 200 × 1.0 = 20 + 200 = 220 显示 token
+      const cost = computeLlmCharge('gpt-6-sol', 100, 200);
+      assert.equal(cost, Math.ceil(220 * LLM_RATIO * TOKEN_PRECISION));
     });
 
-    it('gpt-5.6-sol：官方 $4 / $20 per 1M 校准计费', () => {
-      // 100 × 0.4 + 100 × 2.0 = 40 + 200 = 240 显示 token
-      const cost = computeLlmCharge('gpt-5.6-sol', 100, 100);
-      assert.equal(cost, Math.ceil(240 * LLM_RATIO * TOKEN_PRECISION));
+    it('gpt-6-sol：官方 $2 / $10 per 1M 校准计费', () => {
+      // 100 × 0.2 + 100 × 1.0 = 20 + 100 = 120 显示 token
+      const cost = computeLlmCharge('gpt-6-sol', 100, 100);
+      assert.equal(cost, Math.ceil(120 * LLM_RATIO * TOKEN_PRECISION));
     });
 
-    it('mimo-v2.5：极廉价输入精度被保留（μ 级别 ceil）', () => {
+    it('mimo-v2.6-flash：极廉价输入精度被保留（μ 级别 ceil）', () => {
       // 1 input × 0.008 = 0.008 显示 token
       // ceil(0.008 × 1.1 × 10_000) = ceil(88) = 88 μ
       // 旧公式（整数 ceil 显示 token）：ceil(0.008 × 1.1) = 1 显示 token = 10_000 μ，溢扣 113×
-      const cost = computeLlmCharge('mimo-v2.5', 1, 0);
+      const cost = computeLlmCharge('mimo-v2.6-flash', 1, 0);
       assert.equal(cost, 88);
     });
 
     it('0 + 0 → 0', () => {
-      assert.equal(computeLlmCharge('gpt-5.6-luna', 0, 0), 0);
+      assert.equal(computeLlmCharge('gpt-6-luna', 0, 0), 0);
     });
 
     it('未知 model → null', () => {
@@ -247,28 +252,28 @@ describe('Pricing', () => {
     });
 
     it('cachedTokens=0 与省略参数等价（回归保护）', () => {
-      assert.equal(computeLlmCharge('gpt-5.6-luna', 1000, 500, 0), computeLlmCharge('gpt-5.6-luna', 1000, 500));
+      assert.equal(computeLlmCharge('gpt-6-luna', 1000, 500, 0), computeLlmCharge('gpt-6-luna', 1000, 500));
     });
 
-    it('gpt-5.6-luna：cached 命中应严格便宜', () => {
+    it('gpt-6-luna：cached 命中应严格便宜', () => {
       // fresh=200, cached=800, completion=500
-      // cost = 200 × 0.02 + 800 × 0.002 + 500 × 0.12 = 4 + 1.6 + 60 = 65.6 显示 token
-      const withCache = computeLlmCharge('gpt-5.6-luna', 1000, 500, 800);
-      const withoutCache = computeLlmCharge('gpt-5.6-luna', 1000, 500, 0);
-      assert.equal(withCache, Math.ceil((4 + 1.6 + 60) * LLM_RATIO * TOKEN_PRECISION));
+      // cost = 200 × 0.01 + 800 × 0.001 + 500 × 0.05 = 2 + 0.8 + 25 = 27.8 显示 token
+      const withCache = computeLlmCharge('gpt-6-luna', 1000, 500, 800);
+      const withoutCache = computeLlmCharge('gpt-6-luna', 1000, 500, 0);
+      assert.equal(withCache, Math.ceil((2 + 0.8 + 25) * LLM_RATIO * TOKEN_PRECISION));
       assert.ok(withCache! < withoutCache!, 'cached 命中应该严格便宜');
     });
 
     it('cachedTokens > promptTokens 时 clamp 到 promptTokens', () => {
       // 全 prompt 命中 cache，等价于 cached=1000
-      const clamped = computeLlmCharge('gpt-5.6-luna', 1000, 500, 99_999);
-      const allCached = computeLlmCharge('gpt-5.6-luna', 1000, 500, 1000);
+      const clamped = computeLlmCharge('gpt-6-luna', 1000, 500, 99_999);
+      const allCached = computeLlmCharge('gpt-6-luna', 1000, 500, 1000);
       assert.equal(clamped, allCached);
     });
 
     it('mimo cachedInputRate=inputRate 时，cached 不影响价格', () => {
-      const a = computeLlmCharge('mimo-v2.5', 1000, 200, 0);
-      const b = computeLlmCharge('mimo-v2.5', 1000, 200, 800);
+      const a = computeLlmCharge('mimo-v2.6-flash', 1000, 200, 0);
+      const b = computeLlmCharge('mimo-v2.6-flash', 1000, 200, 800);
       assert.equal(a, b);
     });
   });

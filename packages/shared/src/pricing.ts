@@ -86,9 +86,9 @@ export const JD_CONTRIBUTE_DAILY_CAP = 8;
 
 /**
  * 平台 LLM 上游标识。**查表分流**的唯一依据，routes/llm.ts 据此选 base + secret。
- *   - openai：GPT-5.6 家族直连 api.openai.com（premium 升级档）
- *   - opencode-go：OpenCode Go 包月订阅（https://opencode.ai/zen/go），文字主力 +
- *     语音理解全部走它，成本锁死在订阅费内。量大了切 zen 按量付费。
+ *   - openai：GPT-6 家族直连 api.openai.com（premium 升级档）
+ *   - opencode-go：OpenCode Go 包月订阅（https://opencode.ai/zen/go），默认全模态 +
+ *     包月主力全部走它，成本锁死在订阅费内。量大了切 zen 按量付费。
  */
 export type LlmUpstream = 'openai' | 'opencode-go';
 
@@ -104,31 +104,28 @@ export type LlmUpstream = 'openai' | 'opencode-go';
  * cached_tokens 由上游 usage 提供，注意 OpenAI 约定下它**已计入**
  * prompt_tokens，扣账时要减出新鲜部分单独算价。
  * 数据来源（review 时核对）：
- *   - gpt-5.6-luna：developers.openai.com 官方刊例 $0.20 / $0.02 cached / $1.20 per 1M（2026-08 校准）
- *   - gpt-5.6-terra：同上 $2 / $0.2 / $12
- *   - gpt-5.6-sol：同上 $4 / $0.4 / $20
- *   - deepseek-v4.1-flash / mimo-v2.5：OpenCode Go 包月供给，边际成本≈配额摊销；
+ *   - gpt-6-luna：developers.openai.com 官方刊例 $0.10 / $0.01 cached / $0.50 per 1M（2026-09-22 发布校准）
+ *   - gpt-6-sol：同上 $2 / $0.2 / $10（永久价，非促销；GPT-6 家族无 Terra）
+ *   - mimo-v2.6-flash / deepseek-v4.1-flash：OpenCode Go 包月供给，边际成本≈配额摊销；
  *     价格对齐各厂商公开 API 价位段取整，包月期内偏毛利（quota 内近乎零成本）
  *
  * 平台路径（余额 > 0）只接受表里的 model；表外 model 在 routes/llm.ts 拦截 400。
  * muirouter fallback 路径不受本表约束（model 列表由 muirouter 端管理）。
  */
 // 声明顺序 = ModelCard / 设置页的可视顺序：默认文本模型在前，
-// 语音理解专用次之，最后是 GPT-5.6 升级梯队。
+// 其次是包月主力，最后是 GPT-6 升级梯队。
 export const LLM_PRICING: Record<
   string,
   { upstream: LlmUpstream; inputRate: number; cachedInputRate: number; outputRate: number }
 > = {
-  // OpenCode Go 包月，DeepSeek V4.1 Flash 快而便宜、原生多模态、工具调用强——日常对话主力
+  // OpenCode Go 包月，MiMo v2.6 Flash 全模态（图文音视频直通）、工具调用强——日常对话默认
+  'mimo-v2.6-flash': { upstream: 'opencode-go', inputRate: 0.008, cachedInputRate: 0.008, outputRate: 0.2 },
+  // OpenCode Go 包月，DeepSeek V4.1 Flash 快而便宜、原生多模态——包月主力保留
   'deepseek-v4.1-flash': { upstream: 'opencode-go', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.08 },
-  // 同 id 从 Xiaomi 直连迁到 OpenCode Go（价格不变，用户无感）；语音理解 / 音频直通专用
-  'mimo-v2.5': { upstream: 'opencode-go', inputRate: 0.008, cachedInputRate: 0.008, outputRate: 0.2 },
-  // 上游 $0.20 / cached $0.02 / output $1.20 per 1M —— 重推理性价比档，默认 xhigh
-  'gpt-5.6-luna': { upstream: 'openai', inputRate: 0.02, cachedInputRate: 0.002, outputRate: 0.12 },
-  // 上游 $2 / $0.2 / $12 per 1M —— balanced 升级档
-  'gpt-5.6-terra': { upstream: 'openai', inputRate: 0.2, cachedInputRate: 0.02, outputRate: 1.2 },
-  // 上游 $4 / $0.4 / $20 per 1M —— 旗舰升级档
-  'gpt-5.6-sol': { upstream: 'openai', inputRate: 0.4, cachedInputRate: 0.04, outputRate: 2.0 },
+  // 上游 $0.10 / cached $0.01 / output $0.50 per 1M —— 高频海量性价比档，默认 xhigh
+  'gpt-6-luna': { upstream: 'openai', inputRate: 0.01, cachedInputRate: 0.001, outputRate: 0.05 },
+  // 上游 $2 / $0.2 / $10 per 1M —— 复杂编码 / agent 主力档
+  'gpt-6-sol': { upstream: 'openai', inputRate: 0.2, cachedInputRate: 0.02, outputRate: 1.0 },
 };
 
 /** markup：所有 model 统一 1.1×。等于「上游成本 + 10% 加价」。 */
@@ -140,15 +137,20 @@ export const LLM_RATIO = 1.1;
  *   - deepseek-v4-flash 下架后兼容重定向到 deepseek-v4.1-flash
  *   - deepseek-v4-flash-vision-exp 是已移除的视觉实验变体，旧客户端带图时仍会发它，
  *     也重定向到 4.1（多模态）避免 400
- *   - mimo-v2.5-pro 下架后兼容重定向到 deepseek-v4.1-flash
- *   - gpt-5.4 / gpt-5.5 升级重定向到同档位的 gpt-5.6-sol
+ *   - mimo-v2.5 / mimo-v2.5-pro 下架后兼容重定向到 mimo-v2.6-flash（同系全模态升级）
+ *   - gpt-5.6-luna 升级重定向到 gpt-6-luna；gpt-5.6-sol / gpt-5.6-terra / gpt-5.4 / gpt-5.5
+ *     统一重定向到 gpt-6-sol（GPT-6 家族无 Terra，terra 就近并入 sol）
  */
 export const LLM_MODEL_ALIASES: Record<string, string> = {
   'deepseek-v4-flash': 'deepseek-v4.1-flash',
   'deepseek-v4-flash-vision-exp': 'deepseek-v4.1-flash',
-  'mimo-v2.5-pro': 'deepseek-v4.1-flash',
-  'gpt-5.4': 'gpt-5.6-sol',
-  'gpt-5.5': 'gpt-5.6-sol',
+  'mimo-v2.5-pro': 'mimo-v2.6-flash',
+  'mimo-v2.5': 'mimo-v2.6-flash',
+  'gpt-5.6-luna': 'gpt-6-luna',
+  'gpt-5.6-sol': 'gpt-6-sol',
+  'gpt-5.6-terra': 'gpt-6-sol',
+  'gpt-5.4': 'gpt-6-sol',
+  'gpt-5.5': 'gpt-6-sol',
 };
 
 /** 解析别名。若有兼容别名则返回目标模型名，否则返回原始字符串。 */
@@ -167,7 +169,7 @@ export function isSupportedLlmModel(model: string): boolean {
 export const SUPPORTED_LLM_MODELS = Object.keys(LLM_PRICING);
 
 /** 全平台默认模型 id。新装 / 老 store 里没设过时回退到这个；UI 也按 isDefault 标识。 */
-export const DEFAULT_LLM_MODEL = 'deepseek-v4.1-flash';
+export const DEFAULT_LLM_MODEL = 'mimo-v2.6-flash';
 
 /**
  * 校验 / 回退用户保存的 model id。优先解析兼容别名，未知静默回退到默认，不弹窗。
@@ -202,13 +204,13 @@ export const LLM_DISPLAY_META: Record<
     isDefault?: boolean;
     /**
      * 该模型是否接受 reasoning.effort 参数（设置页据此出「推理力度」选择器）。
-     * 当前只有 OpenAI GPT-5.6 家族；DeepSeek / mimo 由服务端固定策略，不暴露调节。
+     * 当前只有 OpenAI GPT-6 家族；DeepSeek / mimo 由服务端固定策略，不暴露调节。
      */
     supportsReasoningEffort?: boolean;
     /**
      * 当前 muicv 平台路径下该 model id 是否能接受图像 input。
-     * 模型本身能力 ≠ 平台路由能力——GPT-5.6 系走 OpenAI 原生 vision；
-     * DeepSeek V4.1 Flash 起原生多模态，直接吃图；mimo 系与纯文本档保守关掉避免误发图炸 400。
+     * 模型本身能力 ≠ 平台路由能力——GPT-6 系走 OpenAI 原生 vision；
+     * DeepSeek V4.1 Flash 与 MiMo v2.6 Flash 均原生多模态，直接吃图。
      */
     supportsVision: boolean;
     /**
@@ -223,57 +225,47 @@ export const LLM_DISPLAY_META: Record<
      * 为 true 时桌面 app 录音不再先做 Whisper STT，wav 以裸 base64 形式塞进
      * Agents SDK 的 `audio` content block，再由 SDK 转成上游 `input_audio`，
      * 让模型自己听音频——做模拟语音面试时省 STT 一次往返。
-     * 目前只有 mimo-v2.5（全模态版）勾上；未知 / false 维持现状走 STT 老路径。
+     * 目前只有 mimo-v2.6-flash（全模态版）勾上；未知 / false 维持现状走 STT 老路径。
      */
     supportsAudioInput?: boolean;
   }
 > = {
+  'mimo-v2.6-flash': {
+    label: 'MiMo v2.6 Flash',
+    vendor: 'opencode-go',
+    inputPrice: '$0.08 / 1M',
+    outputPrice: '$2.00 / 1M',
+    hint: '默认 · 全模态 · 支持语音视觉 · agent 工具调用首选',
+    isDefault: true,
+    supportsVision: true,
+    supportsToolCalls: true,
+    supportsAudioInput: true,
+  },
   'deepseek-v4.1-flash': {
     label: 'DeepSeek V4.1 Flash',
     vendor: 'opencode-go',
     inputPrice: '$0.20 / 1M',
     outputPrice: '$0.80 / 1M',
-    hint: '默认 · 多模态 · 快而便宜 · agent 工具调用首选',
-    isDefault: true,
+    hint: '包月主力 · 多模态 · 快而便宜',
     supportsVision: true,
     supportsToolCalls: true,
   },
-  'mimo-v2.5': {
-    label: 'MiMo v2.5',
-    vendor: 'opencode-go',
-    inputPrice: '$0.08 / 1M',
-    outputPrice: '$2.00 / 1M',
-    hint: '推荐 · 全模态 · 支持语音 · 可做模拟语音面试',
-    supportsVision: false,
-    supportsToolCalls: true,
-    supportsAudioInput: true,
-  },
-  'gpt-5.6-luna': {
-    label: 'GPT-5.6 Luna',
+  'gpt-6-luna': {
+    label: 'GPT-6 Luna',
     vendor: 'openai',
-    inputPrice: '$0.20 / 1M',
-    outputPrice: '$1.20 / 1M',
-    hint: '重推理性价比档 · 默认 xhigh 力度 · 可调思考深度',
+    inputPrice: '$0.10 / 1M',
+    outputPrice: '$0.50 / 1M',
+    hint: '高频海量性价比档 · 默认 xhigh 力度 · 可调思考深度',
     supportsReasoningEffort: true,
     supportsVision: true,
     supportsToolCalls: true,
   },
-  'gpt-5.6-terra': {
-    label: 'GPT-5.6 Terra',
+  'gpt-6-sol': {
+    label: 'GPT-6 Sol',
     vendor: 'openai',
-    inputPrice: '$2 / 1M',
-    outputPrice: '$12 / 1M',
-    hint: 'balanced 升级档 · 重活复杂任务 · 可调思考深度',
-    supportsReasoningEffort: true,
-    supportsVision: true,
-    supportsToolCalls: true,
-  },
-  'gpt-5.6-sol': {
-    label: 'GPT-5.6 Sol',
-    vendor: 'openai',
-    inputPrice: '$4.00 / 1M',
-    outputPrice: '$20.00 / 1M',
-    hint: '旗舰升级档 · 最强综合能力 · 可调思考深度',
+    inputPrice: '$2.00 / 1M',
+    outputPrice: '$10.00 / 1M',
+    hint: '复杂编码 / agent 主力档 · 可调思考深度',
     supportsReasoningEffort: true,
     supportsVision: true,
     supportsToolCalls: true,
@@ -472,7 +464,7 @@ export type LedgerType =
  * **OpenAI 约定**：cached_tokens 已包含在 prompt_tokens 里（不另加），所以要减出来再算价。
  * 异常输入（cached > prompt、负数）clamp 到合法区间。
  *
- * 取整在 μtoken 层（4 位精度），过去整数 ceil 在显示 token 层，会让 mimo-v2.5 这种
+ * 取整在 μtoken 层（4 位精度），过去整数 ceil 在显示 token 层，会让 mimo-v2.6-flash 这种
  * 廉价模型的小请求被多扣 100×+。
  *
  * @returns μtoken（integer）；model 不在 LLM_PRICING 表里返回 null

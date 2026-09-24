@@ -12,9 +12,9 @@ import {
 test('isThinkingModeModel: 识别 deepseek 和 mimo 系列模型', () => {
   assert.equal(isThinkingModeModel('deepseek-v4.1-flash'), true);
   assert.equal(isThinkingModeModel('deepseek-v4-flash'), true);
-  assert.equal(isThinkingModeModel('mimo-v2.5'), true);
-  assert.equal(isThinkingModeModel('gpt-5.6-luna'), false);
-  assert.equal(isThinkingModeModel('gpt-5.6-sol'), false);
+  assert.equal(isThinkingModeModel('mimo-v2.6-flash'), true);
+  assert.equal(isThinkingModeModel('gpt-6-luna'), false);
+  assert.equal(isThinkingModeModel('gpt-6-sol'), false);
   assert.equal(isThinkingModeModel(null), false);
 });
 

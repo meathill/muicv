@@ -6,7 +6,7 @@
  *   MIMO_API_KEY=sk-xxxx node scripts/verify-mimo-audio.ts path/to/sample.wav
  *
  * 退出码 0 = 上游接受 + 返回非空文本（可以做音频直通了，去 packages/shared/src/pricing.ts
- * 的 mimo-v2.5 加 supportsAudioInput: true）；非 0 = 上游不支持 / key 错 / 网络挂，按错误码
+ * 的 mimo-v2.6-flash 加 supportsAudioInput: true）；非 0 = 上游不支持 / key 错 / 网络挂，按错误码
  * 决定要不要继续 STT 老路径。
  *
  * 不依赖项目其它代码，便于零依赖独立验真。
@@ -41,7 +41,7 @@ async function main() {
   console.log(`音频 ${wavPath} 读取成功，${(wav.byteLength / 1024).toFixed(1)} KB，转 base64 后 ${audioBase64.length} 字节。`);
 
   const body = {
-    model: 'mimo-v2.5',
+    model: 'mimo-v2.6-flash',
     messages: [
       {
         role: 'user',
@@ -70,7 +70,7 @@ async function main() {
   if (!res.ok) {
     console.error('\n=> 上游拒绝。可能原因：');
     console.error('  1. mimo 不支持 OpenAI input_audio 规范 → 维持 STT 老路径，不要加 supportsAudioInput');
-    console.error('  2. key 无效 / 没开通 mimo-v2.5 → 找小米支持核对');
+    console.error('  2. key 无效 / 没开通 mimo-v2.6-flash → 找小米支持核对');
     console.error('  3. 文件格式不对 → 用 16k mono PCM WAV 再试');
     process.exit(1);
   }

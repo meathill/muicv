@@ -84,7 +84,7 @@ export function registerAudioPreviewIpc(): void {
   );
 
   /**
-   * mimo-v2.5 全模态分支：renderer 麦克风按下 → 录 wav → 直接落 inbox/ 当 audio 附件，
+   * mimo-v2.6-flash 全模态分支：renderer 麦克风按下 → 录 wav → 直接落 inbox/ 当 audio 附件，
    * 不做 Whisper STT。AttachmentRef 由 renderer 推进 pendingAttachments，发送时
    * 走 input_audio content block 让模型亲耳听原音（issue 跳过 STT）。
    * profileId 必须 = 当前激活档案，否则 profile-mismatch 错。

@@ -779,16 +779,16 @@ test('POST /llm/v1/chat/completions 透传客户端携带的 x-opencode-session'
   }
 });
 
-test('POST /llm/v1/chat/completions model=mimo-v2.5 → 上游 OpenCode Go（语音理解同上游）', async () => {
+test('POST /llm/v1/chat/completions model=mimo-v2.6-flash → 上游 OpenCode Go（全模态默认）', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('mimo-v2.5'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('mimo-v2.6-flash'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
       {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...AUTH },
-        body: JSON.stringify({ model: 'mimo-v2.5', messages: [{ role: 'user', content: 'hi' }] }),
+        body: JSON.stringify({ model: 'mimo-v2.6-flash', messages: [{ role: 'user', content: 'hi' }] }),
       },
       mockEnv({ authenticated: true, walletMicro: 100_000_000, opencodeGoKey: 'sk-go-test' }),
       ctx,
@@ -800,9 +800,9 @@ test('POST /llm/v1/chat/completions model=mimo-v2.5 → 上游 OpenCode Go（语
   }
 });
 
-test('POST /llm/v1/chat/completions model=gpt-5.6-luna → 上游 OpenAI', async () => {
+test('POST /llm/v1/chat/completions model=gpt-6-luna → 上游 OpenAI', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('gpt-5.6-luna'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('gpt-6-luna'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
@@ -810,7 +810,7 @@ test('POST /llm/v1/chat/completions model=gpt-5.6-luna → 上游 OpenAI', async
         method: 'POST',
         headers: { 'content-type': 'application/json', ...AUTH },
         body: JSON.stringify({
-          model: 'gpt-5.6-luna',
+          model: 'gpt-6-luna',
           reasoning: { effort: 'xhigh' },
           messages: [{ role: 'user', content: 'hi' }],
         }),
@@ -844,19 +844,48 @@ test('POST /llm/v1/chat/completions model=gpt-4o-mini（表外）→ 400 unsuppo
   assert.equal(res.status, 400);
   const body = (await res.json()) as { error: string; supported: string[] };
   assert.equal(body.error, 'unsupported_model');
-  // 已下线的 deepseek-v4-flash / deepseek-v4-flash-vision-exp / gpt-5.4 / mimo-v2.5-pro 也不在支持列表里
+  // 已下线的 mimo-v2.5 / gpt-5.6-* / deepseek-v4-flash / gpt-5.4 也不在支持列表里
+  assert.ok(body.supported.includes('mimo-v2.6-flash'));
   assert.ok(body.supported.includes('deepseek-v4.1-flash'));
-  assert.ok(body.supported.includes('gpt-5.6-luna'));
-  assert.ok(body.supported.includes('mimo-v2.5'));
+  assert.ok(body.supported.includes('gpt-6-luna'));
+  assert.ok(body.supported.includes('gpt-6-sol'));
+  assert.ok(!body.supported.includes('mimo-v2.5'));
+  assert.ok(!body.supported.includes('gpt-5.6-luna'));
+  assert.ok(!body.supported.includes('gpt-5.6-terra'));
+  assert.ok(!body.supported.includes('gpt-5.6-sol'));
   assert.ok(!body.supported.includes('deepseek-v4-flash'));
   assert.ok(!body.supported.includes('deepseek-v4-flash-vision-exp'));
   assert.ok(!body.supported.includes('gpt-5.4'));
   assert.ok(!body.supported.includes('mimo-v2.5-pro'));
 });
 
-test('POST /llm/v1/chat/completions model=mimo-v2.5-pro（兼容映射）→ 上游 OpenCode Go model=deepseek-v4.1-flash', async () => {
+test('POST /llm/v1/chat/completions model=mimo-v2.5（兼容映射）→ 上游 OpenCode Go model=mimo-v2.6-flash', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('deepseek-v4.1-flash'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('mimo-v2.6-flash'));
+  try {
+    const res = await app.request(
+      '/llm/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...AUTH },
+        body: JSON.stringify({ model: 'mimo-v2.5', messages: [{ role: 'user', content: 'hi' }] }),
+      },
+      mockEnv({ authenticated: true, walletMicro: 100_000_000, opencodeGoKey: 'sk-go-test' }),
+      ctx,
+    );
+    assert.equal(res.status, 200);
+    assert.equal(captures.length, 1);
+    assert.equal(captures[0]?.url, 'https://opencode.ai/zen/go/v1/chat/completions');
+    const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
+    assert.equal(forwardedBody.model, 'mimo-v2.6-flash');
+  } finally {
+    restore();
+  }
+});
+
+test('POST /llm/v1/chat/completions model=mimo-v2.5-pro（兼容映射）→ 上游 OpenCode Go model=mimo-v2.6-flash', async () => {
+  const captures: FetchCapture[] = [];
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('mimo-v2.6-flash'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
@@ -872,15 +901,15 @@ test('POST /llm/v1/chat/completions model=mimo-v2.5-pro（兼容映射）→ 上
     assert.equal(captures.length, 1);
     assert.equal(captures[0]?.url, 'https://opencode.ai/zen/go/v1/chat/completions');
     const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
-    assert.equal(forwardedBody.model, 'deepseek-v4.1-flash');
+    assert.equal(forwardedBody.model, 'mimo-v2.6-flash');
   } finally {
     restore();
   }
 });
 
-test('POST /llm/v1/chat/completions model=gpt-5.4（兼容映射）→ 上游 OpenAI model=gpt-5.6-sol', async () => {
+test('POST /llm/v1/chat/completions model=gpt-5.4（兼容映射）→ 上游 OpenAI model=gpt-6-sol', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeChatCompletionResponse('gpt-5.6-sol'));
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('gpt-6-sol'));
   try {
     const res = await app.request(
       '/llm/v1/chat/completions',
@@ -896,7 +925,30 @@ test('POST /llm/v1/chat/completions model=gpt-5.4（兼容映射）→ 上游 Op
     assert.equal(captures.length, 1);
     assert.equal(captures[0]?.url, 'https://api.openai.com/v1/chat/completions');
     const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
-    assert.equal(forwardedBody.model, 'gpt-5.6-sol');
+    assert.equal(forwardedBody.model, 'gpt-6-sol');
+  } finally {
+    restore();
+  }
+});
+
+test('POST /llm/v1/chat/completions model=gpt-5.6-terra（兼容映射）→ 上游 OpenAI model=gpt-6-sol', async () => {
+  const captures: FetchCapture[] = [];
+  const restore = withMockedFetch(captures, makeChatCompletionResponse('gpt-6-sol'));
+  try {
+    const res = await app.request(
+      '/llm/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...AUTH },
+        body: JSON.stringify({ model: 'gpt-5.6-terra', messages: [{ role: 'user', content: 'hi' }] }),
+      },
+      mockEnv({ authenticated: true, walletMicro: 100_000_000, openaiKey: 'sk-openai-test' }),
+      ctx,
+    );
+    assert.equal(res.status, 200);
+    assert.equal(captures[0]?.url, 'https://api.openai.com/v1/chat/completions');
+    const forwardedBody2 = JSON.parse(captures[0]?.init?.body as string);
+    assert.equal(forwardedBody2.model, 'gpt-6-sol');
   } finally {
     restore();
   }
@@ -919,13 +971,13 @@ test('POST /llm/v1/chat/completions model=deepseek-v4.1-flash 但缺 OPENCODE_GO
   assert.match(body.message, /wrangler secret put/);
 });
 
-test('POST /llm/v1/chat/completions model=gpt-5.6-luna 但缺 OPENAI_API_KEY → 500 openai-key-missing', async () => {
+test('POST /llm/v1/chat/completions model=gpt-6-luna 但缺 OPENAI_API_KEY → 500 openai-key-missing', async () => {
   const res = await app.request(
     '/llm/v1/chat/completions',
     {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...AUTH },
-      body: JSON.stringify({ model: 'gpt-5.6-luna', messages: [{ role: 'user', content: 'hi' }] }),
+      body: JSON.stringify({ model: 'gpt-6-luna', messages: [{ role: 'user', content: 'hi' }] }),
     },
     mockEnv({ authenticated: true, walletMicro: 100_000_000, openaiKey: null }),
     ctx,
@@ -941,7 +993,7 @@ test('POST /llm/v1/chat/completions 余额=0 + 没绑 muirouter → 402 insuffic
     {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...AUTH },
-      body: JSON.stringify({ model: 'gpt-5.6-luna', messages: [{ role: 'user', content: 'hi' }] }),
+      body: JSON.stringify({ model: 'gpt-6-luna', messages: [{ role: 'user', content: 'hi' }] }),
     },
     // walletMicro 不设 → 余额 = 0；muirouterLink 表 SELECT 也返 null → 402
     mockEnv({ authenticated: true }),
@@ -967,16 +1019,16 @@ function makeResponsesJsonResponse(model: string): Response {
   );
 }
 
-test('POST /llm/v1/responses model=gpt-5.6-luna → 上游 OpenAI /v1/responses', async () => {
+test('POST /llm/v1/responses model=gpt-6-luna → 上游 OpenAI /v1/responses', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeResponsesJsonResponse('gpt-5.6-luna'));
+  const restore = withMockedFetch(captures, makeResponsesJsonResponse('gpt-6-luna'));
   try {
     const res = await app.request(
       '/llm/v1/responses',
       {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...AUTH },
-        body: JSON.stringify({ model: 'gpt-5.6-luna', input: 'hi' }),
+        body: JSON.stringify({ model: 'gpt-6-luna', input: 'hi' }),
       },
       mockEnv({ authenticated: true, walletMicro: 100_000_000, openaiKey: 'sk-openai-test' }),
       ctx,
@@ -990,9 +1042,9 @@ test('POST /llm/v1/responses model=gpt-5.6-luna → 上游 OpenAI /v1/responses'
   }
 });
 
-test('POST /llm/v1/responses model=gpt-5.4（兼容映射）→ 上游 OpenAI /v1/responses model=gpt-5.6-sol', async () => {
+test('POST /llm/v1/responses model=gpt-5.4（兼容映射）→ 上游 OpenAI /v1/responses model=gpt-6-sol', async () => {
   const captures: FetchCapture[] = [];
-  const restore = withMockedFetch(captures, makeResponsesJsonResponse('gpt-5.6-sol'));
+  const restore = withMockedFetch(captures, makeResponsesJsonResponse('gpt-6-sol'));
   try {
     const res = await app.request(
       '/llm/v1/responses',
@@ -1008,19 +1060,19 @@ test('POST /llm/v1/responses model=gpt-5.4（兼容映射）→ 上游 OpenAI /v
     assert.equal(captures.length, 1);
     assert.equal(captures[0]?.url, 'https://api.openai.com/v1/responses');
     const forwardedBody = JSON.parse(captures[0]?.init?.body as string);
-    assert.equal(forwardedBody.model, 'gpt-5.6-sol');
+    assert.equal(forwardedBody.model, 'gpt-6-sol');
   } finally {
     restore();
   }
 });
 
-test('POST /llm/v1/responses model=mimo-v2.5 → 400 unsupported_endpoint（OpenCode Go 无 responses）', async () => {
+test('POST /llm/v1/responses model=mimo-v2.6-flash → 400 unsupported_endpoint（OpenCode Go 无 responses）', async () => {
   const res = await app.request(
     '/llm/v1/responses',
     {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...AUTH },
-      body: JSON.stringify({ model: 'mimo-v2.5', input: 'hi' }),
+      body: JSON.stringify({ model: 'mimo-v2.6-flash', input: 'hi' }),
     },
     mockEnv({ authenticated: true, walletMicro: 100_000_000 }),
     ctx,

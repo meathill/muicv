@@ -170,10 +170,11 @@ pdftotext /tmp/test.pdf -
 | `RENDER_BASE_URL` | var | wrangler.jsonc | packages/website 的公网 base（`https://muicv.com`） |
 | `BETTER_AUTH_SECRET` | secret | `wrangler secret put` | 与 packages/website 同值 |
 | `OPENAI_API_KEY` | secret | `wrangler secret put` | 平台 OpenAI key（model 为 `gpt-*` 时使用） |
-| `MIMO_API_KEY` | secret | `wrangler secret put` | 平台 Xiaomi Mimo key（model 为 `mimo-*` 时使用），上游 `https://token-plan-cn.xiaomimimo.com/v1` |
+| `OPENCODE_GO_API_KEY` | secret | `wrangler secret put` | 平台 OpenCode Go key（model 为 `mimo-*` / `deepseek-*` 时使用），上游 `https://opencode.ai/zen/go/v1` |
+| `MIMO_API_KEY` | secret | `wrangler secret put` | 已退役（Xiaomi completion 直连下线）。小米侧只剩 TTS（`packages/api/src/lib/tts.ts` 的 `mimo-v2.5-tts`），如 TTS 仍用则保留，否则可删 |
 
-> 平台路径（余额 > 0）只接受 `gpt-5.5` / `gpt-5.4` / `mimo-v2.5-pro` / `mimo-v2.5` 四个 model，
-> 表外（如老的 `gpt-4o-mini`）会拿到 400 `unsupported_model`。详见 `packages/shared/src/pricing.ts` 的 `LLM_PRICING`。
+> 平台路径（余额 > 0）只接受 `LLM_PRICING` 表内 model：`mimo-v2.6-flash`（默认） / `deepseek-v4.1-flash` / `gpt-6-luna` / `gpt-6-sol`，
+> 表外（如老的 `gpt-4o-mini`）会拿到 400 `unsupported_model`；已下架旧 id（`mimo-v2.5` / `gpt-5.6-*` / `gpt-5.4` / `gpt-5.5`）经 alias 自动映射。详见 `packages/shared/src/pricing.ts`。
 
 ### 添加新简历模板
 

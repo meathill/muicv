@@ -59,7 +59,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     return;
   }
   const workspaceDir = config.workspaceDir;
-  // 默认模型直接沿用用户配置。自 V4.1 起默认模型原生多模态，不再按本轮是否带图切换模型。
+  // 默认模型直接沿用用户配置。默认模型（mimo-v2.6-flash）原生全模态，不再按本轮是否带图切换模型。
   const effectiveModel = resolveModelAlias(config.defaultModel) ?? config.defaultModel;
 
   if (!configureLlmForRun(config, effectiveModel)) {
@@ -94,7 +94,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
       if (!waiting) lastEventAt = Date.now();
     }),
   ];
-  // Reasoning effort 注入：仅对支持调节的模型（GPT-5.6 家族）生效。
+  // Reasoning effort 注入：仅对支持调节的模型（GPT-6 家族）生效。
   // OpenAI Agents SDK 的 modelSettings.providerData 会原样并进请求体——
   // responses 端要 `reasoning: { effort }`，chat_completions 端是平铺的
   // `reasoning_effort`，字段名由本 run 选定的端点形态决定。
@@ -143,9 +143,9 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   // 图片有第二种用途（upload_photo agent tool 上传证件照到 R2），不需要 vision。
   // 仅在 model 支持 vision 时把图 base64 进 input_image；不支持就跳过 imageReader，
   // 让 footer 的"调 upload_photo"提示引导 agent 走 R2 上传路径。
-  // 默认模型 V4.1 Flash 原生多模态，带图时无需再切模型。
+  // 默认模型 v2.6 Flash 原生全模态，带图带音频无需再切模型。
   const supportsVision = modelSupportsVision(effectiveModel);
-  // Audio 直通：mimo-v2.5（全模态版）原生听音频，把 wav 以 Xiaomi 规范的
+  // Audio 直通：mimo-v2.6-flash（全模态版）原生听音频，把 wav 以 Xiaomi 规范的
   // wav 裸 base64 灌进 Agents SDK audio content block，跳过 Whisper STT。
   // 其它 model 维持现状（chatbox 麦克风走 recordAndTranscribe → 转写文本）。
   const supportsAudio = modelSupportsAudioInput(effectiveModel);
@@ -287,7 +287,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
         : isMaxTurnsError(rawMsg)
           ? `本次任务的 agent 工具调用超过 ${AGENT_MAX_TURNS} 轮，已自动停止。建议把任务拆小一点，或检查是否有某个工具在反复失败重试。`
           : isReasoningContentError(error, rawMsg)
-            ? `当前模型「${effectiveModel}」是带 thinking mode 的推理模型，多轮工具调用时未成功同步 reasoning_content。建议重试，或到设置切换到 GPT 系列（如 gpt-5.6-luna）。`
+            ? `当前模型「${effectiveModel}」是带 thinking mode 的推理模型，多轮工具调用时未成功同步 reasoning_content。建议重试，或到设置切换到 GPT 系列（如 gpt-6-luna）。`
             : rawMsg;
       send({ type: 'error', message: msg });
       send({ type: 'finish', reason: 'error' });

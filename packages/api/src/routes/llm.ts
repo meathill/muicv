@@ -24,10 +24,10 @@ import type { AppEnv } from '../middleware/api-key.ts';
  * /llm/v1/* —— OpenAI 兼容反向代理。
  *
  * 三种上游路径（按 muicv 平台余额优先 + 计费表 upstream 字段分流）：
- *   1. **平台 OpenAI**：余额 > 0 + 表内 gpt-5.6-* → worker secret OPENAI_API_KEY，
+ *   1. **平台 OpenAI**：余额 > 0 + 表内 gpt-6-* → worker secret OPENAI_API_KEY，
  *      上游 https://api.openai.com/v1，按 model 分价扣费（见 shared LLM_PRICING）。
  *      premium 升级档，支持 /v1/responses 与 reasoning effort。
- *   2. **平台 OpenCode Go**：余额 > 0 + 表内 deepseek-v4.1-flash / mimo-v2.5 →
+ *   2. **平台 OpenCode Go**：余额 > 0 + 表内 mimo-v2.6-flash / deepseek-v4.1-flash →
  *      worker secret OPENCODE_GO_API_KEY，上游 https://opencode.ai/zen/go/v1
  *      （包月订阅，成本锁死）。只暴露 chat/completions；/v1/responses 直接 400 挡掉。
  *   3. **muirouter fallback**：余额 = 0 + 用户绑了 muirouter → 解密 access_token
@@ -36,7 +36,7 @@ import type { AppEnv } from '../middleware/api-key.ts';
  *   4. **都没有**：余额 = 0 且没绑 muirouter → 402 insufficient_balance。
  *
  * 平台路径（1+2）只接受 LLM_PRICING 表里的 model 且按表里 upstream 字段选上游；
- * 历史下架模型（如 mimo-v2.5-pro / gpt-5.4 / gpt-5.5）自动经 resolveModelAlias 兼容映射；
+ * 历史下架模型（如 mimo-v2.5 / gpt-5.6-* / gpt-5.4 / gpt-5.5）自动经 resolveModelAlias 兼容映射；
  * 其他表外 model（如老的 gpt-4o-mini）→ 400 unsupported_model。
  * Xiaomi（token-plan-cn）completion 直连已退役——小米侧现在只剩 TTS（lib/tts.ts）。
  *
