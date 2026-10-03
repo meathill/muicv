@@ -120,14 +120,26 @@
 - `worker-configuration.d.ts`（14k+ 行，wrangler 自动生成）不要 review、不要手改；
   跑 `pnpm --filter @muicv/website cf-typegen` 重新生成即可。
 - 本地开发两套：`pnpm dev` 是纯 Next.js，最快；`pnpm dev:cf` 走 Wrangler，更贴近生产 Worker 行为。
-- **缓存栈（2026-08，issue #14）**：website 当前临时关闭 R2 incremental cache，保留 DO Queue + `enableCacheInterception`；恢复任务计划于 2026-09-20 提醒复原 R2 + regional cache。
+- **缓存栈（2026-10 恢复，额度危机解除）**：`open-next.config.ts` 用 R2（`site-cache`）
+  + regional long-lived + DO Queue，并开 Workers Cache（`wrangler.jsonc` 顶层 `[cache]`）。
+  TTL 分层：详情/营销静态页 `revalidate=604800`（1 周），列表页/sitemap `3600`，
+  download 页 `300`；pricing 无 revalidate（构建期静态，s-maxage 一年，部署即换版）。
+  Next 按 revalidate 自动下发 `s-maxage`，边缘直接吃——不要在 `next.config.ts` 手写
+  页面级 Cache-Control，会盖掉精确值。动态页（dashboard/preview/auth/jobs/`/api/*`）
+  自动 `private,no-store` 走 BYPASS。新部署换 Worker version，边缘 key 默认隔离，
+  无需手动 purge。
+- **缓存栈（2026-08，issue #14，历史）**：website 曾临时关闭 R2 incremental cache，保留 DO Queue + `enableCacheInterception`；
   - **时间型 revalidation（posts / sitemap 的 `revalidate=3600`）必须有 DO Queue**（`NEXT_CACHE_DO_QUEUE` binding + `new_sqlite_classes: ["DOQueueHandler"]` migration）才会后台排队执行——之前只配了 R2 没配 queue，revalidate 实际没生效。
   - 刻意不加 tag cache / cache purge：站点不用 `revalidateTag` / `revalidatePath`，按需失效链路用不到。
   - `deploy` 命令会跑 `populateCache` 把构建期预渲染数据写进 R2，所以纯静态页（如 pricing）改内容 = 部署即生效，不需要 revalidate 兜底。（这是 deploy 命令的机制说明；日常不要手动跑，见本节第 1 条——自动部署走的是同一套构建。）
 - **静态资源 immutable 头**：`public/_headers` 配 `/_next/static/*` → `Cache-Control: public,max-age=31536000,immutable`。OpenNext 会把 public/ 拷进 `.open-next/assets`，Cloudflare Workers Assets 直接吃这份 `_headers`；`next.config.ts` 的 headers 对静态资源无效（Worker 不跑在 assets 前面）。website / cms 都要各放一份。
 - **Pricing 页静态化（issue #14）**：跟首页同套路——静态壳 + 客户端动态区。动态数据（登录态 / 订阅 / 币种）由 `GET /api/pricing/state` 挂载后一次拿齐；币种切换走 `CurrencyToggle` 的可选 `onSwitch` prop（本地 state 更新，不再 router.refresh，dashboard 不传保持原行为）；interval 只维护本地 state 并 `history.replaceState` 同步 URL，**默认年付**（`?interval=monthly` 可覆盖）。价格未返回前显示占位符避免「先 $ 后 ¥」闪烁。订阅卡固定美元标价，¥ 视图的登录用户看到「人民币不支持订阅」提示 + 一键切回美元（走 `lib/currency-client.ts` 的 `postCurrencyPreference`）。
 - **IndexNow（issue #13）**：key 文件 `public/<key>.txt`（内容 = key）随构建发布，`scripts/indexnow-submit.ts` 抓 sitemap 一次性提交全部 URL 到 api.indexnow.org，部署后手跑一次，不引入 cron。
-- **CDN 层缓存 Pricing（评估后不做，2026-08）**：OpenNext 缓存命中后 TTFB 仍有 1~3s（Worker 执行 + R2 读取），因为 Cloudflare CDN 默认不缓存 Worker 返回的 HTML。曾写过一个 Cache Rules API 脚本想给 `/pricing*` 加 `cache_everything` + `edge_ttl 1h`，但**最终决定不做**：ISR 已保证内容正确且命中，CDN 规则只是省掉 Worker 执行；代价是「部署改了价格/文案，但边缘还在发旧版」的失效心智负担（要记得 purge），低流量站点不划算。如果哪天要加，流程是 Dashboard 两条规则（hostname `muicv.com` + path `starts_with /pricing`、`/en/pricing`，Cache Everything + Edge TTL 1h），验证 `cf-cache-status: HIT`。
+- **CDN 层缓存（2026-10 改走 Workers Cache，不再用 Cache Rules）**：2026-08 曾评估给
+  `/pricing*` 加 Cache Rules（`cache_everything` + edge_ttl 1h）但没做，原因是部署后边缘
+  发旧版要手动 purge。现在开 Workers Cache（`[cache] enabled`）解决同一问题：key 默认带
+  Worker version，新部署自动隔离，无需 purge；TTL 直接吃 Next 的 `s-maxage`。
+  验证看 `cf-cache-status: HIT`。
 - **API 路由统一 no-store**：Next 16 不会自动给 route handler 加 `Cache-Control`，`force-dynamic` 只保证 OpenNext 不缓存；防浏览器启发式缓存 / 未来加缓存规则时误缓存用户数据，在 `next.config.ts` 加 `/api/:path*` → `Cache-Control: no-store` 全局规则（已验证对 route handler 生效）。
 
 ## SEO / OG / 安全 headers（packages/website）

@@ -35,7 +35,7 @@ export async function renderPostOgImage({
     const res = renderCard({ post, sectionLabel, brandName, fonts });
     const buf = await res.arrayBuffer();
     return new Response(buf, {
-      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
+      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800' },
     });
   } catch (err) {
     console.error('[og/posts] 生成异常', err);

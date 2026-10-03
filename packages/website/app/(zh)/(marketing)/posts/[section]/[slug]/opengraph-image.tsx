@@ -11,7 +11,7 @@ import { OG_SIZE, renderPostOgImage } from '../../../_content/post-og';
 export const alt = 'Mui简历 文章分享';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Params = { section: string; slug: string };
 

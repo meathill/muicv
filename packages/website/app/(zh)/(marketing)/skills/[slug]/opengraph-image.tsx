@@ -10,7 +10,7 @@ import { loadGoogleFontSubsets } from '@/lib/og-font';
 export const alt = 'Mui简历 Skill';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Params = { slug: string };
 
@@ -42,7 +42,7 @@ export default async function Image({ params }: { params: Promise<Params> }) {
     const res = renderSkillImage({ skill, distributionLabel, fonts });
     const buf = await res.arrayBuffer();
     return new Response(buf, {
-      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
+      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800' },
     });
   } catch (err) {
     console.error('[og/skills] 生成异常', err);

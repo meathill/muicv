@@ -8,7 +8,7 @@ import { pageMetadata } from '@/app/(zh)/(marketing)/_page-meta';
 import { TemplatePreviewViewer } from '@/app/(zh)/(marketing)/templates/template-preview-viewer';
 import { JsonLd } from '@/components/json-ld';
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 const SITE_URL = 'https://muicv.com';
 

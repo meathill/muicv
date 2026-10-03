@@ -2,9 +2,16 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "muicv-web",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2026-07-01",
+  "compatibility_date": "2026-10-03",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "account_id": "fdc63eeea83ae8f5234357308b9a638b",
+  // Workers Cache（2026-10）：边缘 tiered 缓存。Next 按 revalidate 下发的
+  // `s-maxage` 直接被边缘吃掉；动态页 `private, no-cache` 自动 BYPASS。
+  // 新部署换 version 默认隔离 key，无需手动 purge。Paid plan 下 HIT 也按标准单价计费，
+  // 但省掉的 Worker CPU 远超这点（小流量站）。
+  "cache": {
+    "enabled": true
+  },
   "routes": [
     {
       "pattern": "muicv.com",
@@ -47,6 +54,11 @@
     {
       "binding": "MUICV_PHOTOS",
       "bucket_name": "muicv"
+    },
+    // OpenNext ISR 持久层：增量缓存 + Data Cache 全落这里。deploy 时 populateCache 重写。
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "site-cache"
     }
   ],
   "services": [

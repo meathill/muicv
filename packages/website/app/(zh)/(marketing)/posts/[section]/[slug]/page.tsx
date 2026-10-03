@@ -7,7 +7,7 @@ import { MarketingShell } from '../../../_content/marketing-shell';
 import { PostDetailView } from '../../../_content/post-detail-view';
 import { fromContentLocale } from '../../../_i18n/locale';
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Params = { section: string; slug: string };
 

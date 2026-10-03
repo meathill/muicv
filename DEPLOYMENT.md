@@ -200,7 +200,9 @@ Worker name `muicv-web`。承载：
 
 - D1：`MUICV_DB`，database `muicv`（和 `packages/api` 共用同一个 D1）
 - KV：`MUICV_KV`
-- R2：当前不绑定 OpenNext ISR 缓存（临时停用；恢复时再绑定 `site-cache`）
+- R2：`MUICV_RESUME_BLOB` / `MUICV_PHOTOS`（简历快照 + 证件照，共用 `muicv` bucket）；
+  OpenNext ISR 持久层绑 `NEXT_INC_CACHE_R2_BUCKET=site-cache`（2026-10 恢复）
+- Workers Cache：`wrangler.jsonc` 顶层 `[cache] enabled=true`（2026-10 开，Paid plan）
 - Self service binding：`WORKER_SELF_REFERENCE`
 - Vars：`BETTER_AUTH_URL`（生产 `https://muicv.com`，本地 `.dev.vars` 改）
 

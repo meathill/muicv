@@ -7,7 +7,7 @@ import { BLOG_STRINGS, blogUrlPrefix } from '@/app/(zh)/(marketing)/_i18n/blog';
 import { fromContentLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
 import { getPostAlternateLanguages, getWebsitePostBySlug, getWebsitePublishedPosts } from '@/lib/cms-content';
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Params = { locale: string; section: string; slug: string };
 

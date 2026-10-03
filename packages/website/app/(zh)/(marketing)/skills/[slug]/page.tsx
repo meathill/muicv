@@ -9,7 +9,7 @@ import { ArrowUpRight } from '../../_icons';
 
 const SITE_URL = 'https://muicv.com';
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Params = { slug: string };
 

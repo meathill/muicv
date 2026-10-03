@@ -11,7 +11,7 @@ export const metadata: Metadata = soloPageMetadata({
   description: 'Mui简历隐私政策——我们收集什么、怎么用、你有什么权利。',
 });
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 const EFFECTIVE_DATE = '2026-04-30';
 

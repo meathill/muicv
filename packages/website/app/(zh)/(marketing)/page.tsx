@@ -5,8 +5,8 @@ import { getDictionary } from './_i18n/dict';
 import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from './_page-meta';
 
 // 首页走 ISR：HTML 由 OpenNext R2 缓存兜底，首屏不再为登录态加载 auth client。
-// 登录态交给 /dashboard 入口处理。1 小时刷一次足够营销文案的更新节奏。
-export const revalidate = 3600;
+// 登录态交给 /dashboard 入口处理。营销文案基本不变，1 周刷一次；边缘 Workers Cache 吃 s-maxage。
+export const revalidate = 604800;
 
 const SITE_URL = 'https://muicv.com';
 const dict = getDictionary('zh');

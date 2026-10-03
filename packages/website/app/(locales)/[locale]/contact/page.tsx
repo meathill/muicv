@@ -5,7 +5,7 @@ import { isLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
 import { pageMetadata } from '@/app/(zh)/(marketing)/_page-meta';
 import { ContactView, getContactMeta } from '@/app/(zh)/(marketing)/contact/_view';
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Params = { locale: string };
 

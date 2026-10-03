@@ -4,7 +4,7 @@ import { HomePage } from '@/app/(zh)/(marketing)/_home';
 import { getDictionary } from '@/app/(zh)/(marketing)/_i18n/dict';
 import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '@/app/(zh)/(marketing)/_page-meta';
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 const SITE_URL = 'https://muicv.com';
 const dict = getDictionary('en');

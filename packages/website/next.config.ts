@@ -63,6 +63,9 @@ const nextConfig: NextConfig = {
         // API 一律 no-store：Next 16 不会自动给 route handler 加 Cache-Control，
         // force-dynamic 只保证 OpenNext 不缓存。显式声明防止浏览器启发式缓存 /
         // 未来加 CDN 缓存规则时误缓存用户数据（登录态 / 订阅 / 支付等）。
+        // 注意：页面级 Cache-Control 刻意不在这里写——Next 按 `revalidate`
+        // 自动下发 `s-maxage=<revalidate>`（动态页则是 private,no-store），
+        // Workers Cache 直接吃这个值做边缘 TTL。在这里手写会盖掉 Next 的精确值。
         source: '/api/:path*',
         headers: [{ key: 'Cache-Control', value: 'no-store' }],
       },

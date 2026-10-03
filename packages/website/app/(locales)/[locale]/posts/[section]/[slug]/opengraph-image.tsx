@@ -7,7 +7,7 @@ import { getWebsitePostBySlug } from '@/lib/cms-content';
 export const alt = 'MuiCV article';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 type Params = { locale: string; section: string; slug: string };
 

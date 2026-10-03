@@ -10,7 +10,7 @@ import { ArrowUpRight, Highlight } from '../../_icons';
 import { soloPageMetadata } from '../../_page-meta';
 import { TemplatePreviewViewer } from '../template-preview-viewer';
 
-export const revalidate = 3600;
+export const revalidate = 604800;
 
 const SITE_URL = 'https://muicv.com';
 
