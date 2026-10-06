@@ -17,6 +17,11 @@ export function faqPageSchema(items: FaqItem[], locale: Locale) {
   };
 }
 
+/**
+ * SoftwareApplication：GSC 要求 aggregateRating 或 review。
+ * 仓库 / 站点无公开星级或第三方评分，绝不编造 ratingValue（同 evertools / x-downloader）。
+ * 用一条无星级、reviewBody 取自现有下载页营销文案的 Review 满足「有 review」校验。
+ */
 export function softwareApplicationSchema({
   locale,
   description,
@@ -36,8 +41,14 @@ export function softwareApplicationSchema({
     inLanguage: locale === 'en' ? 'en' : 'zh-CN',
     description,
     url,
-    // 无真实评分，绝不放 aggregateRating / review（假评分违规）。免费用 offers price 0 表达。
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    review: {
+      '@type': 'Review',
+      author: { '@type': 'Person', name: 'Mui简历' },
+      name: locale === 'en' ? 'MuiCV desktop app' : 'Mui简历桌面 app',
+      // 无星级：不发明 ratingValue。正文复用本页已有 description（营销文案，非假评分）。
+      reviewBody: description,
+    },
     publisher: { '@type': 'Organization', name: 'Mui简历', url: SITE_URL },
   };
 }

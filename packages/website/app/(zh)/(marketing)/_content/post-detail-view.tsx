@@ -20,18 +20,23 @@ export function PostDetailView({ locale, post }: { locale: ContentLocale; post: 
   // shared 的 POST_SECTION_META.path 是中文站路径，多语言下要换成带前缀的路径。
   const sectionHref = `${prefix}/posts/${post.section}`;
 
+  // ContentPost 无 cover 字段；用全站默认 OG（1200×630）作 Article.image。
+  // 各帖 opengraph-image 路由带构建 hash，JSON-LD 不宜依赖不稳定 URL。
+  const articleImage = `${SITE_URL}/opengraph-image.png`;
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
     headline: post.title,
     description: post.summary,
+    image: [articleImage],
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
     author: { '@type': 'Person', name: post.author },
     publisher: {
       '@type': 'Organization',
       name: 'MuiCV',
+      url: SITE_URL,
       logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/mui-logo.png` },
     },
     keywords: post.keywords,

@@ -60,10 +60,13 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
-  // 浏览器仍会请求 /favicon.ico（旧标准），显式指向 SVG icon 避免 404。
+  // app/favicon.ico + public/favicon.ico 保证 /favicon.ico 200；SVG 给现代浏览器。
   icons: {
-    icon: { url: '/icon.svg', type: 'image/svg+xml' },
-    shortcut: '/icon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.ico',
   },
   // GSC / Bing 验证 token：从 env 读，没设置就跳过——本地 / preview 不写。
   // 拿到验证 token 后，把它放进部署平台的 env vars（NEXT_PUBLIC_* 前缀让构建期能内联）。
