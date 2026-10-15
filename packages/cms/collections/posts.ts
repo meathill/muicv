@@ -59,7 +59,7 @@ export const Posts: CollectionConfig = {
     { name: 'author', type: 'text', defaultValue: 'Mui简历', required: true },
     { name: 'publishedAt', type: 'date', required: true },
     { name: 'seoTitle', type: 'text', required: true },
-    { name: 'seoDescription', type: 'textarea', required: true },
+    { name: 'seoDescription', type: 'textarea', required: true, minLength: 60 },
   ],
   indexes: [
     {
