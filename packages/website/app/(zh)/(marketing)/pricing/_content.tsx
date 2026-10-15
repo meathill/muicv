@@ -48,8 +48,9 @@ export type PricingContent = {
 
 const zh: PricingContent = {
   meta: {
-    title: '定价',
-    description: '按 token 计费，永不过期。注册即送 10K tokens；月付 / 年付 / 一次性补充包随你选。',
+    title: '定价：AI 简历按 token 计费，注册送 10K tokens',
+    description:
+      '按 token 计费，永不过期。注册即送 10K tokens；月付 / 年付 / 一次性补充包随你选。取消订阅后已发 token 全部保留，Skill 与 BYOK 始终可用。',
   },
   heroEyebrow: '定价',
   heroTitleLead: '按 ',
@@ -152,9 +153,9 @@ const zh: PricingContent = {
 
 const en: PricingContent = {
   meta: {
-    title: 'Pricing',
+    title: 'Pricing: AI resume by token, 10K free tokens on sign-up',
     description:
-      'Pay by token, never expires. Sign up for 10K free tokens; choose monthly, yearly, or one-time top-up packs.',
+      'Pay by token, never expires. Sign up for 10K free tokens; choose monthly, yearly, or one-time top-up packs. Keep unused tokens forever, and BYOK stays available.',
   },
   heroEyebrow: 'Pricing',
   heroTitleLead: 'Pay by ',

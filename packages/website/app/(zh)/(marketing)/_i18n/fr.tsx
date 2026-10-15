@@ -279,9 +279,9 @@ export const dict: Dictionary = {
 export const content: LocaleContent = {
   about: {
     meta: {
-      title: 'À propos',
+      title: 'À propos : un outil pour décrocher des offres',
       description:
-        'Nous voulons créer un outil qui vous aide vraiment à décrocher une offre — pas un générateur de modèles de CV de plus.',
+        'Nous voulons créer un outil qui vous aide vraiment à décrocher une offre — pas un générateur de modèles de CV de plus. MuiCV couvre de l’expérience aux entretiens.',
     },
     heroEyebrow: 'À propos',
     heroTitleLead: 'Un outil qui vous fait vraiment décrocher ',
@@ -331,8 +331,9 @@ export const content: LocaleContent = {
   },
   contact: {
     meta: {
-      title: 'Nous contacter',
-      description: 'Retours produits, partenariats, presse — écrivez à la bonne adresse pour une réponse plus rapide.',
+      title: 'Nous contacter : feedback, partenariats, presse',
+      description:
+        'Retours produits, partenariats, presse — écrivez à la bonne adresse pour une réponse plus rapide. Nous répondons en 1–3 jours.',
     },
     heroEyebrow: 'Contact',
     heroTitleLead: 'Vous voulez nous ',
@@ -366,9 +367,9 @@ export const content: LocaleContent = {
   },
   pricing: {
     meta: {
-      title: 'Tarifs',
+      title: 'Tarifs : CV IA par token, 10K tokens offerts',
       description:
-        "Facturation au token, sans expiration. 10,000 tokens offerts à l'inscription ; abonnement mensuel, annuel ou packs de recharge au choix.",
+        "Facturation au token, sans expiration. 10,000 tokens offerts à l'inscription ; abonnement mensuel, annuel ou packs de recharge au choix. Les tokens non utilisés ne périment pas.",
     },
     heroEyebrow: 'Tarifs',
     heroTitleLead: 'Facturé au ',

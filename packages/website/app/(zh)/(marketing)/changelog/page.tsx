@@ -7,8 +7,9 @@ import { soloPageMetadata } from '../_page-meta';
 
 export const metadata: Metadata = soloPageMetadata({
   path: '/changelog',
-  title: '更新日志',
-  description: 'Mui 简历产品、skill、app 和网站内容中心的更新记录。',
+  title: '更新日志：Mui 简历产品、skill、app 与内容更新记录',
+  description:
+    'Mui 简历产品、skill、app 和网站内容中心的更新记录。包含新功能、改进、修复与发布说明，方便你追踪版本变化与能力演进。',
 });
 
 export const revalidate = 3600;

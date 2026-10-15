@@ -8,8 +8,9 @@ import { soloPageMetadata } from '../_page-meta';
 
 export const metadata: Metadata = soloPageMetadata({
   path: '/skills',
-  title: 'Skill 目录',
-  description: 'Mui 简历收集的求职相关 skill：自有内置能力、第三方官方来源索引和后续可安装扩展。',
+  title: 'Skill 目录：Mui 简历求职相关 skill 与第三方来源索引',
+  description:
+    'Mui 简历收集的求职相关 skill：自有内置能力、第三方官方来源索引和后续可安装扩展。收录岗位发现、简历定制、模拟面试等能力，帮助你更快找到适合的机会。',
 });
 
 export const revalidate = 3600;

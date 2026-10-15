@@ -276,8 +276,9 @@ export const dict: Dictionary = {
 export const content: LocaleContent = {
   about: {
     meta: {
-      title: '会社概要',
-      description: '本当にオファー獲得を後押しするツールを作りたい——また一つ別のレジュメテンプレート生成器ではなく。',
+      title: '会社概要：オファー獲得を後押しするツール',
+      description:
+        '本当にオファー獲得を後押しするツールを作りたい——また一つ別のレジュメテンプレート生成器ではなく。MuiCVは経験整理から面接まで支援します。',
     },
     heroEyebrow: 'MuiCV について',
     heroTitleLead: '本当にオファーを',
@@ -328,8 +329,9 @@ export const content: LocaleContent = {
   },
   contact: {
     meta: {
-      title: 'お問い合わせ',
-      description: '製品へのフィードバック、ビジネス提携、取材のご依頼——正しい窓口に送ると、返信が早くなります。',
+      title: 'お問い合わせ：フィードバック、提携、取材',
+      description:
+        '製品へのフィードバック、ビジネス提携、取材のご依頼——正しい窓口に送ると、返信が早くなります。通常1〜3営業日で返信します。',
     },
     heroEyebrow: 'お問い合わせ',
     heroTitleLead: '私たちに ',
@@ -363,9 +365,9 @@ export const content: LocaleContent = {
   },
   pricing: {
     meta: {
-      title: '料金',
+      title: '料金：AIレジュメをトークン課金、登録で10Kトークン',
       description:
-        'トークン課金で、有効期限なし。登録で10Kトークンをプレゼント。月払い／年払い／都度購入のトップアップパックから選べます。',
+        'トークン課金で、有効期限なし。登録で10Kトークンをプレゼント。月払い／年払い／都度購入のトップアップパックから選べます。未使用トークンは失効しません。',
     },
     heroEyebrow: '料金',
     heroTitleLead: '課金は',

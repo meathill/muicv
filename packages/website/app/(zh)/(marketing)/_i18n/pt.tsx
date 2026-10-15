@@ -277,9 +277,9 @@ export const dict: Dictionary = {
 export const content: LocaleContent = {
   about: {
     meta: {
-      title: 'Sobre nós',
+      title: 'Sobre nós: ferramenta para conquistar ofertas',
       description:
-        'Queremos criar uma ferramenta que realmente ajuda você a conquistar uma oferta, e não mais um gerador de modelos de currículo.',
+        'Queremos criar uma ferramenta que realmente ajuda você a conquistar uma oferta, e não mais um gerador de modelos de currículo. O MuiCV cobre da experiência às entrevistas.',
     },
     heroEyebrow: 'Sobre',
     heroTitleLead: 'Uma ferramenta que realmente conquista a ',
@@ -329,8 +329,9 @@ export const content: LocaleContent = {
   },
   contact: {
     meta: {
-      title: 'Fale conosco',
-      description: 'Feedback do produto, parcerias e imprensa — encontre a caixa certa para uma resposta mais rápida.',
+      title: 'Fale conosco: feedback, parcerias, imprensa',
+      description:
+        'Feedback do produto, parcerias e imprensa — encontre a caixa certa para uma resposta mais rápida. Respondemos em 1–3 dias.',
     },
     heroEyebrow: 'Contato',
     heroTitleLead: 'Quer nos ',
@@ -364,9 +365,9 @@ export const content: LocaleContent = {
   },
   pricing: {
     meta: {
-      title: 'Preços',
+      title: 'Preços: currículo com IA por token, 10K tokens grátis',
       description:
-        'Pagamento por token, sem validade. Ganhe 10K tokens ao se registrar; escolha mensal, anual ou pacotes avulsos.',
+        'Pagamento por token, sem validade. Ganhe 10K tokens ao se registrar; escolha mensal, anual ou pacotes avulsos. Tokens não usados não expiram.',
     },
     heroEyebrow: 'Preços',
     heroTitleLead: 'Pagamento por ',

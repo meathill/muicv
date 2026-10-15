@@ -279,9 +279,9 @@ const faqLink =
 
 const about: AboutContent = {
   meta: {
-    title: 'Về chúng tôi',
+    title: 'Về chúng tôi: công cụ giúp nhận offer, không chỉ mẫu CV',
     description:
-      'Chúng tôi muốn làm một công cụ thực sự giúp bạn nhận được offer, chứ không phải một trình tạo mẫu CV nữa.',
+      'Chúng tôi muốn làm một công cụ thực sự giúp bạn nhận được offer, chứ không phải một trình tạo mẫu CV nữa. MuiCV bao quát từ trải nghiệm đến phỏng vấn.',
   },
   heroEyebrow: 'Giới thiệu',
   heroTitleLead: 'Một công cụ thực sự giúp bạn nhận ',
@@ -332,8 +332,9 @@ const about: AboutContent = {
 
 const contact: ContactContent = {
   meta: {
-    title: 'Liên hệ',
-    description: 'Phản hồi sản phẩm, hợp tác kinh doanh, báo chí — chọn đúng hộp thư để được trả lời nhanh hơn.',
+    title: 'Liên hệ: phản hồi, hợp tác, báo chí',
+    description:
+      'Phản hồi sản phẩm, hợp tác kinh doanh, báo chí — chọn đúng hộp thư để được trả lời nhanh hơn. Chúng tôi thường trả lời trong 1–3 ngày.',
   },
   heroEyebrow: 'Liên hệ',
   heroTitleLead: 'Muốn ',

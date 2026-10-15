@@ -11,7 +11,7 @@ import '../globals.css';
 const SITE_URL = 'https://muicv.com';
 const TITLE = 'MuiCV — AI 简历生成器 | 程序员简历模板、英文简历在线制作';
 const DESCRIPTION =
-  'MuiCV（Mui简历）是一站式 AI 求职与简历生成平台：提供程序员简历模板、AI 简历优化润色、英文简历在线制作与一键导出 A4 PDF。素材本地保存，隐私安全可控。';
+  'MuiCV（Mui简历）是一站式 AI 求职与简历生成平台：提供程序员简历模板、AI 简历优化润色、英文简历在线制作与一键导出 A4 PDF。素材本地保存，隐私安全可控，帮助你从经历整理到面试准备全程提升。';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -64,16 +64,17 @@ export const POST_SECTION_META: Record<PostSection, { label: string; path: strin
   jobs: {
     label: '求职博文',
     path: '/posts/jobs',
-    description: '围绕校招、社招、简历、面试、offer 决策的实用文章。',
+    description:
+      '围绕校招、社招、简历、面试、offer 决策的实用文章：程序员简历优化、ATS 关键词、模拟面试、岗位匹配与求职策略持续更新。',
   },
   product: {
     label: '产品文章',
     path: '/posts/product',
-    description: 'Mui 简历的产品思考、能力说明和使用方式。',
+    description: 'Mui 简历的产品思考、能力说明和使用方式：功能更新、AI 能力、定价与工作流说明，帮你更好地使用平台。',
   },
   guide: {
     label: '使用教程',
     path: '/posts/guide',
-    description: '从下载安装到素材整理、简历生成、面试复盘的操作指南。',
+    description: '从下载安装到素材整理、简历生成、面试复盘的操作指南：一步一步把经历变成可投递的简历与面试表现。',
   },
 };

@@ -41,7 +41,11 @@ function extraAboutContent(): Record<ExtraLocale, AboutContent> {
 
 const ABOUT_CONTENT: Record<Locale, AboutContent> = {
   zh: {
-    meta: { title: '关于我们', description: '我们想做一个真正帮你拿到 offer 的工具，而不是又一个简历模板生成器。' },
+    meta: {
+      title: '关于我们：真正帮你拿到 offer 的 AI 求职与简历平台',
+      description:
+        '我们想做一个真正帮你拿到 offer 的工具，而不是又一个简历模板生成器。Mui 简历围绕素材整理、岗位匹配、简历定制、模拟面试与就业策略，做一条真正离 offer 更近的求职链路。',
+    },
     heroEyebrow: '关于',
     heroTitleLead: '一个真正帮你拿到 ',
     heroTitleHighlight: 'offer',
@@ -86,9 +90,9 @@ const ABOUT_CONTENT: Record<Locale, AboutContent> = {
   },
   en: {
     meta: {
-      title: 'About',
+      title: 'About MuiCV: land offers, not just templates',
       description:
-        'We want to build a tool that actually helps you land an offer — not another resume template generator.',
+        'We want to build a tool that actually helps you land an offer — not another resume template generator. MuiCV covers experience, matching, resumes, and interviews.',
     },
     heroEyebrow: 'About',
     heroTitleLead: 'A tool that actually lands you the ',

@@ -27,7 +27,11 @@ function extraContactContent(): Record<ExtraLocale, ContactContent> {
 
 const CONTACT_CONTENT: Record<Locale, ContactContent> = {
   zh: {
-    meta: { title: '联系我们', description: '产品反馈、商务合作、媒体询问——找对邮箱，回复更快。' },
+    meta: {
+      title: '联系我们：产品反馈、商务合作与媒体沟通',
+      description:
+        '产品反馈、商务合作、媒体询问——找对邮箱，回复更快。Mui 简历欢迎你围绕简历生成、求职工作台、桌面 app 与 skill 提出建议，我们会尽快回复。',
+    },
     heroEyebrow: '联系',
     heroTitleLead: '想跟我们 ',
     heroTitleHighlight: '说点什么',
@@ -59,8 +63,9 @@ const CONTACT_CONTENT: Record<Locale, ContactContent> = {
   },
   en: {
     meta: {
-      title: 'Contact',
-      description: 'Product feedback, partnerships, press — reach the right inbox for a faster reply.',
+      title: 'Contact MuiCV: feedback, partnerships, press',
+      description:
+        'Product feedback, partnerships, press — reach the right inbox for a faster reply. We typically reply within 1–3 business days.',
     },
     heroEyebrow: 'Contact',
     heroTitleLead: 'Want to ',

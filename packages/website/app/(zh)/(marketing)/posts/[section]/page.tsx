@@ -19,7 +19,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const resolvedParams = await params;
   if (!isPostSection(resolvedParams.section)) return {};
   const meta = POST_SECTION_META[resolvedParams.section];
-  const base = soloPageMetadata({ path: meta.path, title: meta.label, description: meta.description });
+  const sectionTitle =
+    resolvedParams.section === 'jobs'
+      ? '求职博文：校招社招简历面试与 offer 决策指南'
+      : resolvedParams.section === 'product'
+        ? '产品文章：Mui 简历功能与能力说明'
+        : '使用教程：下载、素材整理、简历与面试复盘';
+  const base = soloPageMetadata({ path: meta.path, title: sectionTitle, description: meta.description });
   return {
     ...base,
     alternates: { canonical: meta.path, languages: getListAlternateLanguages(resolvedParams.section) },

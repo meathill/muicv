@@ -23,7 +23,7 @@ export const metadata: Metadata = pageMetadata({
   path: '/templates',
   title: '程序员与科技人才简历模板库 · 专为 ATS 与技术面试优化',
   description:
-    '免费浏览并使用 8 套高质量程序员与技术岗位简历模板（前端、后端架构、全栈、AI大模型、产品经理、UI/UX、数据科学、DevOps）。支持中英双语切换与一键导出 A4 PDF。',
+    '免费浏览并使用 8 套高质量程序员与技术岗位简历模板（前端、后端架构、全栈、AI大模型、产品经理、UI/UX、数据科学、DevOps）。支持中英双语切换与一键导出 A4 PDF，帮助你更快制作 ATS 友好的专业简历。',
 });
 
 const TEMPLATE_STYLE_LABELS: Record<string, string> = {

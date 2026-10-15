@@ -277,9 +277,9 @@ const faqLink =
 export const content: LocaleContent = {
   about: {
     meta: {
-      title: 'Über uns',
+      title: 'Über uns: Tool für echte Jobangebote',
       description:
-        'Wir wollen ein Tool bauen, das dir wirklich zu einem Jobangebot verhilft — nicht noch einen Lebenslauf-Vorlagen-Generator.',
+        'Wir wollen ein Tool bauen, das dir wirklich zu einem Jobangebot verhilft — nicht noch einen Lebenslauf-Vorlagen-Generator. MuiCV deckt alles von Erfahrung bis Interview ab.',
     },
     heroEyebrow: 'Über uns',
     heroTitleLead: 'Ein Tool, das dir wirklich zum ',
@@ -329,9 +329,9 @@ export const content: LocaleContent = {
   },
   contact: {
     meta: {
-      title: 'Kontakt',
+      title: 'Kontakt: Feedback, Partnerschaften, Presse',
       description:
-        'Produktfeedback, Partnerschaften, Presseanfragen — schreib ans richtige Postfach und bekomme schneller eine Antwort.',
+        'Produktfeedback, Partnerschaften, Presseanfragen — schreib ans richtige Postfach und bekomme schneller eine Antwort. Wir antworten meist in 1–3 Werktagen.',
     },
     heroEyebrow: 'Kontakt',
     heroTitleLead: 'Möchtest du uns ',
@@ -365,9 +365,9 @@ export const content: LocaleContent = {
   },
   pricing: {
     meta: {
-      title: 'Preise',
+      title: 'Preise: KI-Lebenslauf per Token, 10K Tokens gratis',
       description:
-        'Abrechnung nach Token, verfallen nie. Bei der Registrierung gibt es 10K Tokens gratis; monatlich, jährlich oder einmalige Top-up-Pakete, ganz wie du willst.',
+        'Abrechnung nach Token, verfallen nie. Bei der Registrierung gibt es 10K Tokens gratis; monatlich, jährlich oder einmalige Top-up-Pakete, ganz wie du willst. Nicht genutzte Tokens bleiben erhalten.',
     },
     heroEyebrow: 'Preise',
     heroTitleLead: 'Abrechnung nach ',

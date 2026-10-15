@@ -278,9 +278,9 @@ const faqLink =
 export const content: LocaleContent = {
   about: {
     meta: {
-      title: 'Sobre nosotros',
+      title: 'Sobre nosotros: herramienta para ofertas, no plantillas',
       description:
-        'Queremos una herramienta que de verdad te ayude a conseguir una oferta, no otro generador de plantillas de currículum.',
+        'Queremos una herramienta que de verdad te ayude a conseguir una oferta, no otro generador de plantillas de currículum. MuiCV cubre desde organizar experiencia hasta entrevistas.',
     },
     heroEyebrow: 'Sobre nosotros',
     heroTitleLead: 'Una herramienta que de verdad te ayuda a conseguir la ',
@@ -330,9 +330,9 @@ export const content: LocaleContent = {
   },
   contact: {
     meta: {
-      title: 'Contacto',
+      title: 'Contacto: feedback, alianzas y prensa',
       description:
-        'Comentarios sobre el producto, alianzas, prensa — escribe al correo correcto y recibirás respuesta antes.',
+        'Comentarios sobre el producto, alianzas, prensa — escribe al correo correcto y recibirás respuesta antes. Respondemos normalmente en 1–3 días.',
     },
     heroEyebrow: 'Contacto',
     heroTitleLead: '¿Quieres ',
@@ -366,9 +366,9 @@ export const content: LocaleContent = {
   },
   pricing: {
     meta: {
-      title: 'Precios',
+      title: 'Precios: CV con IA por token, 10K tokens gratis al registrarte',
       description:
-        'Pago por token, sin caducidad. Al registrarte recibes 10K tokens gratis; elige pago mensual, anual o packs de recarga puntuales.',
+        'Pago por token, sin caducidad. Al registrarte recibes 10K tokens gratis; elige pago mensual, anual o packs de recarga puntuales. Los tokens no usados no caducan y BYOK sigue disponible.',
     },
     heroEyebrow: 'Precios',
     heroTitleLead: 'Pago por ',
