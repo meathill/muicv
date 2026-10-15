@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { trackEvent } from '@/components/analytics';
 import { ArrowUpRight } from '../_icons';
 
 /**
@@ -45,6 +46,12 @@ export function BuyButton(props: Props) {
         setBusy(false);
         return;
       }
+      trackEvent('begin_checkout', {
+        kind: props.kind,
+        plan: 'plan' in props ? props.plan : undefined,
+        interval: 'interval' in props ? props.interval : undefined,
+        pack: 'pack' in props ? props.pack : undefined,
+      });
       window.location.href = data.url;
     } catch (e) {
       setError(e instanceof Error ? e.message : '网络错误');

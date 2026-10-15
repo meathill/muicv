@@ -12,6 +12,13 @@ declare global {
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
+export function trackEvent(name: string, params?: Record<string, unknown>): void {
+  if (typeof window === 'undefined' || !GA_ID) return;
+  window.dataLayer = window.dataLayer || [];
+  if (!window.gtag) return;
+  window.gtag('event', name, params ?? {});
+}
+
 /**
  * 站点分析 + Web Vitals 上报。
  *

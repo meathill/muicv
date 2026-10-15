@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-
+import { trackEvent } from '@/components/analytics';
 import { signIn, signUp } from '@/lib/auth-client';
 
 type Mode = 'sign-in' | 'sign-up';
@@ -59,6 +59,7 @@ export function AuthForm({
         });
         if (result.error) throw new Error(result.error.message ?? '邮箱或密码不对');
       }
+      trackEvent(mode === 'sign-up' ? 'sign_up' : 'login', { method: 'email' });
       router.push(successTarget);
       router.refresh();
     } catch (error) {
@@ -72,6 +73,7 @@ export function AuthForm({
     setErrorMsg(null);
     setBusy(true);
     try {
+      trackEvent(mode === 'sign-up' ? 'sign_up' : 'login', { method: 'github' });
       // 这一步会跳转到 GitHub 授权页，不会 resolve 回来；finally 在跳转后执行也没关系
       await signIn.social({
         provider: 'github',
