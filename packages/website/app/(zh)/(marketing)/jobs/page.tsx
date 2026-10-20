@@ -1,11 +1,28 @@
-import { isOneOf, JOB_KINDS, JOB_REGIONS, type JobListing, type JobSearchRequest, REMOTE_TYPES } from '@muicv/shared';
+import {
+  filterTagLabel,
+  isOneOf,
+  JOB_FILTER_KEYS,
+  JOB_KINDS,
+  type JobFilterKey,
+  type JobListing,
+  type JobSearchRequest,
+  LOCATION_REGIONS,
+  WORKPLACES,
+} from '@muicv/shared';
 import type { Metadata } from 'next';
 
 import { searchWebsiteJobs } from '@/lib/jobs';
 
 import { MarketingShell } from '../_content/marketing-shell';
 import { soloPageMetadata } from '../_page-meta';
-import { KIND_TABS, REGION_LABEL, REMOTE_LABEL, SITE_LABEL } from './_labels';
+import {
+  COUNTRY_OPTIONS,
+  describeRestrictions,
+  KIND_TABS,
+  LOCATION_REGION_LABEL,
+  SITE_LABEL,
+  WORKPLACE_LABEL,
+} from './_labels';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,14 +32,37 @@ export const metadata: Metadata = soloPageMetadata({
   description: '国际 / 远程技术岗与社区贡献 JD 合一，支持自然语言搜索，一键发到 Mui简历桌面端判断是否适合你投。',
 });
 
-type SearchParams = { q?: string; kind?: string; remote?: string; region?: string; page?: string };
+type SearchParams = {
+  q?: string;
+  kind?: string;
+  workplace?: string;
+  /** 旧链接兼容：remote=remote 等价 workplace=remote */
+  remote?: string;
+  region?: string;
+  country?: string;
+  utcOffset?: string;
+  ignore?: string;
+  page?: string;
+};
+
+const SELECT = 'rounded-md border-2 border-ink bg-cream px-2 py-2 text-[14px] text-ink';
+const UTC_VALUES = Array.from({ length: 27 }, (_, i) => i - 12);
+
+function parseIgnore(raw: string | undefined): JobFilterKey[] {
+  return (raw ?? '').split(',').filter((k): k is JobFilterKey => (JOB_FILTER_KEYS as string[]).includes(k));
+}
 
 function toRequest(params: SearchParams): JobSearchRequest {
+  const workplace = params.workplace ?? params.remote;
+  const ignore = parseIgnore(params.ignore);
   return {
     ...(params.q?.trim() ? { q: params.q.trim() } : {}),
     ...(isOneOf(JOB_KINDS, params.kind) ? { kind: params.kind } : {}),
-    ...(isOneOf(REMOTE_TYPES, params.remote) ? { remote: params.remote } : {}),
-    ...(isOneOf(JOB_REGIONS, params.region) ? { region: params.region } : {}),
+    ...(isOneOf(WORKPLACES, workplace) ? { workplace } : {}),
+    ...(isOneOf(LOCATION_REGIONS, params.region) ? { region: params.region } : {}),
+    ...(params.country && /^[A-Za-z]{2}$/.test(params.country) ? { country: params.country.toUpperCase() } : {}),
+    ...(params.utcOffset && Number.isFinite(Number(params.utcOffset)) ? { utcOffset: Number(params.utcOffset) } : {}),
+    ...(ignore.length ? { ignore } : {}),
     page: Math.max(Number(params.page) || 1, 1),
     pageSize: 20,
   };
@@ -48,7 +88,8 @@ function JobCard({ item }: { item: JobListing }) {
   const meta = [
     item.kind === 'community' ? '社区' : `via ${SITE_LABEL[item.source] ?? item.source}`,
     item.location,
-    item.remote ? REMOTE_LABEL[item.remote] : '',
+    WORKPLACE_LABEL[item.workplace],
+    describeRestrictions(item),
   ].filter(Boolean);
   return (
     <a
@@ -70,6 +111,24 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const result = await searchWebsiteJobs(req);
   const items = result?.items ?? [];
   const page = req.page ?? 1;
+  const detected = result?.detected ?? [];
+  const tags = JOB_FILTER_KEYS.flatMap((key) => {
+    const value = result?.filters[key];
+    if (value === undefined || value === null) return [];
+    const isDetected = detected.includes(key);
+    // 自动识别的标签：加进 ignore；手动选的：去掉对应参数（remote 是旧别名，一并清掉）
+    const patch: Partial<SearchParams> = isDetected
+      ? { ignore: [...new Set([...parseIgnore(params.ignore), key])].join(',') }
+      : { [key]: '', ...(key === 'workplace' ? { remote: '' } : {}) };
+    return [
+      {
+        key,
+        detected: isDetected,
+        label: filterTagLabel(key, value as never),
+        href: hrefWith(params, { ...patch, page: '' }),
+      },
+    ];
+  });
 
   return (
     <MarketingShell>
@@ -98,33 +157,42 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
         <form className="mt-4 flex flex-wrap gap-2" method="get">
           {params.kind ? <input type="hidden" name="kind" value={params.kind} /> : null}
+          {params.ignore ? <input type="hidden" name="ignore" value={params.ignore} /> : null}
           <input
             name="q"
             defaultValue={params.q ?? ''}
-            placeholder="比如：欧洲远程的资深后端，Go 优先"
+            placeholder="比如：我在中国 UTC+8，找远程的资深后端，Go 优先"
             className="min-w-0 flex-1 rounded-md border-2 border-ink bg-cream px-3 py-2 text-[14px] text-ink"
           />
-          <select
-            name="remote"
-            defaultValue={params.remote ?? ''}
-            className="rounded-md border-2 border-ink bg-cream px-2 py-2 text-[14px] text-ink"
-          >
+          <select name="workplace" defaultValue={params.workplace ?? params.remote ?? ''} className={SELECT}>
             <option value="">办公方式</option>
-            {REMOTE_TYPES.map((v) => (
+            {WORKPLACES.map((v) => (
               <option key={v} value={v}>
-                {REMOTE_LABEL[v]}
+                {WORKPLACE_LABEL[v]}
               </option>
             ))}
           </select>
-          <select
-            name="region"
-            defaultValue={params.region ?? ''}
-            className="rounded-md border-2 border-ink bg-cream px-2 py-2 text-[14px] text-ink"
-          >
+          <select name="region" defaultValue={params.region ?? ''} className={SELECT}>
             <option value="">地区</option>
-            {JOB_REGIONS.map((v) => (
+            {LOCATION_REGIONS.map((v) => (
               <option key={v} value={v}>
-                {REGION_LABEL[v]}
+                {LOCATION_REGION_LABEL[v]}
+              </option>
+            ))}
+          </select>
+          <select name="country" defaultValue={params.country ?? ''} className={SELECT} aria-label="我在">
+            <option value="">我在（国家）</option>
+            {COUNTRY_OPTIONS.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <select name="utcOffset" defaultValue={params.utcOffset ?? ''} className={SELECT} aria-label="我的时区">
+            <option value="">我的时区</option>
+            {UTC_VALUES.map((v) => (
+              <option key={v} value={String(v)}>
+                {v === 0 ? 'UTC' : `UTC${v > 0 ? '+' : ''}${v}`}
               </option>
             ))}
           </select>
@@ -132,6 +200,23 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             搜索
           </button>
         </form>
+
+        {tags.length > 0 ? (
+          <div className="mt-4 flex flex-wrap items-center gap-1.5" aria-label="生效中的筛选">
+            <span className="text-[12px] text-mute">生效筛选：</span>
+            {tags.map((tag) => (
+              <a
+                key={tag.key}
+                href={tag.href}
+                title={tag.detected ? '从你的描述中自动识别，点击移除' : '点击移除'}
+                className="inline-flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2 py-0.5 text-[12px] text-ink no-underline"
+              >
+                {tag.detected ? '✦ ' : ''}
+                {tag.label} ✕
+              </a>
+            ))}
+          </div>
+        ) : null}
 
         {result?.mode === 'keyword' && params.q ? (
           <p className="mt-4 text-[12px] text-mute">语义搜索暂时不可用，已退回关键词匹配。</p>

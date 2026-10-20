@@ -52,6 +52,6 @@ export function getWebsiteOpportunity(id: string) {
 
 /** sitemap 用：最新的采集岗位（Remotive 条款不允许转投搜索引擎，排除）。 */
 export async function getSitemapOpportunities() {
-  const page = await fetchCmsOpportunities({ pageSize: 500 }, cmsOptions());
-  return page.docs.filter((doc) => doc.source !== 'remotive');
+  const page = await fetchCmsOpportunities({ pageSize: 500, excludeSource: 'remotive' }, cmsOptions());
+  return page.docs;
 }

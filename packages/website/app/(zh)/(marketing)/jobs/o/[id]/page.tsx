@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getWebsiteOpportunity } from '@/lib/jobs';
 
 import { MarketingShell } from '../../../_content/marketing-shell';
-import { REGION_LABEL, REMOTE_LABEL, SITE_LABEL } from '../../_labels';
+import { describeRestrictions, SITE_LABEL, WORKPLACE_LABEL } from '../../_labels';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +31,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
     <MarketingShell>
       <main className="mx-auto max-w-3xl px-5 py-14 md:px-8 md:py-20">
         <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-yellow-deep">
-          — {REMOTE_LABEL[doc.remote]} · {REGION_LABEL[doc.region]}
+          — {[WORKPLACE_LABEL[doc.workplace], describeRestrictions(doc)].filter(Boolean).join(' · ')}
         </p>
         <h1 className="mt-3 text-[clamp(1.8rem,4vw,2.6rem)] font-extrabold leading-[1.15] tracking-tight">
           {doc.title}
