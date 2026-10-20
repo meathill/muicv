@@ -4,6 +4,19 @@
 
 ## 当前进行中
 
+### 统一岗位频道 /jobs + 自然语言搜索（2026-10-20，分支 feat/opportunities）
+
+目标：采集国际 / 远程技术岗进 CMS，与社区贡献 JD 合并为一个 /jobs 频道；
+基于 Workers AI（bge-m3）+ Vectorize 提供自然语言搜索，作为稳定公开 API 给桌面端 / 扩展 / skill 用。
+
+- [x] shared：jobs 领域类型、分类规则、query 过滤抽取、向量工具、CMS fetcher、`searchJobs` 客户端 + 单测
+- [ ] cms：`opportunities` collection + migration
+- [ ] cron：采集 worker（Greenhouse / Lever / Ashby / Remotive）+ CMS upsert + 过期 + 向量索引 + 单测
+- [ ] api：`GET /jobs/search`（向量 + 结构化过滤 + 关键词降级 + 速率限制）、社区 JD 入库即索引、去重标记、重建索引端点 + 单测
+- [ ] app：agent 工具 `search_jobs`
+- [ ] website：/jobs 合并展示（来源 tab + 搜索）、采集岗位详情页、sitemap
+- [ ] 文档：DEPLOYMENT（Vectorize / secret / migration）、DEV_NOTE
+
 ### 模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）
 
 - [x] `packages/shared/src/pricing.ts`：4 模型表（v2.6-flash 默认 / deepseek 保留 / gpt-6-luna/sol）+ alias 全链 + displayMeta（v2.6 开 vision+audio，mimo 价格不动）
