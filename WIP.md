@@ -17,7 +17,8 @@
 - [x] website：/jobs 合并展示（来源 tab + 搜索）、采集岗位详情页、sitemap
 - [x] 文档：DEPLOYMENT（Vectorize / secret / migration）、DEV_NOTE
 - [ ] **用户**：按 DEPLOYMENT「统一岗位频道」建 Vectorize 索引、跑 CMS 迁移、建采集账号与 secret、依序部署、回填向量
-- [ ] 后续：桌面端独立岗位搜索面板（目前经 agent `search_jobs`）、多语言 /jobs、LLM query 解析（视效果）
+- [x] app：桌面端岗位库面板（左栏入口，搜索 / 筛选 / 无限滚动 / 详情 / 导入 / 投递）
+- [ ] 后续：多语言 /jobs、LLM query 解析（视效果）
 
 ### 模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）
 
