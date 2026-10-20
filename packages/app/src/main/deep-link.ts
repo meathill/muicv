@@ -239,63 +239,13 @@ async function handleMuirouterLinked(parsed: URL): Promise<void> {
  */
 async function handleImportCommunityJd(parsed: URL): Promise<void> {
   const opportunityId = parsed.searchParams.get('opportunity');
-  if (opportunityId) {
-    await handleImportOpportunity(opportunityId);
-    return;
-  }
   const id = parsed.searchParams.get('id');
-  if (!id) return;
-  const { ingestCapturedJd } = await import('./extension-jobs.ts');
-  const cfg = getConfig();
+  const { importJobById } = await import('./job-import.ts');
   try {
-    const res = await fetch(`${cfg.muicvApiBase.replace(/\/$/, '')}/jobs/community/${encodeURIComponent(id)}`);
-    if (!res.ok) return;
-    const row = (await res.json()) as {
-      canonicalUrl?: string;
-      sourceSite?: string;
-      title?: string | null;
-      company?: string | null;
-      location?: string | null;
-      employmentType?: string | null;
-      markdown?: string;
-    };
-    if (typeof row.markdown !== 'string' || !row.canonicalUrl) return;
-    await ingestCapturedJd({
-      url: row.canonicalUrl,
-      canonicalUrl: row.canonicalUrl,
-      sourceSite: (row.sourceSite as 'generic') ?? 'generic',
-      title: row.title ?? null,
-      company: row.company ?? null,
-      location: row.location ?? null,
-      employmentType: row.employmentType ?? null,
-      markdown: row.markdown,
-      extractedAt: new Date().toISOString(),
-    });
+    if (opportunityId) await importJobById('collected', opportunityId);
+    else if (id) await importJobById('community', id);
   } catch (err) {
     console.warn('[deep-link] import-jd failed', err);
-  }
-}
-
-/** `muicv://import-jd?opportunity=<cmsId>` —— 网页 /jobs/o/:id 点「用这个 JD」，导入采集岗位。 */
-async function handleImportOpportunity(id: string): Promise<void> {
-  const { ingestCapturedJd } = await import('./extension-jobs.ts');
-  const { fetchCmsOpportunityById, siteIdForHost } = await import('@muicv/shared');
-  try {
-    const doc = await fetchCmsOpportunityById(id);
-    if (!doc) return;
-    await ingestCapturedJd({
-      url: doc.applyUrl,
-      canonicalUrl: doc.applyUrl,
-      sourceSite: siteIdForHost(new URL(doc.applyUrl).hostname),
-      title: doc.title,
-      company: doc.company,
-      location: doc.location,
-      employmentType: doc.employmentType ?? null,
-      markdown: doc.descriptionMarkdown,
-      extractedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.warn('[deep-link] import opportunity failed', err);
   }
 }
 

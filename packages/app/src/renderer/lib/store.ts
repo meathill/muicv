@@ -15,7 +15,7 @@ import type {
 } from '../../shared/types.ts';
 import { DEFAULT_CONFIG } from '../../shared/types.ts';
 
-type View = 'login' | 'onboarding' | 'chat' | 'settings';
+type View = 'login' | 'onboarding' | 'chat' | 'settings' | 'jobs';
 
 export type OnboardingStart = 'resume' | 'experience' | 'blank';
 

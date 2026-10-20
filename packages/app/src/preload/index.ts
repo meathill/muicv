@@ -1,4 +1,4 @@
-import type { ExtensionJobState } from '@muicv/shared';
+import type { ExtensionJobState, JobKind, JobSearchRequest } from '@muicv/shared';
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   AgentChunk,
@@ -21,6 +21,9 @@ import type {
   DefaultTemplateChangedPayload,
   FeedbackCommentOutcome,
   FeedbackRateOutcome,
+  JobDetailResult,
+  JobImportResult,
+  JobSearchResult,
   MediaDeleteAllResult,
   MuirouterLinkResult,
   PhotoHistoryResult,
@@ -227,6 +230,11 @@ const api: RendererApi = {
       ipcRenderer.on('extension:job', listener);
       return () => ipcRenderer.removeListener('extension:job', listener);
     },
+  },
+  jobs: {
+    search: (req: JobSearchRequest) => ipcRenderer.invoke('jobs:search', req) as Promise<JobSearchResult>,
+    detail: (kind: JobKind, id: string) => ipcRenderer.invoke('jobs:detail', kind, id) as Promise<JobDetailResult>,
+    import: (kind: JobKind, id: string) => ipcRenderer.invoke('jobs:import', kind, id) as Promise<JobImportResult>,
   },
   speech: {
     speak: (text: string) => ipcRenderer.invoke('speech:tts', text) as Promise<TtsSpeakOutcome>,

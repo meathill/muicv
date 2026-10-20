@@ -638,6 +638,13 @@ export type QuestionAnswerPayload = {
   customText?: string | undefined;
 };
 
+/** 岗位搜索面板（main 代理 /jobs/search）。 */
+export type JobSearchResult =
+  | { ok: true; data: import('@muicv/shared').JobSearchResponse }
+  | { ok: false; status: number; error: string };
+export type JobDetailResult = { ok: true; markdown: string } | { ok: false; error: string };
+export type JobImportResult = { ok: true; targetPath: string } | { ok: false; error: string };
+
 export type RendererApi = {
   config: {
     get(): Promise<AppConfig>;
@@ -843,6 +850,12 @@ export type RendererApi = {
      * 给一条 AI 消息留文字反馈。不限次数；text 长度 ≥ minChars 才发奖（50,000 显示 token）。
      */
     comment(args: { messageId: string; conversationId: string; text: string }): Promise<FeedbackCommentOutcome>;
+  };
+  jobs: {
+    search(req: import('@muicv/shared').JobSearchRequest): Promise<JobSearchResult>;
+    detail(kind: import('@muicv/shared').JobKind, id: string): Promise<JobDetailResult>;
+    /** 导入到当前档案 targets/，并触发 match → generate */
+    import(kind: import('@muicv/shared').JobKind, id: string): Promise<JobImportResult>;
   };
   speech: {
     /**

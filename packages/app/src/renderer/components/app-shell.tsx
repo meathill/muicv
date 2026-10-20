@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../lib/store';
 import { useAudioTranscoder } from '../lib/use-audio-transcoder';
 import { ChatView } from './chat-view';
+import { JobsView } from './jobs-view';
 import { OnboardingView } from './onboarding-view';
 import { PreviewDrawer } from './preview-drawer';
 import { SettingsView } from './settings-view';
@@ -14,10 +15,11 @@ import { TitleBar } from './title-bar';
  * View 路由映射：login 由外层处理，这里只覆盖已登录后的中栏 view。
  * 比嵌套三元更可读，新增 view 时单点扩展。
  */
-const VIEW_MAP: Record<'onboarding' | 'chat' | 'settings', ComponentType> = {
+const VIEW_MAP: Record<'onboarding' | 'chat' | 'settings' | 'jobs', ComponentType> = {
   onboarding: OnboardingView,
   chat: ChatView,
   settings: SettingsView,
+  jobs: JobsView,
 };
 
 /**
