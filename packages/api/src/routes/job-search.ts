@@ -74,7 +74,9 @@ async function checkRateLimit(c: Context<AppEnv>): Promise<Response | null> {
   const userId = c.get('userId');
   const limiter = userId ? env.JOBS_SEARCH_LIMITER : env.JOBS_SEARCH_ANON_LIMITER;
   if (!limiter) return null;
-  const key = userId ?? c.req.header('cf-connecting-ip') ?? 'anon';
+  // 公网请求一定带 cf-connecting-ip（Cloudflare 注入，客户端无法伪造）；没有它说明来自 service
+  // binding（website），此时才信任 website 透传的访客 IP。
+  const key = userId ?? c.req.header('cf-connecting-ip') ?? `web:${c.req.header('x-muicv-client-ip') || 'unknown'}`;
   const { success } = await limiter.limit({ key });
   return success ? null : c.json({ error: '搜索太频繁，请稍后再试（登录并配置 API key 可获得更高额度）' }, 429);
 }

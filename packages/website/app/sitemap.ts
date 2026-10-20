@@ -2,6 +2,7 @@ import { CONTENT_LOCALES, contentLocalePrefix, POST_SECTION_META, SAMPLE_RESUME_
 import type { MetadataRoute } from 'next';
 import { LOCALES, type Locale } from '@/app/(zh)/(marketing)/_i18n/locale';
 import { getWebsitePublishedChangelog, getWebsitePublishedPosts, getWebsitePublishedSkills } from '@/lib/cms-content';
+import { getSitemapOpportunities } from '@/lib/jobs';
 import { postAlternateLanguages } from '@/lib/post-alternates';
 
 const BASE = 'https://muicv.com';
@@ -37,10 +38,11 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const generatedAt = new Date();
-  const [postsZh, skills, changelog] = await Promise.all([
+  const [postsZh, skills, changelog, opportunities] = await Promise.all([
     getWebsitePublishedPosts('zh-CN'),
     getWebsitePublishedSkills(),
     getWebsitePublishedChangelog(),
+    getSitemapOpportunities(),
   ]);
   // 非默认语言的文章 URL（每个 locale 一组），用于 sitemap 收录与 hreflang。
   const localizedPosts = Object.fromEntries(
@@ -155,6 +157,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         alternates: postAlternatesFor(post.section, post.slug),
       })),
     ),
+    // 采集岗位详情（已排除 Remotive，见 lib/jobs.ts）
+    ...opportunities.map((doc) => ({
+      path: `/jobs/o/${encodeURIComponent(doc.id)}`,
+      priority: 0.5,
+      changeFrequency: 'weekly' as const,
+      lastModified: toDate(doc.updatedAt),
+    })),
     ...skills.map((skill) => ({
       path: `/skills/${encodeURIComponent(skill.slug)}`,
       priority: 0.7,

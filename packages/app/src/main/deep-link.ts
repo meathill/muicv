@@ -238,6 +238,11 @@ async function handleMuirouterLinked(parsed: URL): Promise<void> {
  * 没激活 profile 时直接忽略并提示 renderer（让 UI 引导用户先选档案）。
  */
 async function handleImportCommunityJd(parsed: URL): Promise<void> {
+  const opportunityId = parsed.searchParams.get('opportunity');
+  if (opportunityId) {
+    await handleImportOpportunity(opportunityId);
+    return;
+  }
   const id = parsed.searchParams.get('id');
   if (!id) return;
   const { ingestCapturedJd } = await import('./extension-jobs.ts');
@@ -268,6 +273,29 @@ async function handleImportCommunityJd(parsed: URL): Promise<void> {
     });
   } catch (err) {
     console.warn('[deep-link] import-jd failed', err);
+  }
+}
+
+/** `muicv://import-jd?opportunity=<cmsId>` —— 网页 /jobs/o/:id 点「用这个 JD」，导入采集岗位。 */
+async function handleImportOpportunity(id: string): Promise<void> {
+  const { ingestCapturedJd } = await import('./extension-jobs.ts');
+  const { fetchCmsOpportunityById, siteIdForHost } = await import('@muicv/shared');
+  try {
+    const doc = await fetchCmsOpportunityById(id);
+    if (!doc) return;
+    await ingestCapturedJd({
+      url: doc.applyUrl,
+      canonicalUrl: doc.applyUrl,
+      sourceSite: siteIdForHost(new URL(doc.applyUrl).hostname),
+      title: doc.title,
+      company: doc.company,
+      location: doc.location,
+      employmentType: doc.employmentType ?? null,
+      markdown: doc.descriptionMarkdown,
+      extractedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('[deep-link] import opportunity failed', err);
   }
 }
 
