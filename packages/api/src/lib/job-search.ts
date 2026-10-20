@@ -1,51 +1,43 @@
 import {
-  classifyCategory,
-  classifyRegion,
-  classifyRemote,
+  buildFilterSql,
+  buildFtsPlan,
   dedupeListings,
-  extractFiltersFromQuery,
+  detectQueryFilters,
+  isCountryCode,
   isOneOf,
   JOB_CATEGORIES,
+  JOB_FILTER_KEYS,
   JOB_KINDS,
-  JOB_REGIONS,
-  type JobListing,
+  type JobFilterKey,
+  type JobIndexRow,
   type JobSearchEnv,
   type JobSearchFilters,
   type JobSearchRequest,
   type JobSearchResponse,
-  type Opportunity,
-  type OpportunityListQuery,
-  opportunityToListing,
-  parseJobVectorId,
+  LOCATION_REGIONS,
   queryJobVectors,
-  REMOTE_TYPES,
-  summarize,
+  reciprocalRankFusion,
+  rowToListing,
+  type SqlDatabase,
+  WORKPLACES,
 } from '@muicv/shared';
 
-import type { CommunityJdRow } from './community-jd.ts';
-
 /**
- * 统一岗位搜索（采集岗位 + 社区 JD）。
+ * 统一岗位混合检索（采集岗位 + 社区 JD，全部在 D1 jobIndex）。
  *
- * - 有 q 且有 AI/Vectorize：q → bge-m3 embedding → Vectorize topK（metadata 过滤）→ 回源 hydrate
- * - 向量不可用 / 无结果 / 报错：降级关键词（社区 FTS + CMS like）
- * - 无 q：按时间倒序
- * 结构化过滤 = 显式参数 ∪ 从 q 规则抽取（显式优先）。结果按 company+title / url 折叠去重。
+ * q 存在时三路召回，各自都带同一套结构化 WHERE（硬约束）：
+ *   1. FTS5 trigram（bm25）：中英文模糊 / 拼写容错
+ *   2. LIKE：< 3 字符的短词（「前端」「Go」trigram 匹配不了）
+ *   3. 语义：bge-m3 → Vectorize topK（kind/workplace/category 下推 metadata）→ 回 D1 按 WHERE 复核
+ * 然后 RRF 融合 → 按 company+title / url 折叠 → 分页。无 q 时按 postedAt 倒序。
  */
 
 export const MAX_PAGE_SIZE = 50;
-const VECTOR_TOP_K = 100;
+const RECALL_LIMIT = 100;
 
 export type JobSearchDeps = {
+  db: SqlDatabase;
   vector: JobSearchEnv | null;
-  community: {
-    byIds(ids: string[]): Promise<CommunityJdRow[]>;
-    search(q: string | undefined, limit: number): Promise<CommunityJdRow[]>;
-  };
-  collected: {
-    byIds(ids: string[]): Promise<Opportunity[]>;
-    list(query: OpportunityListQuery): Promise<Opportunity[]>;
-  };
   log?: (message: string) => void;
 };
 
@@ -54,9 +46,19 @@ export function parseSearchRequest(input: Record<string, unknown>): JobSearchReq
   const q = typeof input.q === 'string' ? input.q.trim().slice(0, 300) : '';
   if (q) req.q = q;
   if (isOneOf(JOB_KINDS, input.kind)) req.kind = input.kind;
-  if (isOneOf(REMOTE_TYPES, input.remote)) req.remote = input.remote;
-  if (isOneOf(JOB_REGIONS, input.region)) req.region = input.region;
+  // 兼容早期参数名 remote=remote|hybrid|onsite
+  const workplace = input.workplace ?? input.remote;
+  if (isOneOf(WORKPLACES, workplace)) req.workplace = workplace;
+  if (isOneOf(LOCATION_REGIONS, input.region)) req.region = input.region;
   if (isOneOf(JOB_CATEGORIES, input.category)) req.category = input.category;
+  if (isCountryCode(input.country)) req.country = input.country.toUpperCase();
+  const utc = Number(input.utcOffset);
+  if (input.utcOffset !== undefined && input.utcOffset !== '' && Number.isFinite(utc) && utc >= -12 && utc <= 14) {
+    req.utcOffset = utc;
+  }
+  const ignoreRaw = Array.isArray(input.ignore) ? input.ignore.join(',') : String(input.ignore ?? '');
+  const ignore = ignoreRaw.split(',').filter((k): k is JobFilterKey => (JOB_FILTER_KEYS as string[]).includes(k));
+  if (ignore.length) req.ignore = ignore;
   const page = Number(input.page);
   const pageSize = Number(input.pageSize);
   req.page = Number.isInteger(page) && page > 0 ? Math.min(page, 20) : 1;
@@ -64,115 +66,126 @@ export function parseSearchRequest(input: Record<string, unknown>): JobSearchReq
   return req;
 }
 
-export function communityToListing(row: CommunityJdRow, score: number | null = null): JobListing {
-  const title = row.title ?? '未命名岗位';
-  const location = row.location ?? '';
-  const category = classifyCategory(title);
-  return {
-    id: `community:${row.id}`,
-    kind: 'community',
-    title,
-    company: row.company ?? '未知公司',
-    location,
-    remote: classifyRemote(`${location} ${title}`),
-    region: classifyRegion(location),
-    category,
-    source: row.sourceSite,
-    url: row.canonicalUrl,
-    summary: summarize(row.markdown),
-    postedAt: new Date(row.createdAt).toISOString(),
-    score,
-  };
+/** 显式参数优先；q 里识别出的过滤只补充显式没给、且未被 ignore 的键。 */
+export function resolveFilters(req: JobSearchRequest): {
+  filters: JobSearchFilters;
+  detected: JobFilterKey[];
+  residual: string;
+} {
+  const explicit: JobSearchFilters = {};
+  for (const key of JOB_FILTER_KEYS) {
+    if (req[key] !== undefined) Object.assign(explicit, { [key]: req[key] });
+  }
+  if (!req.q) return { filters: explicit, detected: [], residual: '' };
+  const { filters: auto, residual } = detectQueryFilters(req.q);
+  const detected: JobFilterKey[] = [];
+  const filters = { ...explicit };
+  for (const key of JOB_FILTER_KEYS) {
+    if (auto[key] === undefined || explicit[key] !== undefined || req.ignore?.includes(key)) continue;
+    Object.assign(filters, { [key]: auto[key] });
+    detected.push(key);
+  }
+  return { filters, detected, residual };
 }
 
-function matchesFilters(item: JobListing, filters: JobSearchFilters): boolean {
-  if (filters.kind && item.kind !== filters.kind) return false;
-  if (filters.remote && item.remote !== filters.remote) return false;
-  if (filters.region && item.region !== filters.region) return false;
-  if (filters.category && item.category !== filters.category) return false;
-  return true;
+async function ftsRecall(db: SqlDatabase, text: string, filters: JobSearchFilters): Promise<JobIndexRow[]> {
+  const plan = buildFtsPlan(text);
+  if (!plan.match) return [];
+  const { where, params } = buildFilterSql(filters);
+  const res = await db
+    .prepare(
+      `SELECT j.* FROM jobIndexFts f JOIN jobIndex j ON j.rowid = f.rowid
+       WHERE jobIndexFts MATCH ? AND ${where}
+       ORDER BY bm25(jobIndexFts, 10.0, 6.0, 2.0, 1.0) LIMIT ?`,
+    )
+    .bind(plan.match, ...params, RECALL_LIMIT)
+    .all<JobIndexRow>();
+  return res.results ?? [];
 }
 
-function paginate(items: JobListing[], page: number, pageSize: number) {
-  const start = (page - 1) * pageSize;
-  return { items: items.slice(start, start + pageSize), hasMore: items.length > start + pageSize };
+async function likeRecall(db: SqlDatabase, text: string, filters: JobSearchFilters): Promise<JobIndexRow[]> {
+  const { shortTerms } = buildFtsPlan(text);
+  if (shortTerms.length === 0) return [];
+  const { where, params } = buildFilterSql(filters);
+  const likes = shortTerms.map(() => '(j.title LIKE ? OR j.company LIKE ? OR j.body LIKE ?)');
+  const likeParams = shortTerms.flatMap((t) => [`%${t}%`, `%${t}%`, `%${t}%`]);
+  const res = await db
+    .prepare(`SELECT j.* FROM jobIndex j WHERE ${where} AND (${likes.join(' OR ')}) ORDER BY j.postedAt DESC LIMIT ?`)
+    .bind(...params, ...likeParams, RECALL_LIMIT)
+    .all<JobIndexRow>();
+  return res.results ?? [];
 }
 
-async function vectorSearch(deps: JobSearchDeps, vector: JobSearchEnv, q: string, filters: JobSearchFilters) {
-  const matches = await queryJobVectors(vector, q, filters, VECTOR_TOP_K);
-  const refs = matches.flatMap((m) => {
-    const ref = parseJobVectorId(m.id);
-    return ref ? [{ ...ref, score: m.score }] : [];
+async function vectorRecall(
+  db: SqlDatabase,
+  vector: JobSearchEnv,
+  text: string,
+  filters: JobSearchFilters,
+): Promise<JobIndexRow[]> {
+  const matches = await queryJobVectors(vector, text, filters, RECALL_LIMIT);
+  if (matches.length === 0) return [];
+  const ids = matches.map((m) => m.id);
+  const { where, params } = buildFilterSql(filters);
+  const res = await db
+    .prepare(`SELECT j.* FROM jobIndex j WHERE j.id IN (${ids.map(() => '?').join(',')}) AND ${where}`)
+    .bind(...ids, ...params)
+    .all<JobIndexRow>();
+  const byId = new Map((res.results ?? []).map((r) => [r.id, r]));
+  // 保持向量相似度顺序；已下线 / 不满足硬约束的自然被丢掉
+  return ids.flatMap((id) => {
+    const row = byId.get(id);
+    return row ? [row] : [];
   });
-  if (refs.length === 0) return [];
-  const communityIds = refs.filter((r) => r.kind === 'community').map((r) => r.refId);
-  const collectedIds = refs.filter((r) => r.kind === 'collected').map((r) => r.refId);
-  const [community, collected] = await Promise.all([
-    communityIds.length ? deps.community.byIds(communityIds) : [],
-    collectedIds.length ? deps.collected.byIds(collectedIds) : [],
-  ]);
-  const communityMap = new Map(community.map((row) => [row.id, row]));
-  const collectedMap = new Map(collected.map((doc) => [doc.id, doc]));
-  // 回源时已隐藏 / 过期的条目自然消失（向量索引允许短暂滞后）
-  return refs.flatMap((ref) => {
-    if (ref.kind === 'community') {
-      const row = communityMap.get(ref.refId);
-      return row ? [communityToListing(row, ref.score)] : [];
-    }
-    const doc = collectedMap.get(ref.refId);
-    return doc ? [opportunityToListing(doc, ref.score)] : [];
-  });
 }
 
-async function listSearch(deps: JobSearchDeps, q: string | undefined, filters: JobSearchFilters, want: number) {
-  // 社区 JD 没有结构化列：多取一些再按规则分类过滤
-  const [community, collected] = await Promise.all([
-    filters.kind === 'collected' ? [] : deps.community.search(q, Math.min(want * 2, 100)),
-    filters.kind === 'community'
-      ? []
-      : deps.collected.list({
-          ...(q ? { keyword: q } : {}),
-          ...(filters.remote ? { remote: filters.remote } : {}),
-          ...(filters.region ? { region: filters.region } : {}),
-          ...(filters.category ? { category: filters.category } : {}),
-          pageSize: want,
-        }),
-  ]);
-  return [...collected.map((doc) => opportunityToListing(doc)), ...community.map((row) => communityToListing(row))]
-    .filter((item) => matchesFilters(item, filters))
-    .sort((a, b) => b.postedAt.localeCompare(a.postedAt));
+async function latest(db: SqlDatabase, filters: JobSearchFilters, page: number, pageSize: number) {
+  const { where, params } = buildFilterSql(filters);
+  const res = await db
+    .prepare(`SELECT j.* FROM jobIndex j WHERE ${where} ORDER BY j.postedAt DESC LIMIT ? OFFSET ?`)
+    .bind(...params, pageSize * 2 + 1, (page - 1) * pageSize)
+    .all<JobIndexRow>();
+  const items = dedupeListings((res.results ?? []).map((row) => rowToListing(row)));
+  return { items: items.slice(0, pageSize), hasMore: (res.results ?? []).length > pageSize };
 }
 
 export async function searchAllJobs(deps: JobSearchDeps, req: JobSearchRequest): Promise<JobSearchResponse> {
   const page = req.page ?? 1;
   const pageSize = req.pageSize ?? 20;
-  const explicit: JobSearchFilters = {
-    ...(req.kind ? { kind: req.kind } : {}),
-    ...(req.remote ? { remote: req.remote } : {}),
-    ...(req.region ? { region: req.region } : {}),
-    ...(req.category ? { category: req.category } : {}),
-  };
-  const filters: JobSearchFilters = req.q ? { ...extractFiltersFromQuery(req.q), ...explicit } : explicit;
-  const want = page * pageSize + 1;
+  const { filters, detected, residual } = resolveFilters(req);
+  const base = { page, pageSize, filters, detected };
 
-  if (req.q && deps.vector) {
+  // q 全是过滤短语（「我在中国 远程」）时，等价于按条件看最新
+  if (!req.q || !residual) {
+    return { ...base, ...(await latest(deps.db, filters, page, pageSize)), mode: 'latest' };
+  }
+
+  let vectorRows: JobIndexRow[] = [];
+  let vectorOk = false;
+  const keywordTask = Promise.all([ftsRecall(deps.db, residual, filters), likeRecall(deps.db, residual, filters)]);
+  if (deps.vector) {
     try {
-      const items = dedupeListings(await vectorSearch(deps, deps.vector, req.q, filters));
-      if (items.length > 0) return { ...paginate(items, page, pageSize), page, pageSize, mode: 'vector', filters };
+      vectorRows = await vectorRecall(deps.db, deps.vector, residual, filters);
+      vectorOk = true;
     } catch (error) {
-      deps.log?.(`[jobs/search] vector 降级: ${String(error)}`);
+      deps.log?.(`[jobs/search] 语义检索降级: ${String(error)}`);
     }
   }
+  const [ftsRows, likeRows] = await keywordTask;
 
-  if (req.q) {
-    let items = dedupeListings(await listSearch(deps, req.q, filters, want));
-    // 自然语言整句做 LIKE 基本命不中：有抽到过滤条件就退化为「按条件看最新」
-    if (items.length === 0 && Object.keys(filters).length > Object.keys(explicit).length) {
-      items = dedupeListings(await listSearch(deps, undefined, filters, want));
-    }
-    return { ...paginate(items, page, pageSize), page, pageSize, mode: 'keyword', filters };
-  }
-
-  const items = dedupeListings(await listSearch(deps, undefined, filters, want));
-  return { ...paginate(items, page, pageSize), page, pageSize, mode: 'latest', filters };
+  const rows = new Map<string, JobIndexRow>();
+  for (const row of [...ftsRows, ...likeRows, ...vectorRows]) rows.set(row.id, row);
+  const fused = reciprocalRankFusion([ftsRows, likeRows, vectorRows].map((list) => list.map((r) => r.id)));
+  const listings = dedupeListings(
+    fused.flatMap(({ id, score }) => {
+      const row = rows.get(id);
+      return row ? [rowToListing(row, Number(score.toFixed(5)))] : [];
+    }),
+  );
+  const start = (page - 1) * pageSize;
+  return {
+    ...base,
+    items: listings.slice(start, start + pageSize),
+    hasMore: listings.length > start + pageSize,
+    mode: vectorOk ? 'hybrid' : 'keyword',
+  };
 }

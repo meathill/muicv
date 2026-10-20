@@ -176,5 +176,10 @@ export async function hideCommunityJd(env: WalletEnv, id: string, now = Date.now
   )
     .bind(now, id)
     .run();
+  // 同步统一检索索引（表在旧测试库里可能不存在）
+  await env.MUICV_API_DB.prepare(`UPDATE jobIndex SET status = 'hidden', updatedAt = ? WHERE id = ?`)
+    .bind(now, `community:${id}`)
+    .run()
+    .catch(() => {});
   return (result.meta?.changes ?? 0) > 0;
 }

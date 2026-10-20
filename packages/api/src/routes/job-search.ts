@@ -1,28 +1,29 @@
 import {
+  communityToIndexRow,
   fetchCmsOpportunities,
   indexJobs,
+  indexRowToIndexable,
   type JobSearchEnv,
-  type Opportunity,
-  type OpportunityCmsOptions,
+  opportunityToIndexRow,
+  type SqlDatabase,
+  upsertJobIndexRows,
 } from '@muicv/shared';
 import type { Context } from 'hono';
 
 import type { CommunityJdRow } from '../lib/community-jd.ts';
-import { searchPublishedJds } from '../lib/community-jd.ts';
-import { communityIndexable, opportunityIndexable } from '../lib/job-index.ts';
 import { type JobSearchDeps, parseSearchRequest, searchAllJobs } from '../lib/job-search.ts';
 import { readJsonBody } from '../lib/json-body.ts';
 import type { AppEnv } from '../middleware/api-key.ts';
 
 /**
- * GET|POST /jobs/search —— 统一岗位自然语言搜索（公开 API，给桌面端 / 扩展 / skill / website）。
- * 鉴权：optionalApiKey。带 key 走登录用户配额，匿名按 IP 走更低配额（Workers Rate Limiting）。
- * POST /jobs/search/reindex —— 运维回填向量，`x-reindex-token` 校验 JOBS_REINDEX_TOKEN。
+ * GET|POST /jobs/search —— 统一岗位混合检索（公开 API，给桌面端 / 扩展 / skill / website）。
+ * 鉴权：optionalApiKey。带 key 按 userId 限流，匿名按 IP（Workers Rate Limiting）。
+ * POST /jobs/search/reindex —— 运维回填 jobIndex + 向量，`x-reindex-token` 校验 JOBS_REINDEX_TOKEN。
  */
 
 type RateLimiter = { limit(options: { key: string }): Promise<{ success: boolean }> };
 
-type JobSearchBindings = {
+export type JobSearchBindings = {
   AI?: JobSearchEnv['AI'];
   JOBS_INDEX?: JobSearchEnv['JOBS_INDEX'];
   JOBS_SEARCH_LIMITER?: RateLimiter;
@@ -40,33 +41,12 @@ export function vectorEnv(env: JobSearchBindings): JobSearchEnv | null {
   return env.AI && env.JOBS_INDEX ? { AI: env.AI, JOBS_INDEX: env.JOBS_INDEX } : null;
 }
 
-function cmsOptions(env: JobSearchBindings): OpportunityCmsOptions {
-  return env.MUICV_CMS_URL ? { baseUrl: env.MUICV_CMS_URL } : {};
-}
-
-async function communityByIds(db: D1Database, ids: string[]): Promise<CommunityJdRow[]> {
-  const placeholders = ids.map(() => '?').join(',');
-  const rows = await db
-    .prepare(`SELECT * FROM communityJd WHERE status = 'published' AND id IN (${placeholders})`)
-    .bind(...ids)
-    .all<CommunityJdRow>();
-  return rows.results ?? [];
+function sqlDb(env: JobSearchBindings): SqlDatabase {
+  return env.MUICV_API_DB as unknown as SqlDatabase;
 }
 
 export function buildDeps(env: JobSearchBindings): JobSearchDeps {
-  const cms = cmsOptions(env);
-  return {
-    vector: vectorEnv(env),
-    community: {
-      byIds: (ids) => communityByIds(env.MUICV_API_DB, ids),
-      search: (q, limit) => searchPublishedJds(env, { ...(q ? { q } : {}), limit: Math.min(limit, 50) }),
-    },
-    collected: {
-      byIds: async (ids) => (await fetchCmsOpportunities({ ids, pageSize: ids.length }, cms)).docs,
-      list: async (query) => (await fetchCmsOpportunities(query, cms)).docs,
-    },
-    log: console.warn,
-  };
+  return { db: sqlDb(env), vector: vectorEnv(env), log: console.warn };
 }
 
 async function checkRateLimit(c: Context<AppEnv>): Promise<Response | null> {
@@ -96,40 +76,50 @@ export async function handleJobsSearch(c: Context<AppEnv>): Promise<Response> {
   return c.json(result);
 }
 
-/** 社区 JD 入库后异步建向量；失败不影响贡献与积分。 */
+/** 社区 JD 入库后同步进 jobIndex 并建向量；失败不影响贡献与积分。 */
 export async function indexCommunityJdById(env: JobSearchBindings, id: string): Promise<void> {
+  const row = await env.MUICV_API_DB.prepare(`SELECT * FROM communityJd WHERE id = ? LIMIT 1`)
+    .bind(id)
+    .first<CommunityJdRow>();
+  if (!row) return;
+  const indexRow = communityToIndexRow(row);
+  await upsertJobIndexRows(sqlDb(env), [indexRow]);
   const vector = vectorEnv(env);
-  if (!vector) return;
-  const [row] = await communityByIds(env.MUICV_API_DB, [id]);
-  if (row) await indexJobs(vector, [communityIndexable(row)]);
+  if (vector && row.status === 'published') await indexJobs(vector, [indexRowToIndexable(indexRow)]);
 }
 
 export async function handleJobsReindex(c: Context<AppEnv>): Promise<Response> {
   const env = bindings(c);
   const token = c.req.header('x-reindex-token');
   if (!env.JOBS_REINDEX_TOKEN || token !== env.JOBS_REINDEX_TOKEN) return c.json({ error: 'forbidden' }, 403);
-  const vector = vectorEnv(env);
-  if (!vector) return c.json({ error: 'vectorize-not-configured' }, 503);
 
   const parsed = await readJsonBody<{ kind?: unknown; page?: unknown }>(c);
   if (!parsed.ok) return parsed.response;
   const kind = parsed.body.kind === 'collected' ? 'collected' : 'community';
   const page = Math.max(Number(parsed.body.page) || 1, 1);
   const pageSize = 50;
+  const vector = vectorEnv(env);
 
+  let rows: ReturnType<typeof communityToIndexRow>[];
+  let nextPage: number | null;
   if (kind === 'community') {
-    const rows = await env.MUICV_API_DB.prepare(
-      `SELECT * FROM communityJd WHERE status = 'published' ORDER BY createdAt LIMIT ? OFFSET ?`,
-    )
+    const res = await env.MUICV_API_DB.prepare(`SELECT * FROM communityJd ORDER BY createdAt LIMIT ? OFFSET ?`)
       .bind(pageSize, (page - 1) * pageSize)
       .all<CommunityJdRow>();
-    const items = rows.results ?? [];
-    const indexed = await indexJobs(vector, items.map(communityIndexable));
-    return c.json({ kind, page, indexed, nextPage: items.length === pageSize ? page + 1 : null });
+    const items = res.results ?? [];
+    rows = items.map((jd) => communityToIndexRow(jd));
+    nextPage = items.length === pageSize ? page + 1 : null;
+  } else {
+    const result = await fetchCmsOpportunities(
+      { page, pageSize },
+      env.MUICV_CMS_URL ? { baseUrl: env.MUICV_CMS_URL } : {},
+    );
+    rows = result.docs.map((doc) => opportunityToIndexRow(doc));
+    nextPage = result.hasMore ? page + 1 : null;
   }
-
-  const result = await fetchCmsOpportunities({ page, pageSize }, cmsOptions(env));
-  const docs: Opportunity[] = result.docs;
-  const indexed = await indexJobs(vector, docs.map(opportunityIndexable));
-  return c.json({ kind, page, indexed, nextPage: result.hasMore ? page + 1 : null });
+  await upsertJobIndexRows(sqlDb(env), rows);
+  const indexed = vector
+    ? await indexJobs(vector, rows.filter((r) => r.status === 'published').map(indexRowToIndexable))
+    : 0;
+  return c.json({ kind, page, upserted: rows.length, indexed, nextPage });
 }
