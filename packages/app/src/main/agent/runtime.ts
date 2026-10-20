@@ -11,6 +11,7 @@ import type { WebContents } from 'electron';
 import type { AgentChunk, AppConfig, ChatMessage, ConversationType, ToolCallRecord } from '../../shared/types.ts';
 import { getConversation, saveConversation } from '../conversations.ts';
 import { buildApiTools } from './api-tools.ts';
+import { buildJobSearchTools } from './api-tools-jobs.ts';
 import { buildSttTools } from './api-tools-stt.ts';
 import { buildSyncTools } from './api-tools-sync.ts';
 import { buildAgentInput, getModelBudget } from './history.ts';
@@ -88,6 +89,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     ...buildApiTools(config, emitArtifact),
     ...buildWebTools(config),
     ...buildSyncTools(config),
+    ...buildJobSearchTools(config),
     ...buildSttTools(config, sender),
     ...buildQuestionTools((waiting) => {
       isWaitingForQuestion = waiting;

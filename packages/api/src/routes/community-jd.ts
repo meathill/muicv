@@ -4,6 +4,7 @@ import type { Context } from 'hono';
 import { contributeJd, getPublishedJd, searchPublishedJds } from '../lib/community-jd.ts';
 import { readJsonBody } from '../lib/json-body.ts';
 import type { AppEnv } from '../middleware/api-key.ts';
+import { indexCommunityJdById } from './job-search.ts';
 
 function isCapturedJd(value: unknown): value is CapturedJd {
   if (!value || typeof value !== 'object') return false;
@@ -35,6 +36,14 @@ export async function handleJobsContribute(c: Context<AppEnv>): Promise<Response
   const userId = c.get('userId') as string;
   const result = await contributeJd(c.env, userId, parsed.body.capturedJd);
   if (!result.ok) return c.json({ error: result.error }, result.status);
+  if (!result.duplicate) {
+    // 入库即建向量，进统一搜索；不阻塞响应，失败不影响积分
+    c.executionCtx.waitUntil(
+      indexCommunityJdById(c.env as never, result.id).catch((error: unknown) =>
+        console.warn('[jobs/contribute] 向量索引失败', error),
+      ),
+    );
+  }
   return c.json({
     id: result.id,
     awarded: result.awarded,

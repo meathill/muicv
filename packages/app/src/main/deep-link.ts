@@ -238,34 +238,12 @@ async function handleMuirouterLinked(parsed: URL): Promise<void> {
  * 没激活 profile 时直接忽略并提示 renderer（让 UI 引导用户先选档案）。
  */
 async function handleImportCommunityJd(parsed: URL): Promise<void> {
+  const opportunityId = parsed.searchParams.get('opportunity');
   const id = parsed.searchParams.get('id');
-  if (!id) return;
-  const { ingestCapturedJd } = await import('./extension-jobs.ts');
-  const cfg = getConfig();
+  const { importJobById } = await import('./job-import.ts');
   try {
-    const res = await fetch(`${cfg.muicvApiBase.replace(/\/$/, '')}/jobs/community/${encodeURIComponent(id)}`);
-    if (!res.ok) return;
-    const row = (await res.json()) as {
-      canonicalUrl?: string;
-      sourceSite?: string;
-      title?: string | null;
-      company?: string | null;
-      location?: string | null;
-      employmentType?: string | null;
-      markdown?: string;
-    };
-    if (typeof row.markdown !== 'string' || !row.canonicalUrl) return;
-    await ingestCapturedJd({
-      url: row.canonicalUrl,
-      canonicalUrl: row.canonicalUrl,
-      sourceSite: (row.sourceSite as 'generic') ?? 'generic',
-      title: row.title ?? null,
-      company: row.company ?? null,
-      location: row.location ?? null,
-      employmentType: row.employmentType ?? null,
-      markdown: row.markdown,
-      extractedAt: new Date().toISOString(),
-    });
+    if (opportunityId) await importJobById('collected', opportunityId);
+    else if (id) await importJobById('community', id);
   } catch (err) {
     console.warn('[deep-link] import-jd failed', err);
   }

@@ -29,41 +29,6 @@ function toPublic(row: typeof schema.communityJd.$inferSelect): CommunityJdPubli
   };
 }
 
-export async function listPublishedJds(
-  opts: { q?: string | undefined; site?: string | undefined; limit?: number | undefined } = {},
-): Promise<CommunityJdPublic[]> {
-  const limit = Math.min(opts.limit ?? 30, 50);
-  const q = opts.q
-    ?.trim()
-    .replace(/['"^:()*]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (q) {
-    const { env } = await getCloudflareContext({ async: true });
-    const stmt = opts.site
-      ? env.MUICV_DB.prepare(
-          `SELECT j.* FROM communityJdFts f JOIN communityJd j ON j.rowid = f.rowid
-           WHERE communityJdFts MATCH ? AND j.status = 'published' AND j.sourceSite = ?
-           ORDER BY rank LIMIT ?`,
-        ).bind(q, opts.site, limit)
-      : env.MUICV_DB.prepare(
-          `SELECT j.* FROM communityJdFts f JOIN communityJd j ON j.rowid = f.rowid
-           WHERE communityJdFts MATCH ? AND j.status = 'published'
-           ORDER BY rank LIMIT ?`,
-        ).bind(q, limit);
-    const rows = await stmt.all<typeof schema.communityJd.$inferSelect>();
-    return (rows.results ?? []).map(toPublic);
-  }
-  const db = await getDb();
-  const rows = await db
-    .select()
-    .from(schema.communityJd)
-    .where(eq(schema.communityJd.status, 'published'))
-    .orderBy(desc(schema.communityJd.createdAt))
-    .limit(limit);
-  return rows.filter((r) => (opts.site ? r.sourceSite === opts.site : true)).map(toPublic);
-}
-
 export async function getPublishedJd(id: string): Promise<CommunityJdPublic | null> {
   const db = await getDb();
   const rows = await db.select().from(schema.communityJd).where(eq(schema.communityJd.id, id)).limit(1);
@@ -97,6 +62,10 @@ export async function hideJd(id: string): Promise<boolean> {
     `UPDATE communityJd SET status = 'hidden', updatedAt = ? WHERE id = ? AND status = 'published'`,
   )
     .bind(Date.now(), id)
+    .run();
+  // 同步统一检索索引：搜索按 jobIndex.status 硬过滤，下架即从搜索消失
+  await env.MUICV_DB.prepare(`UPDATE jobIndex SET status = 'hidden', updatedAt = ? WHERE id = ?`)
+    .bind(Date.now(), `community:${id}`)
     .run();
   return (result.meta.changes ?? 0) > 0;
 }

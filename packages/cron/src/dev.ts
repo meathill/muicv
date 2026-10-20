@@ -1,12 +1,33 @@
-import { setTimeout as sleep } from 'node:timers/promises';
+import type { CmsWriter } from './cms-client.ts';
+import { collectOpportunities } from './collect.ts';
 
-async function main() {
-  console.log('[cron] dev 占位脚本：后续接入 Cloudflare Cron Trigger');
-  await sleep(50);
-  console.log('[cron] done');
-}
+/**
+ * 本地试跑：真实拉取各数据源，但 CMS / Vectorize 用内存假实现，不写任何远端。
+ * `pnpm --filter @muicv/cron dev`
+ */
+const memory: CmsWriter = {
+  async listExistingKeys() {
+    return { dedupeKeys: new Set(), fingerprints: new Set() };
+  },
+  async create(doc) {
+    console.log(
+      `[dry] ${doc.source} | ${doc.company} | ${doc.title} | ${doc.workplace} ${doc.allowedCountries.join('/')} ${doc.allowedRegions.join('/')} ${doc.utcOffsetMin ?? ''}~${doc.utcOffsetMax ?? ''}`,
+    );
+    return doc.dedupeKey;
+  },
+  async expireBefore() {
+    return [];
+  },
+};
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
+const report = await collectOpportunities({
+  fetchImpl: fetch,
+  cms: memory,
+  db: null,
+  search: null,
+  llm: null,
+  now: new Date(),
+  maxAgeDays: 30,
+  maxNewPerRun: 1000,
 });
+console.log(report);

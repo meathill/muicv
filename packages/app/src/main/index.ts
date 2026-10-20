@@ -20,6 +20,7 @@ import { registerAgentConversationIpc } from './ipc/agent-conversation.ts';
 import { registerAudioPreviewIpc } from './ipc/audio-preview.ts';
 import { registerConfigProfileIpc } from './ipc/config-profile.ts';
 import { inWorkspace, registerFsAttachmentsIpc } from './ipc/fs-attachments.ts';
+import { registerJobsIpc } from './ipc/jobs.ts';
 import { registerSessionShellAppIpc } from './ipc/session-shell-app.ts';
 import { registerSpeechIpc } from './ipc/speech.ts';
 import { dedupeProfiles, getConfig } from './store.ts';
@@ -128,6 +129,7 @@ function createWindow() {
 // -------------------- IPC 模块化注册 --------------------
 
 registerConfigProfileIpc({ getMainWindow: () => mainWindow });
+registerJobsIpc();
 registerSessionShellAppIpc();
 registerAgentConversationIpc();
 registerFsAttachmentsIpc();

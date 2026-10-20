@@ -65,6 +65,11 @@
     {
       "binding": "WORKER_SELF_REFERENCE",
       "service": "muicv-web"
+    },
+    // /jobs 搜索走 api worker 的 /jobs/search（同 zone worker 互调用 service binding，不绕公网）
+    {
+      "binding": "MUICV_API",
+      "service": "muicv-api"
     }
   ],
   // OpenNext ISR revalidation queue：时间型 revalidate（posts / sitemap）后台排队执行。
