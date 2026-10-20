@@ -963,3 +963,17 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
 **买一次性补充包**（¥ 通道开微信 / 支付宝 / 国际卡，这几种都能付），而不是「切美元订阅」。
 定价页 ¥ 视图提示、dashboard 文案、9 语言 FAQ 都按这个口径写；加了「支持哪些支付方式」FAQ。
 如果你确认某类银联卡可用，需要再校准这段文案。
+
+## 统一岗位频道 /jobs（2026-10-20）
+
+- **合并而非新开频道**：采集岗位（CMS `opportunities`）与社区 JD（D1 `communityJd`）在 /jobs 同屏，来源 tab 区分；路由不变。
+- **数据源**：Greenhouse / Lever / Ashby 公开岗位板（种子公司在 `packages/cron/src/seeds.ts`）+ Remotive。国内招聘站无合规 API，靠扩展贡献补位。
+  - Remotive 条款：必须 via 署名并链回原帖、不得转投 Google Jobs 等 → 详情页 noindex、不进 sitemap、不输出 JobPosting 结构化数据。
+- **「近期」口径**：只收 `postedAt` 在 30 天内的岗位，超过即 expired（Ashby 部分常年挂着的岗位 publishedAt 很老，会被丢弃——有意为之）。
+- **去重**：采集内按 `dedupeKey`（source:sourceId）幂等 + `fingerprint`（company+title 归一化）跨来源去重；与社区 JD 只在**展示层**按 company+title / url 折叠（`dedupeListings`），社区贡献照常入库、照常发积分。
+- **搜索**：`GET|POST /jobs/search` 是唯一入口（桌面端 `search_jobs` 工具、website、扩展 / skill 都走它，客户端用 shared `searchJobs`）。
+  - q → `@cf/baai/bge-m3`（中英多语）→ Vectorize topK 100 + metadata filter → 回源 hydrate（已隐藏 / 过期的自然消失）→ 去重分页。
+  - 过滤 = 显式参数 ∪ 规则从 q 抽取（remote/region/category，`extractFiltersFromQuery`），没上 LLM 解析：规则零成本、确定，够用再说。
+  - 向量不可用 / 报错 / 无结果 → 关键词（社区 FTS + CMS like）；整句 like 命不中时退化为「按抽到的条件看最新」。
+  - 向量 id：`collected:<cmsId>` / `community:<uuid>`。社区 JD 入库后 `waitUntil` 异步索引；采集岗位由 cron 索引，过期时删向量。
+- **限流**：Workers Rate Limiting，带 key 按 userId 60/min，匿名按 IP 20/min。website 走 service binding 时没有 `cf-connecting-ip`，此时才信任 `x-muicv-client-ip`（公网请求 CF 必注入 cf-connecting-ip，伪造不了）。

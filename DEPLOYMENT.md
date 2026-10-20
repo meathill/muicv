@@ -735,3 +735,44 @@ npx skills add meathill/muicv -g
 - **点了"授权"浏览器没唤起 app**：检查 macOS 系统设置 → 默认 → 自定义 URL scheme 是否正确指向 Mui简历.app；或者用 paste fallback
 - **state 不匹配**：用户在浏览器停留太久（>5 分钟）/ 多次发起 connect 后用了旧链接 → 重新点登录按钮
 - **app 已开但浏览器在另一台机器**：scheme 仅本机有效，跨机器场景必须 fallback paste
+
+## 统一岗位频道 /jobs（采集 + 社区 + 自然语言搜索）
+
+涉及 4 个部署单元：cms（新集合）、cron（新 worker `muicv-cron`）、api（`/jobs/search`）、website（/jobs 页）。
+**按下面顺序**首次上线：
+
+1. **Vectorize 索引**（bge-m3 = 1024 维，cosine），并为过滤字段建 metadata index（必须在写入向量前建，否则旧向量不参与过滤）：
+
+   ```bash
+   pnpm exec wrangler vectorize create muicv-jobs --dimensions=1024 --metric=cosine
+   for p in kind remote region category; do
+     pnpm exec wrangler vectorize create-metadata-index muicv-jobs --propertyName=$p --type=string
+   done
+   ```
+
+2. **CMS 迁移**：`pnpm --filter @muicv/cms migrate`（新增 `opportunities` 表），随后部署 cms。
+3. **CMS 采集账号**：在 cms 后台新建用户（如 `jobs-bot@muicv.com`），勾选「Enable API Key」生成 key。
+   > 现有 access 规则是「登录即可写」，采集账号权限等同管理员；如需收紧再单独加角色。
+4. **cron secret + 部署**：
+
+   ```bash
+   pnpm --filter @muicv/cron exec wrangler secret put CMS_API_KEY   # 粘贴第 3 步的 key
+   pnpm --filter @muicv/cron deploy
+   ```
+
+   频率 `17 */6 * * *`（UTC），参数见 `packages/cron/wrangler.jsonc` vars（`MAX_AGE_DAYS` / `MAX_NEW_PER_RUN`）。
+   单次 subrequest ≈ 27 个数据源 + `MAX_NEW_PER_RUN` 次 CMS 写入，**需要 Workers Paid**（免费版上限 50）。
+5. **api secret + 部署**（`/jobs/search` 依赖 AI、`JOBS_INDEX`、两个 ratelimit 绑定）：
+
+   ```bash
+   pnpm --filter @muicv/api exec wrangler secret put JOBS_REINDEX_TOKEN   # 任意长随机串
+   ```
+
+6. **website**：新增 service binding `MUICV_API → muicv-api`，api 先部署再部署 website。
+7. **回填已有社区 JD 与已采集岗位的向量**（幂等，可重复跑）：
+
+   ```bash
+   node --env-file=.env.reindex packages/api/scripts/backfill-job-vectors.ts
+   ```
+
+本地试跑采集（真实拉数据源，不写 CMS / Vectorize）：`pnpm --filter @muicv/cron dev`。

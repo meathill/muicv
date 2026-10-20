@@ -10,12 +10,14 @@
 基于 Workers AI（bge-m3）+ Vectorize 提供自然语言搜索，作为稳定公开 API 给桌面端 / 扩展 / skill 用。
 
 - [x] shared：jobs 领域类型、分类规则、query 过滤抽取、向量工具、CMS fetcher、`searchJobs` 客户端 + 单测
-- [ ] cms：`opportunities` collection + migration
-- [ ] cron：采集 worker（Greenhouse / Lever / Ashby / Remotive）+ CMS upsert + 过期 + 向量索引 + 单测
-- [ ] api：`GET /jobs/search`（向量 + 结构化过滤 + 关键词降级 + 速率限制）、社区 JD 入库即索引、去重标记、重建索引端点 + 单测
-- [ ] app：agent 工具 `search_jobs`
-- [ ] website：/jobs 合并展示（来源 tab + 搜索）、采集岗位详情页、sitemap
-- [ ] 文档：DEPLOYMENT（Vectorize / secret / migration）、DEV_NOTE
+- [x] cms：`opportunities` collection + migration
+- [x] cron：采集 worker（Greenhouse / Lever / Ashby / Remotive）+ CMS upsert + 过期 + 向量索引 + 单测
+- [x] api：`GET /jobs/search`（向量 + 结构化过滤 + 关键词降级 + 速率限制）、社区 JD 入库即索引、去重标记、重建索引端点 + 单测
+- [x] app：agent 工具 `search_jobs`
+- [x] website：/jobs 合并展示（来源 tab + 搜索）、采集岗位详情页、sitemap
+- [x] 文档：DEPLOYMENT（Vectorize / secret / migration）、DEV_NOTE
+- [ ] **用户**：按 DEPLOYMENT「统一岗位频道」建 Vectorize 索引、跑 CMS 迁移、建采集账号与 secret、依序部署、回填向量
+- [ ] 后续：桌面端独立岗位搜索面板（目前经 agent `search_jobs`）、多语言 /jobs、LLM query 解析（视效果）
 
 ### 模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）
 
