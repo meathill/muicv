@@ -14,7 +14,14 @@ import {
 import type { CmsWriter } from './cms-client.ts';
 import { extractWithLlm, needsLlm, type TextGenerator } from './llm-location.ts';
 import { normalizeJob, type RawJob } from './normalize.ts';
-import { NICHE_FEEDS, type NicheFeed, REMOTIVE_CATEGORIES, SEED_COMPANIES, type SeedCompany } from './seeds.ts';
+import {
+  LONG_LIVED_SEEDS,
+  NICHE_FEEDS,
+  type NicheFeed,
+  REMOTIVE_CATEGORIES,
+  SEED_COMPANIES,
+  type SeedCompany,
+} from './seeds.ts';
 import { fetchAshby, fetchGreenhouse, fetchLever } from './sources/ats.ts';
 import type { FetchLike } from './sources/fetch-json.ts';
 import {
@@ -47,6 +54,8 @@ export type CollectOptions = {
   seeds?: SeedCompany[];
   remotiveCategories?: string[];
   nicheFeeds?: NicheFeed[];
+  /** 设置了 maxAgeDays 的公司（默认取 seeds.ts），不受全局过期影响 */
+  longLivedSeeds?: SeedCompany[];
   log?: (message: string) => void;
 };
 
@@ -81,12 +90,15 @@ function fetchNiche(fetchImpl: FetchLike, feed: NicheFeed): Promise<RawJob[]> {
       return fetchJobicy(fetchImpl, feed.industry);
     case 'himalayas':
       return fetchHimalayas(fetchImpl, feed.pages);
+    case 'ats':
+      return FETCHERS[feed.seed.source](fetchImpl, feed.seed);
   }
 }
 
 function nicheLabel(feed: NicheFeed): string {
   if (feed.source === 'weworkremotely') return `${feed.source}/${feed.category}`;
   if (feed.source === 'jobicy') return `${feed.source}/${feed.industry}`;
+  if (feed.source === 'ats') return `${feed.seed.source}/${feed.seed.token}`;
   return feed.source;
 }
 
@@ -127,12 +139,22 @@ export async function collectOpportunities(options: CollectOptions): Promise<Col
     llmExtracted: 0,
     errors: [],
   };
-  const cutoff = new Date(options.now.getTime() - options.maxAgeDays * 86_400_000).toISOString();
+  const daysAgo = (days: number) => new Date(options.now.getTime() - days * 86_400_000).toISOString();
+  const cutoff = daysAgo(options.maxAgeDays);
   const maxLlm = options.maxLlmPerRun ?? 20;
+  const longLived = options.longLivedSeeds ?? LONG_LIVED_SEEDS;
+  const seedCutoff = new Map(
+    longLived.map((s) => [`${s.source}:${s.name}`, daysAgo(s.maxAgeDays ?? options.maxAgeDays)]),
+  );
+  function cutoffOf(doc: OpportunityInput): string {
+    return seedCutoff.get(`${doc.source}:${doc.company}`) ?? cutoff;
+  }
 
   const raw = await fetchAllRaw(options, report.errors);
   report.fetched = raw.length;
-  const existing = await options.cms.listExistingKeys(cutoff);
+  // 取已有键要覆盖最长的收录窗口，否则长期岗位会被重复创建
+  const earliest = [cutoff, ...seedCutoff.values()].sort()[0] ?? cutoff;
+  const existing = await options.cms.listExistingKeys(earliest);
 
   // 新的在前：配额有限时优先收最新岗位
   const candidates = raw
@@ -142,7 +164,7 @@ export async function collectOpportunities(options: CollectOptions): Promise<Col
 
   const rows: JobIndexRow[] = [];
   for (let doc of candidates) {
-    if (doc.postedAt < cutoff) {
+    if (doc.postedAt < cutoffOf(doc)) {
       report.skippedOld += 1;
       continue;
     }
@@ -170,7 +192,28 @@ export async function collectOpportunities(options: CollectOptions): Promise<Col
     }
   }
 
-  const expiredIds = (await options.cms.expireBefore(cutoff)).map((id) => jobVectorId('collected', id));
+  const expired = await options.cms.expireBefore(
+    cutoff,
+    longLived.map((s) => s.name),
+  );
+  // 长期公司：只在本轮实际抓到了它的岗位板时，按「下架或超过 maxAgeDays」过期（抓取失败不误杀）
+  for (const seed of longLived) {
+    const seen = raw.filter((r) => r.source === seed.source && r.company === seed.name).map((r) => r.sourceId);
+    if (seen.length === 0 || !options.cms.expireCompany) continue;
+    try {
+      expired.push(
+        ...(await options.cms.expireCompany(
+          seed.source,
+          seed.name,
+          seen,
+          seedCutoff.get(`${seed.source}:${seed.name}`) ?? cutoff,
+        )),
+      );
+    } catch (error) {
+      report.errors.push(`expire ${seed.name}: ${String(error)}`);
+    }
+  }
+  const expiredIds = expired.map((id) => jobVectorId('collected', id));
   report.expired = expiredIds.length;
 
   if (options.db) {
