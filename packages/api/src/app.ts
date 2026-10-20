@@ -11,6 +11,7 @@ import {
   handleSkillsCatalog,
 } from './routes/content.ts';
 import { handleComment, handleRate } from './routes/feedback.ts';
+import { handleJobsReindex, handleJobsSearch } from './routes/job-search.ts';
 import { handleJobsFetch } from './routes/jobs.ts';
 import { handleLlmProxy } from './routes/llm.ts';
 import { handleMe } from './routes/me.ts';
@@ -111,6 +112,7 @@ app.get('/', (c) =>
       'GET /posts/:section/:slug（公开文章详情）',
       'GET /changelog（公开更新日志）',
       'ALL /llm/v1/* (OpenAI 兼容代理 → muirouter)',
+      'GET|POST /jobs/search（统一岗位自然语言搜索）',
       'POST /feedback/rate（赞/踩 AI 消息，奖励 1000 token）',
       'POST /feedback/comment（意见建议 AI 消息，≥50 字奖励 50000 token）',
       'POST /resume/sync（push 整个素材库快照，明文 JSON）',
@@ -214,6 +216,13 @@ app.post('/jobs/fetch', requireApiKey, handleJobsFetch);
 app.post('/jobs/contribute', requireApiKey, handleJobsContribute);
 app.get('/jobs/community', handleJobsCommunityList);
 app.get('/jobs/community/:id', handleJobsCommunityGet);
+/**
+ * GET|POST /jobs/search —— 统一岗位自然语言搜索（采集岗位 + 社区 JD，Workers AI + Vectorize）。
+ * 详见 src/routes/job-search.ts、src/lib/job-search.ts。
+ */
+app.get('/jobs/search', optionalApiKey, handleJobsSearch);
+app.post('/jobs/search', optionalApiKey, handleJobsSearch);
+app.post('/jobs/search/reindex', handleJobsReindex);
 
 /**
  * POST /audio/transcribe —— STT 转写（issue #1 M1）。

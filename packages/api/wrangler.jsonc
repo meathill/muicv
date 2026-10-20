@@ -17,6 +17,26 @@
   "ai": {
     "binding": "AI"
   },
+  // 统一岗位搜索的向量索引，与 packages/cron 共用（创建命令见 DEPLOYMENT.md）。
+  "vectorize": [
+    {
+      "binding": "JOBS_INDEX",
+      "index_name": "muicv-jobs"
+    }
+  ],
+  // /jobs/search 速率限制：带 key 按 userId，匿名按 IP。namespace_id 是账户内自定义整数。
+  "ratelimits": [
+    {
+      "name": "JOBS_SEARCH_LIMITER",
+      "namespace_id": "1101",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "JOBS_SEARCH_ANON_LIMITER",
+      "namespace_id": "1102",
+      "simple": { "limit": 20, "period": 60 }
+    }
+  ],
   // BrowserContainer 已下线；v1/v2 migration 必须留着，否则 Cloudflare 会拒部署。
   "migrations": [
     {
@@ -66,7 +86,8 @@
   "vars": {
     "RENDER_BASE_URL": "https://muicv.com",
     "PHOTOS_PUBLIC_BASE_URL": "https://i.muicv.com",
-    "PREVIEW_PUBLIC_BASE_URL": "https://muicv.com"
+    "PREVIEW_PUBLIC_BASE_URL": "https://muicv.com",
+    "MUICV_CMS_URL": "https://cms.muicv.com"
     // Stripe priceId → plan 的反查表已下沉到 @muicv/shared（src/stripe-prices.ts），
     // 与 packages/website 共用同一份，不再放 env vars（历史上两边 ID 代际不同步，
     // 导致 Pro 订阅在桌面 app 显示为免费版）。
