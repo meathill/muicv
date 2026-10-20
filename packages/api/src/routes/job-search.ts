@@ -88,10 +88,21 @@ export async function indexCommunityJdById(env: JobSearchBindings, id: string): 
   if (vector && row.status === 'published') await indexJobs(vector, [indexRowToIndexable(indexRow)]);
 }
 
+/** 常量时间比较，避免按响应时间逐字节猜 token */
+function safeEqual(a: string, b: string): boolean {
+  const x = new TextEncoder().encode(a);
+  const y = new TextEncoder().encode(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
+}
+
 export async function handleJobsReindex(c: Context<AppEnv>): Promise<Response> {
   const env = bindings(c);
   const token = c.req.header('x-reindex-token');
-  if (!env.JOBS_REINDEX_TOKEN || token !== env.JOBS_REINDEX_TOKEN) return c.json({ error: 'forbidden' }, 403);
+  if (!env.JOBS_REINDEX_TOKEN || !token || !safeEqual(token, env.JOBS_REINDEX_TOKEN)) {
+    return c.json({ error: 'forbidden' }, 403);
+  }
 
   const parsed = await readJsonBody<{ kind?: unknown; page?: unknown }>(c);
   if (!parsed.ok) return parsed.response;

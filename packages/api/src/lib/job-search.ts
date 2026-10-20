@@ -127,8 +127,9 @@ async function vectorRecall(
   const ids = matches.map((m) => m.id);
   const { where, params } = buildFilterSql(filters);
   const res = await db
-    .prepare(`SELECT j.* FROM jobIndex j WHERE j.id IN (${ids.map(() => '?').join(',')}) AND ${where}`)
-    .bind(...ids, ...params)
+    // D1 单条语句最多 100 个绑定参数：id 列表走 json_each 只占 1 个
+    .prepare(`SELECT j.* FROM jobIndex j WHERE j.id IN (SELECT value FROM json_each(?)) AND ${where}`)
+    .bind(JSON.stringify(ids), ...params)
     .all<JobIndexRow>();
   const byId = new Map((res.results ?? []).map((r) => [r.id, r]));
   // 保持向量相似度顺序；已下线 / 不满足硬约束的自然被丢掉
