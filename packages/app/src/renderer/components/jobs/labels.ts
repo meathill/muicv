@@ -1,4 +1,4 @@
-import type { JobCategory, JobKind } from '@muicv/shared';
+import { type JobCategory, type JobKind, SOURCE_POLICY } from '@muicv/shared';
 
 export { COUNTRY_OPTIONS, LOCATION_REGION_LABEL, WORKPLACE_LABEL } from '@muicv/shared';
 
@@ -14,10 +14,7 @@ export const CATEGORY_LABEL: Record<JobCategory, string> = {
   other: '其他',
 };
 export const SOURCE_LABEL: Record<string, string> = {
-  greenhouse: 'Greenhouse',
-  lever: 'Lever',
-  ashby: 'Ashby',
-  remotive: 'Remotive',
+  ...Object.fromEntries(Object.entries(SOURCE_POLICY).map(([k, v]) => [k, v.label])),
   boss: 'Boss直聘',
   zhilian: '智联',
   liepin: '猎聘',
