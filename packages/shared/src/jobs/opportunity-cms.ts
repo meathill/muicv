@@ -12,7 +12,14 @@ export type OpportunityCmsOptions = {
   cache?: 'default' | 'force-cache' | 'no-store';
 };
 
-export type OpportunityListQuery = { ids?: string[]; page?: number; pageSize?: number; excludeSource?: string };
+export type OpportunityListQuery = {
+  ids?: string[];
+  page?: number;
+  pageSize?: number;
+  excludeSource?: string;
+  /** 只取这些来源（如 sitemap 只要可收录来源） */
+  onlySources?: readonly string[];
+};
 
 export type OpportunityPage = { docs: Opportunity[]; hasMore: boolean };
 
@@ -26,6 +33,7 @@ export function buildOpportunityParams(query: OpportunityListQuery): URLSearchPa
   });
   if (query.ids) params.set('where[id][in]', query.ids.join(','));
   if (query.excludeSource) params.set('where[source][not_equals]', query.excludeSource);
+  if (query.onlySources?.length) params.set('where[source][in]', query.onlySources.join(','));
   return params;
 }
 

@@ -364,7 +364,18 @@ export interface Opportunity {
   summary?: string | null;
   descriptionMarkdown?: string | null;
   applyUrl: string;
-  source: 'greenhouse' | 'lever' | 'ashby' | 'remotive';
+  source:
+    | 'greenhouse'
+    | 'lever'
+    | 'ashby'
+    | 'remotive'
+    | 'vuejobs'
+    | 'larajobs'
+    | 'weworkremotely'
+    | 'remoteok'
+    | 'himalayas'
+    | 'jobicy'
+    | 'golangprojects';
   sourceId: string;
   dedupeKey: string;
   fingerprint: string;

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>VueJobs</title>
+<item>
+  <title><![CDATA[Senior Frontend Engineer (Vue)]]></title>
+  <link>https://vuejobs.com/jobs/acme-senior-frontend-engineer?utm_source=rssfeed</link>
+  <description><![CDATA[<p><strong>Employer:</strong> Acme</p>
+  <p><strong>Location:</strong> Remote, Europe</p>
+  <p>Build our Vue 3 dashboard. Must be based in Europe.</p>]]></description>
+  <guid>https://vuejobs.com/jobs/acme-senior-frontend-engineer</guid>
+  <pubDate>Tue, 20 Oct 2026 12:27:53 +0000</pubDate>
+</item>
+</channel></rss>

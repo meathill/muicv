@@ -2,8 +2,8 @@ import type { EmbeddingRunner, JobVectorIndex, SqlDatabase } from '@muicv/shared
 
 import { planCollectBudget } from './budget.ts';
 import { createCmsWriter } from './cms-client.ts';
-import { type CollectReport, collectOpportunities } from './collect.ts';
-import { REMOTIVE_CATEGORIES, SEED_COMPANIES } from './seeds.ts';
+import { type CollectGroup, type CollectReport, collectOpportunities } from './collect.ts';
+import { NICHE_FEEDS, nicheFeedRequests, REMOTIVE_CATEGORIES, SEED_COMPANIES } from './seeds.ts';
 
 /**
  * api worker 的 scheduled 入口：定时采集国际 / 远程技术岗 → CMS opportunities + D1 jobIndex + Vectorize。
@@ -24,7 +24,18 @@ export type CollectEnv = {
   JOBS_SUBREQUEST_BUDGET?: string;
 };
 
-export async function runScheduledCollect(env: CollectEnv, now = new Date()): Promise<CollectReport | null> {
+/** 垂直岗位板的 cron 表达式（北京时间 08:00 / 20:00）；其余触发器跑 ATS 组 */
+export const NICHE_CRON = '0 0,12 * * *';
+
+export function groupForCron(cron: string | undefined): CollectGroup {
+  return cron === NICHE_CRON ? 'niche' : 'ats';
+}
+
+export async function runScheduledCollect(
+  env: CollectEnv,
+  now = new Date(),
+  group: CollectGroup = 'ats',
+): Promise<CollectReport | null> {
   // secret 未配置时安静跳过：上线早期先部署、secret 后补，不应每 6 小时报错一次
   if (!env.CMS_API_KEY || !env.MUICV_CMS_URL) {
     console.warn('[jobs-cron] 未配置 CMS_API_KEY / MUICV_CMS_URL，跳过本次采集');
@@ -33,7 +44,7 @@ export async function runScheduledCollect(env: CollectEnv, now = new Date()): Pr
   const llmOn = env.JOBS_LOCATION_LLM !== 'off' && Boolean(env.AI);
   const budget = planCollectBudget({
     budget: Number(env.JOBS_SUBREQUEST_BUDGET ?? 900),
-    sources: SEED_COMPANIES.length + REMOTIVE_CATEGORIES.length,
+    sources: group === 'niche' ? nicheFeedRequests(NICHE_FEEDS) : SEED_COMPANIES.length + REMOTIVE_CATEGORIES.length,
     maxNew: Number(env.JOBS_MAX_NEW_PER_RUN ?? 150),
     maxLlm: llmOn ? 20 : 0,
   });
@@ -47,6 +58,7 @@ export async function runScheduledCollect(env: CollectEnv, now = new Date()): Pr
     maxAgeDays: Number(env.JOBS_MAX_AGE_DAYS ?? 30),
     maxNewPerRun: budget.maxNew,
     maxLlmPerRun: budget.maxLlm,
+    group,
     log: console.log,
   });
 }

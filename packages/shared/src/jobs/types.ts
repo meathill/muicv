@@ -10,8 +10,47 @@ import type { LocationRestrictions, Workplace } from './location.ts';
  * 两者都镜像进 D1 `jobIndex`（结构化列 + FTS5 trigram）与 Vectorize，搜索只查这两处。
  */
 
-export const OPPORTUNITY_SOURCES = ['greenhouse', 'lever', 'ashby', 'remotive'] as const;
+export const OPPORTUNITY_SOURCES = [
+  'greenhouse',
+  'lever',
+  'ashby',
+  'remotive',
+  // 垂直 / 远程岗位板（官方 RSS / JSON，每天 2 次）
+  'vuejobs',
+  'larajobs',
+  'weworkremotely',
+  'remoteok',
+  'himalayas',
+  'jobicy',
+  'golangprojects',
+] as const;
 export type OpportunitySource = (typeof OPPORTUNITY_SOURCES)[number];
+
+/** 雇主自己的 ATS 岗位板：可被搜索引擎收录、可进 sitemap。其余均为第三方岗位板转载。 */
+export const INDEXABLE_SOURCES: readonly OpportunitySource[] = ['greenhouse', 'lever', 'ashby'];
+
+/**
+ * 第三方岗位板的展示名与条款要求（2026-10 核对）：全部「注明来源 + 链回原帖」，
+ * 详情页 noindex、不进 sitemap、不输出 JobPosting 结构化数据（避免与原站重复收录 / 转投 Google Jobs）。
+ * followLink：原站要求回链不带 nofollow（Remote OK API 条款）。
+ */
+export const SOURCE_POLICY: Record<OpportunitySource, { label: string; followLink: boolean }> = {
+  greenhouse: { label: 'Greenhouse', followLink: true },
+  lever: { label: 'Lever', followLink: true },
+  ashby: { label: 'Ashby', followLink: true },
+  remotive: { label: 'Remotive', followLink: true },
+  vuejobs: { label: 'VueJobs', followLink: true },
+  larajobs: { label: 'LaraJobs', followLink: true },
+  weworkremotely: { label: 'We Work Remotely', followLink: true },
+  remoteok: { label: 'Remote OK', followLink: true },
+  himalayas: { label: 'Himalayas', followLink: true },
+  jobicy: { label: 'Jobicy', followLink: true },
+  golangprojects: { label: 'Golangprojects', followLink: true },
+};
+
+export function isIndexableSource(source: string): boolean {
+  return (INDEXABLE_SOURCES as readonly string[]).includes(source);
+}
 
 export const JOB_CATEGORIES = [
   'engineering',

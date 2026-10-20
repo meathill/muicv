@@ -1,0 +1,30 @@
+{
+  "offset": 0,
+  "limit": 20,
+  "totalCount": 2,
+  "nextCursor": "",
+  "jobs": [
+    {
+      "title": "Staff Software Engineer",
+      "companyName": "Delta",
+      "employmentType": "Full Time",
+      "locationRestrictions": ["Germany", "Poland"],
+      "timezoneRestrictions": [0, 1, 2],
+      "categories": ["Software-Engineer"],
+      "description": "<p>TypeScript platform.</p>",
+      "pubDate": 1792400000,
+      "applicationLink": "https://himalayas.app/companies/delta/jobs/staff-software-engineer?utm_source=api",
+      "guid": "https://himalayas.app/companies/delta/jobs/staff-software-engineer"
+    },
+    {
+      "title": "Excess Inventory Buyer",
+      "companyName": "ASC",
+      "locationRestrictions": ["United States"],
+      "timezoneRestrictions": [-8, -5],
+      "categories": ["Logistics"],
+      "description": "x",
+      "pubDate": 1792400000,
+      "guid": "https://himalayas.app/companies/asc/jobs/buyer"
+    }
+  ]
+}

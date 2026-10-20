@@ -14,9 +14,18 @@ import {
 import type { CmsWriter } from './cms-client.ts';
 import { extractWithLlm, needsLlm, type TextGenerator } from './llm-location.ts';
 import { normalizeJob, type RawJob } from './normalize.ts';
-import { REMOTIVE_CATEGORIES, SEED_COMPANIES, type SeedCompany } from './seeds.ts';
+import { NICHE_FEEDS, type NicheFeed, REMOTIVE_CATEGORIES, SEED_COMPANIES, type SeedCompany } from './seeds.ts';
 import { fetchAshby, fetchGreenhouse, fetchLever } from './sources/ats.ts';
 import type { FetchLike } from './sources/fetch-json.ts';
+import {
+  fetchGolangProjects,
+  fetchHimalayas,
+  fetchJobicy,
+  fetchLaraJobs,
+  fetchRemoteOk,
+  fetchVueJobs,
+  fetchWeWorkRemotely,
+} from './sources/niche.ts';
 import { fetchRemotive } from './sources/remotive.ts';
 
 export type CollectOptions = {
@@ -33,8 +42,11 @@ export type CollectOptions = {
   /** 单次最多新建条数，控制 subrequest 数 */
   maxNewPerRun: number;
   maxLlmPerRun?: number;
+  /** ats：雇主 ATS + Remotive（每 6 小时）；niche：垂直 / 远程岗位板（每天 2 次） */
+  group?: CollectGroup;
   seeds?: SeedCompany[];
   remotiveCategories?: string[];
+  nicheFeeds?: NicheFeed[];
   log?: (message: string) => void;
 };
 
@@ -49,16 +61,53 @@ export type CollectReport = {
   errors: string[];
 };
 
+export type CollectGroup = 'ats' | 'niche';
+
 const FETCHERS = { greenhouse: fetchGreenhouse, lever: fetchLever, ashby: fetchAshby } as const;
 
-async function fetchAllRaw(options: CollectOptions, errors: string[]): Promise<RawJob[]> {
+function fetchNiche(fetchImpl: FetchLike, feed: NicheFeed): Promise<RawJob[]> {
+  switch (feed.source) {
+    case 'vuejobs':
+      return fetchVueJobs(fetchImpl);
+    case 'larajobs':
+      return fetchLaraJobs(fetchImpl);
+    case 'remoteok':
+      return fetchRemoteOk(fetchImpl);
+    case 'golangprojects':
+      return fetchGolangProjects(fetchImpl);
+    case 'weworkremotely':
+      return fetchWeWorkRemotely(fetchImpl, feed.category);
+    case 'jobicy':
+      return fetchJobicy(fetchImpl, feed.industry);
+    case 'himalayas':
+      return fetchHimalayas(fetchImpl, feed.pages);
+  }
+}
+
+function nicheLabel(feed: NicheFeed): string {
+  if (feed.source === 'weworkremotely') return `${feed.source}/${feed.category}`;
+  if (feed.source === 'jobicy') return `${feed.source}/${feed.industry}`;
+  return feed.source;
+}
+
+function buildTasks(options: CollectOptions): { tasks: Array<Promise<RawJob[]>>; labels: string[] } {
+  if (options.group === 'niche') {
+    const feeds = options.nicheFeeds ?? NICHE_FEEDS;
+    return { tasks: feeds.map((f) => fetchNiche(options.fetchImpl, f)), labels: feeds.map(nicheLabel) };
+  }
   const seeds = options.seeds ?? SEED_COMPANIES;
   const categories = options.remotiveCategories ?? REMOTIVE_CATEGORIES;
-  const tasks: Array<Promise<RawJob[]>> = [
-    ...seeds.map((seed) => FETCHERS[seed.source](options.fetchImpl, seed)),
-    ...categories.map((category) => fetchRemotive(options.fetchImpl, category)),
-  ];
-  const labels = [...seeds.map((s) => `${s.source}/${s.token}`), ...categories.map((c) => `remotive/${c}`)];
+  return {
+    tasks: [
+      ...seeds.map((seed) => FETCHERS[seed.source](options.fetchImpl, seed)),
+      ...categories.map((category) => fetchRemotive(options.fetchImpl, category)),
+    ],
+    labels: [...seeds.map((s) => `${s.source}/${s.token}`), ...categories.map((c) => `remotive/${c}`)],
+  };
+}
+
+async function fetchAllRaw(options: CollectOptions, errors: string[]): Promise<RawJob[]> {
+  const { tasks, labels } = buildTasks(options);
   const results = await Promise.allSettled(tasks);
   return results.flatMap((result, i) => {
     if (result.status === 'fulfilled') return result.value;

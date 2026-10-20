@@ -1,0 +1,15 @@
+[
+  { "last_updated": 1792483205, "legal": "API Terms of Service: Please link back" },
+  {
+    "slug": "remote-senior-rust-engineer-gamma-1",
+    "id": "1",
+    "epoch": 1792400000,
+    "date": "2026-10-19T08:00:00+00:00",
+    "company": "Gamma",
+    "position": "Senior Rust Engineer",
+    "tags": ["rust", "backend"],
+    "description": "<p>Async Rust services.</p>",
+    "location": "Worldwide",
+    "url": "https://remoteok.com/remote-jobs/remote-senior-rust-engineer-gamma-1"
+  }
+]

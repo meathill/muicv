@@ -1,6 +1,7 @@
 import {
   fetchCmsOpportunities,
   fetchCmsOpportunityById,
+  INDEXABLE_SOURCES,
   type JobSearchRequest,
   type JobSearchResponse,
   searchJobs,
@@ -52,6 +53,6 @@ export function getWebsiteOpportunity(id: string) {
 
 /** sitemap 用：最新的采集岗位（Remotive 条款不允许转投搜索引擎，排除）。 */
 export async function getSitemapOpportunities() {
-  const page = await fetchCmsOpportunities({ pageSize: 500, excludeSource: 'remotive' }, cmsOptions());
+  const page = await fetchCmsOpportunities({ pageSize: 500, onlySources: INDEXABLE_SOURCES }, cmsOptions());
   return page.docs;
 }

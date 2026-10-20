@@ -1,0 +1,17 @@
+{
+  "apiVersion": "2.2.19",
+  "jobCount": 1,
+  "jobs": [
+    {
+      "id": 155963,
+      "url": "https://jobicy.com/jobs/155963-senior-ai-engineer-gtm",
+      "jobTitle": "Senior AI Engineer (GTM)",
+      "companyName": "Paddle",
+      "jobIndustry": ["Software Engineering"],
+      "jobType": ["Full-Time"],
+      "jobGeo": "Canada,  UK",
+      "jobDescription": "<p>LLM tooling.</p>",
+      "pubDate": "2026-10-20T10:01:43+00:00"
+    }
+  ]
+}

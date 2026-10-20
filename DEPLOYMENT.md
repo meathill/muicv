@@ -769,7 +769,8 @@ npx skills add meathill/muicv -g
    pnpm --filter @muicv/api exec wrangler secret put JOBS_REINDEX_TOKEN   # 任意长随机串；未设置时 reindex 一律 403
    ```
 
-6. **采集参数**（`packages/api/wrangler.jsonc`）：`triggers.crons = 17 */6 * * *`（UTC）；vars
+6. **采集参数**（`packages/api/wrangler.jsonc`）：`triggers.crons`（UTC）= `17 */6 * * *`（雇主 ATS + Remotive）与
+   `0 0,12 * * *`（垂直岗位板：VueJobs / LaraJobs / WWR / Remote OK / Himalayas / Jobicy / Golangprojects，单次约 10 个源请求）；vars
    `JOBS_MAX_AGE_DAYS` / `JOBS_MAX_NEW_PER_RUN` / `JOBS_LOCATION_LLM`（`off` 关 LLM 兜底）/
    `JOBS_SUBREQUEST_BUDGET`（单次子请求预算，默认 900 适配 Workers Paid 的 1000；**Free 计划改成 50**，
    写入条数与 LLM 次数会按预算自动压低，见 `src/cron/budget.ts`）。

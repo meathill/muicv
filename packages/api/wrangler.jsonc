@@ -18,9 +18,10 @@
     "binding": "AI"
   },
   // 统一岗位搜索的向量索引，采集（scheduled，src/cron）与搜索共用（创建命令见 DEPLOYMENT.md）。
-  // 每 6 小时采集一次岗位（UTC）
+  // 岗位采集（UTC）：每 6 小时跑雇主 ATS + Remotive；每天 2 次（北京时间 08:00 / 20:00）跑垂直岗位板
+  // 第二个表达式必须与 src/cron/index.ts 的 NICHE_CRON 一致
   "triggers": {
-    "crons": ["17 */6 * * *"]
+    "crons": ["17 */6 * * *", "0 0,12 * * *"]
   },
   "vectorize": [
     {

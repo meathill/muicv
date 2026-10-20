@@ -25,6 +25,8 @@ export type RawJob = {
   applyUrl: string;
   postedAt: string | number;
   tags?: string[];
+  /** 来源直接给出的可接受时区（UTC 小时），覆盖规则解析结果（Himalayas timezoneRestrictions） */
+  utcRange?: [number, number] | null;
 };
 
 /** 原始岗位 → CMS 文档。非技术岗返回 null（频道只做技术岗）。 */
@@ -45,6 +47,10 @@ export function normalizeJob(raw: RawJob): OpportunityInput | null {
     body: description,
     title,
   });
+  if (raw.utcRange) {
+    restrictions.utcOffsetMin = Math.min(...raw.utcRange);
+    restrictions.utcOffsetMax = Math.max(...raw.utcRange);
+  }
 
   return {
     title,

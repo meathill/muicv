@@ -1,3 +1,4 @@
+import { isIndexableSource } from '@muicv/shared';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -16,8 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: `${doc.title} · ${doc.company}`,
     description: doc.summary || `${doc.company} · ${doc.location}`,
     alternates: { canonical: `/jobs/o/${doc.id}` },
-    // Remotive 条款不允许转投搜索引擎：noindex
-    robots: doc.source === 'remotive' ? { index: false, follow: true } : undefined,
+    // 第三方岗位板转载（Remotive 条款明确不许转投搜索引擎）：noindex，只收录雇主 ATS 原帖
+    robots: isIndexableSource(doc.source) ? undefined : { index: false, follow: true },
   };
 }
 
