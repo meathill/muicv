@@ -24,7 +24,8 @@
 - [x] 索引：jobIndex 过滤列 / 唯一去重键 / FTS 触发器；CMS opportunities workplace / source / category 索引
 - [x] skill：muicv-jobs 新增 search 子任务；agent `search_jobs` 增加 country / utcOffset / workplace
 - [x] Cloudflare：Vectorize `muicv-jobs` + metadata index 已建；D1 0018 已远端执行
-- [ ] **用户**：CMS 迁移（含 ALTER，待部署时执行）、采集账号 + `CMS_API_KEY`、`JOBS_REINDEX_TOKEN`、cron 接 git 构建、回填
+- [x] CMS 迁移已远端执行；采集并入 api worker（scheduled），去掉独立 cron worker
+- [ ] **用户**：CMS 采集账号 + api 的 `CMS_API_KEY`、`JOBS_REINDEX_TOKEN`；可选手动触发 / 回填
 - [ ] 后续：多语言 /jobs
 
 ### 模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）

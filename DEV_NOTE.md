@@ -967,7 +967,7 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
 ## 统一岗位频道 /jobs（2026-10-20）
 
 - **合并而非新开频道**：采集岗位（CMS `opportunities`）与社区 JD（D1 `communityJd`）在 /jobs 同屏，来源 tab 区分；路由不变。
-- **数据源**：Greenhouse / Lever / Ashby 公开岗位板（种子公司在 `packages/cron/src/seeds.ts`）+ Remotive。国内招聘站无合规 API，靠扩展贡献补位。
+- **数据源**：Greenhouse / Lever / Ashby 公开岗位板（种子公司在 `packages/api/src/cron/seeds.ts`）+ Remotive。国内招聘站无合规 API，靠扩展贡献补位。
   - Remotive 条款：必须 via 署名并链回原帖、不得转投 Google Jobs 等 → 详情页 noindex、不进 sitemap、不输出 JobPosting 结构化数据。
 - **「近期」口径**：只收 `postedAt` 在 30 天内的岗位，超过即 expired（Ashby 部分常年挂着的岗位 publishedAt 很老，会被丢弃——有意为之）。
 - **去重**：采集内按 `dedupeKey`（source:sourceId）幂等 + `fingerprint`（company+title 归一化）跨来源去重；与社区 JD 只在**展示层**按 company+title / url 折叠（`dedupeListings`），社区贡献照常入库、照常发积分。
@@ -986,6 +986,9 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
     向量挂了 mode=`keyword`；没有 q 时 mode=`latest`。
   - FTS 是 external-content 表 + insert/delete/update 触发器；upsert 必须用 `ON CONFLICT DO UPDATE`（`REPLACE` 会删行，触发器链易错）。
   - 列表列存成 `,US,CA,` 包裹形式，用 `LIKE '%,CN,%'` 匹配；`isOpenLocation=1` 表示未声明限制。
+- **采集并入 api worker（2026-10-20）**：不单独部署 cron worker，api 的 `export default { fetch, scheduled }` 每 6 小时跑
+  `src/cron`。api 已有 D1 / Vectorize / AI 绑定，jobIndex 与向量直接写；CMS 仍经 REST + `CMS_API_KEY` 写（CMS 是编辑真源）。
+  子请求预算由 `JOBS_SUBREQUEST_BUDGET` 控制（fetch 与 binding 调用都保守计入），超出部分留到下一轮。
 - **地域限制**（`shared/jobs/location.ts`）：结构化字段 `workplace`、`allowedCountries[]`（ISO）、`allowedRegions[]`
   （worldwide/americas/north-america/latam/emea/europe/apac）、`utcOffsetMin/Max`、`officeLocations`。
   - 来源：ATS 的 location / offices / secondaryLocations / allLocations / workplaceType / isRemote + Remotive `candidate_required_location`

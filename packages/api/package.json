@@ -10,6 +10,7 @@
     "deploy": "wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "build": "wrangler deploy --dry-run --outdir=dist",
+    "jobs:collect:dry": "node src/cron/dev.ts",
     "db:migrate:local": "wrangler d1 migrations apply muicv --local",
     "db:migrate": "wrangler d1 migrations apply muicv --remote",
     "db:migrate:list": "wrangler d1 migrations list muicv --remote",

@@ -3,7 +3,7 @@ import { collectOpportunities } from './collect.ts';
 
 /**
  * 本地试跑：真实拉取各数据源，但 CMS / Vectorize 用内存假实现，不写任何远端。
- * `pnpm --filter @muicv/cron dev`
+ * `pnpm --filter @muicv/api jobs:collect:dry`
  */
 const memory: CmsWriter = {
   async listExistingKeys() {
