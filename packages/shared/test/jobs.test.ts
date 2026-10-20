@@ -248,3 +248,30 @@ test('dedupeListings 按 company+title 或 url 折叠', () => {
     ['collected:1'],
   );
 });
+
+test('地域文案：describeRestrictions / filterTagLabel / formatUtc', async () => {
+  const { describeRestrictions, filterTagLabel, formatUtc } = await import('../src/jobs/labels.ts');
+  assert.equal(
+    describeRestrictions({
+      workplace: 'remote',
+      allowedCountries: ['US', 'CA'],
+      allowedRegions: [],
+      utcOffsetMin: -8,
+      utcOffsetMax: -5,
+    }),
+    '仅限 美国 / 加拿大 · UTC-8 ~ UTC-5',
+  );
+  assert.equal(
+    describeRestrictions({
+      workplace: 'remote',
+      allowedCountries: [],
+      allowedRegions: [],
+      utcOffsetMin: null,
+      utcOffsetMax: null,
+    }),
+    '不限地区',
+  );
+  assert.equal(formatUtc(5.5), 'UTC+5:30');
+  assert.equal(filterTagLabel('country', 'CN'), '我在：中国');
+  assert.equal(filterTagLabel('utcOffset', 8), '时区：UTC+8');
+});

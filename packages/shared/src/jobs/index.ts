@@ -4,6 +4,7 @@ export * from './countries.ts';
 export * from './dedupe.ts';
 export * from './fts.ts';
 export * from './job-index-sql.ts';
+export * from './labels.ts';
 export * from './location.ts';
 export * from './opportunity-cms.ts';
 export * from './rrf.ts';
