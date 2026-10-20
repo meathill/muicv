@@ -51,7 +51,7 @@ export function JobsView() {
           onSearch={(query) => void search(query)}
         />
         {tags.length > 0 && (
-          <div role="group" className="mt-2 flex flex-wrap items-center gap-1.5" aria-label="生效中的筛选">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span className="text-[12px] text-mute">生效筛选：</span>
             {tags.map((tag) => (
               <span
