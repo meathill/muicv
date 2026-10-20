@@ -17,6 +17,7 @@ export async function fetchGreenhouse(fetchImpl: FetchLike, seed: SeedCompany): 
       title: asString(j.title),
       company: asString(j.company_name) || seed.name,
       location: asString(asRecord(j.location).name),
+      extraLocations: Array.isArray(j.offices) ? j.offices.map((o) => asString(asRecord(o).location)) : [],
       html: asString(j.content),
       applyUrl: asString(j.absolute_url),
       postedAt: asString(j.first_published) || asString(j.updated_at),
@@ -36,6 +37,7 @@ export async function fetchLever(fetchImpl: FetchLike, seed: SeedCompany): Promi
       title: asString(j.text),
       company: seed.name,
       location: asString(categories.location),
+      extraLocations: Array.isArray(categories.allLocations) ? categories.allLocations.map(asString) : [],
       workplace: asString(j.workplaceType),
       employmentType: asString(categories.commitment) || undefined,
       plain: asString(j.descriptionPlain),
@@ -58,6 +60,9 @@ export async function fetchAshby(fetchImpl: FetchLike, seed: SeedCompany): Promi
         title: asString(j.title),
         company: seed.name,
         location: asString(j.location),
+        extraLocations: Array.isArray(j.secondaryLocations)
+          ? j.secondaryLocations.map((l) => asString(asRecord(l).location))
+          : [],
         isRemote: j.isRemote === true,
         workplace: asString(j.workplaceType),
         employmentType: asString(j.employmentType) || undefined,

@@ -1,11 +1,10 @@
 import {
   classifyCategory,
-  classifyRegion,
-  classifyRemote,
   htmlToText,
   jobFingerprint,
   type OpportunityInput,
   type OpportunitySource,
+  parseLocationRestrictions,
   summarize,
 } from '@muicv/shared';
 
@@ -14,7 +13,10 @@ export type RawJob = {
   sourceId: string;
   title: string;
   company: string;
+  /** 主 location 字段 */
   location: string;
+  /** 其它办公地 / 次要地点（Ashby secondaryLocations、Lever allLocations） */
+  extraLocations?: string[];
   isRemote?: boolean;
   workplace?: string;
   employmentType?: string | undefined;
@@ -35,18 +37,20 @@ export function normalizeJob(raw: RawJob): OpportunityInput | null {
   const posted = new Date(raw.postedAt);
   if (Number.isNaN(posted.getTime())) return null;
 
-  const workplace = raw.workplace?.toLowerCase() ?? '';
   const location = raw.location.trim();
-  const remote =
-    workplace === 'hybrid' ? 'hybrid' : workplace === 'remote' ? 'remote' : classifyRemote(location, raw.isRemote);
   const description = raw.plain?.trim() || (raw.html ? htmlToText(raw.html) : '');
+  const restrictions = parseLocationRestrictions({
+    locations: [location, ...(raw.extraLocations ?? [])],
+    workplaceHint: raw.workplace || raw.isRemote,
+    body: description,
+    title,
+  });
 
   return {
     title,
     company,
     location,
-    remote,
-    region: classifyRegion(location),
+    ...restrictions,
     category,
     ...(raw.employmentType ? { employmentType: raw.employmentType } : {}),
     summary: summarize(description),

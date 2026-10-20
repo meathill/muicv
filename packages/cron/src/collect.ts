@@ -1,13 +1,18 @@
 import {
-  buildEmbeddingText,
-  type IndexableJob,
   indexJobs,
+  indexRowToIndexable,
+  type JobIndexRow,
   type JobSearchEnv,
   jobVectorId,
   type OpportunityInput,
+  opportunityToIndexRow,
+  type SqlDatabase,
+  setJobIndexStatus,
+  upsertJobIndexRows,
 } from '@muicv/shared';
 
 import type { CmsWriter } from './cms-client.ts';
+import { extractWithLlm, needsLlm, type TextGenerator } from './llm-location.ts';
 import { normalizeJob, type RawJob } from './normalize.ts';
 import { REMOTIVE_CATEGORIES, SEED_COMPANIES, type SeedCompany } from './seeds.ts';
 import { fetchAshby, fetchGreenhouse, fetchLever } from './sources/ats.ts';
@@ -17,12 +22,17 @@ import { fetchRemotive } from './sources/remotive.ts';
 export type CollectOptions = {
   fetchImpl: FetchLike;
   cms: CmsWriter;
+  /** D1 jobIndex（统一检索的结构化 + FTS 索引） */
+  db: SqlDatabase | null;
   search: JobSearchEnv | null;
+  /** 地域限制 LLM 兜底；null 关闭 */
+  llm: TextGenerator | null;
   now: Date;
   /** 只收这么多天内发布的岗位，超过即过期 */
   maxAgeDays: number;
   /** 单次最多新建条数，控制 subrequest 数 */
   maxNewPerRun: number;
+  maxLlmPerRun?: number;
   seeds?: SeedCompany[];
   remotiveCategories?: string[];
   log?: (message: string) => void;
@@ -35,6 +45,7 @@ export type CollectReport = {
   skippedOld: number;
   expired: number;
   indexed: number;
+  llmExtracted: number;
   errors: string[];
 };
 
@@ -56,26 +67,6 @@ async function fetchAllRaw(options: CollectOptions, errors: string[]): Promise<R
   });
 }
 
-function toIndexable(id: string, doc: OpportunityInput): IndexableJob {
-  return {
-    id: jobVectorId('collected', id),
-    text: buildEmbeddingText({
-      title: doc.title,
-      company: doc.company,
-      location: doc.location,
-      body: doc.descriptionMarkdown,
-    }),
-    metadata: {
-      kind: 'collected',
-      refId: id,
-      remote: doc.remote,
-      region: doc.region,
-      category: doc.category,
-      postedAt: new Date(doc.postedAt).getTime(),
-    },
-  };
-}
-
 export async function collectOpportunities(options: CollectOptions): Promise<CollectReport> {
   const report: CollectReport = {
     fetched: 0,
@@ -84,9 +75,11 @@ export async function collectOpportunities(options: CollectOptions): Promise<Col
     skippedOld: 0,
     expired: 0,
     indexed: 0,
+    llmExtracted: 0,
     errors: [],
   };
   const cutoff = new Date(options.now.getTime() - options.maxAgeDays * 86_400_000).toISOString();
+  const maxLlm = options.maxLlmPerRun ?? 20;
 
   const raw = await fetchAllRaw(options, report.errors);
   report.fetched = raw.length;
@@ -98,8 +91,8 @@ export async function collectOpportunities(options: CollectOptions): Promise<Col
     .filter((doc): doc is OpportunityInput => doc !== null)
     .sort((a, b) => b.postedAt.localeCompare(a.postedAt));
 
-  const created: IndexableJob[] = [];
-  for (const doc of candidates) {
+  const rows: JobIndexRow[] = [];
+  for (let doc of candidates) {
     if (doc.postedAt < cutoff) {
       report.skippedOld += 1;
       continue;
@@ -109,26 +102,41 @@ export async function collectOpportunities(options: CollectOptions): Promise<Col
       continue;
     }
     if (report.created >= options.maxNewPerRun) break;
+    if (options.llm && report.llmExtracted < maxLlm && needsLlm(doc)) {
+      try {
+        doc = await extractWithLlm(options.llm, doc);
+        report.llmExtracted += 1;
+      } catch (error) {
+        report.errors.push(`llm ${doc.dedupeKey}: ${String(error)}`);
+      }
+    }
     try {
       const id = await options.cms.create(doc);
       existing.dedupeKeys.add(doc.dedupeKey);
       existing.fingerprints.add(doc.fingerprint);
       report.created += 1;
-      created.push(toIndexable(id, doc));
+      rows.push(opportunityToIndexRow({ ...doc, id, updatedAt: options.now.toISOString() }, options.now.getTime()));
     } catch (error) {
       report.errors.push(`create ${doc.dedupeKey}: ${String(error)}`);
     }
   }
 
-  const expiredIds = await options.cms.expireBefore(cutoff);
+  const expiredIds = (await options.cms.expireBefore(cutoff)).map((id) => jobVectorId('collected', id));
   report.expired = expiredIds.length;
+
+  if (options.db) {
+    try {
+      await upsertJobIndexRows(options.db, rows);
+      await setJobIndexStatus(options.db, expiredIds, 'expired', options.now.getTime());
+    } catch (error) {
+      report.errors.push(`jobIndex: ${String(error)}`);
+    }
+  }
 
   if (options.search) {
     try {
-      report.indexed = await indexJobs(options.search, created);
-      if (expiredIds.length) {
-        await options.search.JOBS_INDEX.deleteByIds(expiredIds.map((id) => jobVectorId('collected', id)));
-      }
+      report.indexed = await indexJobs(options.search, rows.map(indexRowToIndexable));
+      if (expiredIds.length) await options.search.JOBS_INDEX.deleteByIds(expiredIds);
     } catch (error) {
       report.errors.push(`vectorize: ${String(error)}`);
     }

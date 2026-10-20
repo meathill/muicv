@@ -1,12 +1,49 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 
-import type { JobVector, OpportunityInput } from '@muicv/shared';
+import type { JobVector, OpportunityInput, SqlDatabase } from '@muicv/shared';
 
 import type { CmsWriter } from '../src/cms-client.ts';
 import { createCmsWriter } from '../src/cms-client.ts';
 import { collectOpportunities } from '../src/collect.ts';
+import { extractWithLlm, needsLlm } from '../src/llm-location.ts';
 import { normalizeJob } from '../src/normalize.ts';
+
+/** node:sqlite 包一层 D1 形状，跑真实的 0018 迁移 */
+function sqliteD1(): { db: SqlDatabase; raw: DatabaseSync } {
+  const raw = new DatabaseSync(':memory:');
+  raw.exec(readFileSync(new URL('../../website/migrations/0018_job_index.sql', import.meta.url), 'utf8'));
+  function prepare(sql: string) {
+    let args: unknown[] = [];
+    const stmt = {
+      bind(...values: unknown[]) {
+        args = values;
+        return stmt;
+      },
+      async run() {
+        raw.prepare(sql).run(...(args as never[]));
+        return {};
+      },
+      async all<T>() {
+        return { results: raw.prepare(sql).all(...(args as never[])) as T[] };
+      },
+      async first<T>() {
+        return (raw.prepare(sql).get(...(args as never[])) ?? null) as T | null;
+      },
+    };
+    return stmt;
+  }
+  const db = {
+    prepare,
+    async batch(stmts: Array<{ run(): Promise<unknown> }>) {
+      for (const s of stmts) await s.run();
+      return [];
+    },
+  } as unknown as SqlDatabase;
+  return { db, raw };
+}
 
 const NOW = new Date('2026-10-20T00:00:00Z');
 const RECENT = '2026-10-15T00:00:00Z';
@@ -137,10 +174,16 @@ const SEEDS = [
 test('采集：过滤非技术 / 过旧 / 未上架，跨来源指纹去重，写 CMS 并建向量', async () => {
   const { cms, created } = memoryCms();
   const search = memorySearch();
+  const d1 = sqliteD1();
+  d1.raw.exec(
+    "INSERT INTO jobIndex (id, kind, refId, title, company, workplace, category, source, url, fingerprint, urlKey, status, postedAt, updatedAt) VALUES ('collected:old-1','collected','old-1','Old','X','remote','engineering','lever','u','f','u','published',0,0)",
+  );
   const report = await collectOpportunities({
     fetchImpl: fakeFetch,
     cms,
+    db: d1.db,
     search: search.env,
+    llm: null,
     now: NOW,
     maxAgeDays: 30,
     maxNewPerRun: 100,
@@ -158,10 +201,20 @@ test('采集：过滤非技术 / 过旧 / 未上架，跨来源指纹去重，�
   assert.deepEqual(search.deleted, ['collected:old-1']);
 
   const lever = created.find((d) => d.source === 'lever');
-  assert.equal(lever?.remote, 'hybrid');
-  assert.equal(lever?.region, 'europe');
+  assert.equal(lever?.workplace, 'hybrid');
+  assert.deepEqual(lever?.allowedCountries, ['DE']);
   const gh = created.find((d) => d.source === 'greenhouse');
-  assert.equal(gh?.remote, 'remote');
+  assert.equal(gh?.workplace, 'remote');
+  assert.deepEqual(gh?.allowedCountries, ['US']);
+
+  const rows = d1.raw.prepare('SELECT id, status, allowedCountries FROM jobIndex ORDER BY id').all() as Array<{
+    id: string;
+    status: string;
+    allowedCountries: string;
+  }>;
+  assert.equal(rows.length, 4);
+  assert.equal(rows.find((r) => r.id === 'collected:old-1')?.status, 'expired');
+  assert.ok(rows.some((r) => r.allowedCountries === ',US,'));
   assert.match(gh?.descriptionMarkdown ?? '', /Build APIs/);
 });
 
@@ -170,7 +223,9 @@ test('采集：已存在的 dedupeKey 不重复创建，且受单次配额限制
   const report = await collectOpportunities({
     fetchImpl: fakeFetch,
     cms,
+    db: null,
     search: null,
+    llm: null,
     now: NOW,
     maxAgeDays: 30,
     maxNewPerRun: 1,
@@ -217,4 +272,31 @@ test('CMS writer：API key 头、新建带 tags 数组、批量过期', async ()
   const posted = (await calls[1]?.json()) as { tags: unknown };
   assert.deepEqual(posted.tags, [{ value: 'go' }]);
   assert.match(calls[2]?.url ?? '', /where%5Bstatus%5D%5Bequals%5D=published/);
+});
+
+test('LLM 兜底：仅对规则没解析出限制、但有限制句的 remote 岗调用，并校验输出', async () => {
+  const doc = normalizeJob({
+    source: 'lever',
+    sourceId: 'x',
+    title: 'Backend Engineer',
+    company: 'A',
+    location: 'Remote',
+    workplace: 'remote',
+    plain: 'You must be legally authorized to work in the country where our entity operates.',
+    applyUrl: 'https://x',
+    postedAt: RECENT,
+  });
+  assert.ok(doc);
+  assert.equal(needsLlm(doc), true);
+  const ai = {
+    async run() {
+      return { response: 'Sure: {"countries":["us","XX"],"regions":["americas","mars"],"utcMin":-5,"utcMax":-8}' };
+    },
+  };
+  const out = await extractWithLlm(ai, doc);
+  assert.deepEqual(out.allowedCountries, ['US']);
+  assert.deepEqual(out.allowedRegions, ['americas']);
+  assert.equal(out.utcOffsetMin, -8);
+  assert.equal(out.utcOffsetMax, -5);
+  assert.equal(needsLlm({ ...doc, allowedCountries: ['US'] }), false);
 });

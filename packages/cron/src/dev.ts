@@ -10,7 +10,9 @@ const memory: CmsWriter = {
     return { dedupeKeys: new Set(), fingerprints: new Set() };
   },
   async create(doc) {
-    console.log(`[dry] ${doc.source} | ${doc.company} | ${doc.title} | ${doc.remote}/${doc.region}/${doc.category}`);
+    console.log(
+      `[dry] ${doc.source} | ${doc.company} | ${doc.title} | ${doc.workplace} ${doc.allowedCountries.join('/')} ${doc.allowedRegions.join('/')} ${doc.utcOffsetMin ?? ''}~${doc.utcOffsetMax ?? ''}`,
+    );
     return doc.dedupeKey;
   },
   async expireBefore() {
@@ -21,7 +23,9 @@ const memory: CmsWriter = {
 const report = await collectOpportunities({
   fetchImpl: fetch,
   cms: memory,
+  db: null,
   search: null,
+  llm: null,
   now: new Date(),
   maxAgeDays: 30,
   maxNewPerRun: 1000,
