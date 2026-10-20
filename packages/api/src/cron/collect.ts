@@ -194,7 +194,7 @@ export async function collectOpportunities(options: CollectOptions): Promise<Col
 
   const expired = await options.cms.expireBefore(
     cutoff,
-    longLived.map((s) => s.name),
+    longLived.map((s) => ({ source: s.source, company: s.name })),
   );
   // 长期公司：只在本轮实际抓到了它的岗位板时，按「下架或超过 maxAgeDays」过期（抓取失败不误杀）
   for (const seed of longLived) {

@@ -124,7 +124,12 @@ test('cron 分组：0 0,12 跑垂直岗位板，其余跑 ATS；niche 组只请�
 
   calls.length = 0;
   const created: OpportunityInput[] = [];
-  const expireCalls: Array<{ except?: string[]; company?: string; keep?: string[]; cutoff: string }> = [];
+  const expireCalls: Array<{
+    except?: Array<{ source: string; company: string }>;
+    company?: string;
+    keep?: string[];
+    cutoff: string;
+  }> = [];
   const cms: CmsWriter = {
     async listExistingKeys() {
       return { dedupeKeys: new Set(), fingerprints: new Set() };
@@ -175,7 +180,7 @@ test('cron 分组：0 0,12 跑垂直岗位板，其余跑 ATS；niche 组只请�
     ['s1', 's2'],
   );
   // 全局过期排除 Supabase；Supabase 按「下架或超过 365 天」单独过期
-  assert.deepEqual(expireCalls[0]?.except, ['Supabase']);
+  assert.deepEqual(expireCalls[0]?.except, [{ source: 'ashby', company: 'Supabase' }]);
   assert.equal(expireCalls[1]?.company, 'Supabase');
   assert.deepEqual(expireCalls[1]?.keep?.sort(), ['s1', 's2', 's3']);
   assert.equal(expireCalls[1]?.cutoff, '2025-10-20T13:00:00.000Z');
@@ -189,8 +194,9 @@ test('CMS 过期查询：全局排除长期公司，长期公司按下架或超�
     urls.push(decodeURIComponent(String(input)));
     return Response.json({ docs: [{ id: 7 }] });
   });
-  assert.deepEqual(await writer.expireBefore('2026-09-20', ['Supabase']), ['7']);
-  assert.match(urls[0] ?? '', /where\[company\]\[not_in\]=Supabase/);
+  assert.deepEqual(await writer.expireBefore('2026-09-20', [{ source: 'ashby', company: 'Supabase' }]), ['7']);
+  assert.match(urls[0] ?? '', /where\[or\]\[0\]\[company\]\[not_in\]=Supabase/);
+  assert.match(urls[0] ?? '', /where\[or\]\[1\]\[source\]\[not_in\]=ashby/);
   await writer.expireCompany?.('ashby', 'Supabase', ['s1', 's2'], '2025-10-20');
   assert.match(urls[1] ?? '', /where\[and\]\[2\]\[company\]\[equals\]=Supabase/);
   assert.match(urls[1] ?? '', /where\[and\]\[3\]\[or\]\[1\]\[sourceId\]\[not_in\]=s1,s2/);

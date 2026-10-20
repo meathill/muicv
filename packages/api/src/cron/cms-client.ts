@@ -8,7 +8,7 @@ export type CmsWriter = {
   listExistingKeys(sinceIso: string): Promise<{ dedupeKeys: Set<string>; fingerprints: Set<string> }>;
   create(doc: OpportunityInput): Promise<string>;
   /** 过期 postedAt < cutoff 的已发布岗位；exceptCompanies 不参与（由各自的 maxAgeDays 管） */
-  expireBefore(cutoffIso: string, exceptCompanies?: string[]): Promise<string[]>;
+  expireBefore(cutoffIso: string, except?: Array<{ source: string; company: string }>): Promise<string[]>;
   /** 过期某公司在该来源下「已不在岗位板上」或超过 cutoff 的岗位 */
   expireCompany?(source: string, company: string, keepSourceIds: string[], cutoffIso: string): Promise<string[]>;
 };
@@ -51,13 +51,18 @@ export function createCmsWriter(baseUrl: string, apiKey: string, fetchImpl: type
       const created = (body.doc ?? {}) as Record<string, unknown>;
       return String(created.id);
     },
-    async expireBefore(cutoffIso, exceptCompanies = []) {
+    async expireBefore(cutoffIso, except = []) {
       const params = new URLSearchParams({
         depth: '0',
         'where[status][equals]': 'published',
         'where[postedAt][less_than]': cutoffIso,
       });
-      if (exceptCompanies.length) params.set('where[company][not_in]', exceptCompanies.join(','));
+      // 只排除「该来源下的该公司」：同一公司出现在其他岗位板上的转载照常按 30 天过期。
+      // 多个长期种子时这里是 (company ∉ C) OR (source ∉ S) 的近似，跨来源同名才会多排除。
+      if (except.length) {
+        params.set('where[or][0][company][not_in]', [...new Set(except.map((e) => e.company))].join(','));
+        params.set('where[or][1][source][not_in]', [...new Set(except.map((e) => e.source))].join(','));
+      }
       const body = await request(`?${params.toString()}`, {
         method: 'PATCH',
         body: JSON.stringify({ status: 'expired' }),
