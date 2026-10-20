@@ -25,6 +25,7 @@
 - [x] skill：muicv-jobs 新增 search 子任务；agent `search_jobs` 增加 country / utcOffset / workplace
 - [x] Cloudflare：Vectorize `muicv-jobs` + metadata index 已建；D1 0018 已远端执行
 - [x] CMS 迁移已远端执行；采集并入 api worker（scheduled），去掉独立 cron worker
+- [x] 垂直 / 远程岗位板采集（7 个官方 feed，每天 2 次，第三方来源 noindex）
 - [ ] **用户**：CMS 采集账号 + api 的 `CMS_API_KEY`、`JOBS_REINDEX_TOKEN`；可选手动触发 / 回填
 - [ ] 后续：多语言 /jobs
 

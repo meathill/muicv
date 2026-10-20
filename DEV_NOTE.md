@@ -968,7 +968,7 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
 
 - **合并而非新开频道**：采集岗位（CMS `opportunities`）与社区 JD（D1 `communityJd`）在 /jobs 同屏，来源 tab 区分；路由不变。
 - **数据源**：Greenhouse / Lever / Ashby 公开岗位板（种子公司在 `packages/api/src/cron/seeds.ts`）+ Remotive。国内招聘站无合规 API，靠扩展贡献补位。
-  - Remotive 条款：必须 via 署名并链回原帖、不得转投 Google Jobs 等 → 详情页 noindex、不进 sitemap、不输出 JobPosting 结构化数据。
+  - Remotive 条款：必须 via 署名并链回原帖、不得转投 Google Jobs 等 → 详情页 noindex、不进 sitemap、不输出 JobPosting 结构化数据（所有第三方岗位板同此处理）。
 - **「近期」口径**：只收 `postedAt` 在 30 天内的岗位，超过即 expired（Ashby 部分常年挂着的岗位 publishedAt 很老，会被丢弃——有意为之）。
 - **去重**：采集内按 `dedupeKey`（source:sourceId）幂等 + `fingerprint`（company+title 归一化）跨来源去重；与社区 JD 只在**展示层**按 company+title / url 折叠（`dedupeListings`），社区贡献照常入库、照常发积分。
 - **搜索**：`GET|POST /jobs/search` 是唯一入口（桌面端 `search_jobs` 工具、website、扩展 / skill 都走它，客户端用 shared `searchJobs`）。
@@ -986,6 +986,21 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
     向量挂了 mode=`keyword`；没有 q 时 mode=`latest`。
   - FTS 是 external-content 表 + insert/delete/update 触发器；upsert 必须用 `ON CONFLICT DO UPDATE`（`REPLACE` 会删行，触发器链易错）。
   - 列表列存成 `,US,CA,` 包裹形式，用 `LIKE '%,CN,%'` 匹配；`isOpenLocation=1` 表示未声明限制。
+- **垂直 / 远程岗位板（2026-10-20）**：每天 2 次（cron `0 0,12 * * *` = 北京 08:00 / 20:00，`event.cron` 分组），
+  适配器在 `packages/api/src/cron/sources/niche.ts`，清单在 `seeds.ts` `NICHE_FEEDS`。一律用官方 feed，不抓页面。
+  | 来源 | feed | 条款 / robots 结论 |
+  |---|---|---|
+  | VueJobs | `https://vuejobs.com/feed`（RSS） | ToS 无转载限制，robots 允许；注明来源 + 链回 |
+  | LaraJobs | `https://larajobs.com/feed`（RSS，`job:*` 扩展） | 无 ToS 限制，robots 全放行；注明来源 + 链回 |
+  | We Work Remotely | `/categories/remote-programming-jobs.rss`、`remote-devops-sysadmin-jobs.rss` | ToS 未限制 RSS 使用，robots 允许；注明来源 + 链回 |
+  | Remote OK | `https://remoteok.com/api` | API 条款：**必须链回原帖（不带 nofollow）并写明 Remote OK**，不得用 logo |
+  | Himalayas | `https://himalayas.app/jobs/api`（每页 20，cursor，取 3 页） | API 文档明确允许回填其他岗位板，须链回 + 注明来源 |
+  | Jobicy | `https://jobicy.com/api/v2/remote-jobs?industry=engineering` | Fair use：保留原帖 URL、注明 Jobicy、申请跳原帖 |
+  | Golangprojects | `https://www.golangprojects.com/rss.xml` | robots 仅屏蔽特定爬虫；无 ToS 限制；注明来源 + 链回 |
+  - **跳过**：ElixirJobs（RSS 无公司字段，无法入库）、RustJobs.dev（feed 返回 429 反爬）、React Jobs Board / JS Remotely（无官方 feed，只能抓页面）、python.org Jobs（站点内容归 PSF 版权、无转载授权）。
+  - 共同做法：applyUrl 用岗位板原帖（不直链雇主 ATS），「via 来源」署名；**只有雇主 ATS（Greenhouse / Lever / Ashby）可被收录**，
+    第三方岗位板详情页一律 noindex、不进 sitemap（`isIndexableSource`）。外链 `rel="noreferrer"`，不加 nofollow。
+  - 同一岗位在多个岗位板 / ATS 出现时，按 fingerprint（公司 + 标题）跨来源去重，先到先得。
 - **采集并入 api worker（2026-10-20）**：不单独部署 cron worker，api 的 `export default { fetch, scheduled }` 每 6 小时跑
   `src/cron`。api 已有 D1 / Vectorize / AI 绑定，jobIndex 与向量直接写；CMS 仍经 REST + `CMS_API_KEY` 写（CMS 是编辑真源）。
   子请求预算由 `JOBS_SUBREQUEST_BUDGET` 控制（fetch 与 binding 调用都保守计入），超出部分留到下一轮。
