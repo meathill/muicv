@@ -972,8 +972,27 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
 - **「近期」口径**：只收 `postedAt` 在 30 天内的岗位，超过即 expired（Ashby 部分常年挂着的岗位 publishedAt 很老，会被丢弃——有意为之）。
 - **去重**：采集内按 `dedupeKey`（source:sourceId）幂等 + `fingerprint`（company+title 归一化）跨来源去重；与社区 JD 只在**展示层**按 company+title / url 折叠（`dedupeListings`），社区贡献照常入库、照常发积分。
 - **搜索**：`GET|POST /jobs/search` 是唯一入口（桌面端 `search_jobs` 工具、website、扩展 / skill 都走它，客户端用 shared `searchJobs`）。
-  - q → `@cf/baai/bge-m3`（中英多语）→ Vectorize topK 100 + metadata filter → 回源 hydrate（已隐藏 / 过期的自然消失）→ 去重分页。
-  - 过滤 = 显式参数 ∪ 规则从 q 抽取（remote/region/category，`extractFiltersFromQuery`），没上 LLM 解析：规则零成本、确定，够用再说。
-  - 向量不可用 / 报错 / 无结果 → 关键词（社区 FTS + CMS like）；整句 like 命不中时退化为「按抽到的条件看最新」。
+  - 过滤 = 显式参数 ∪ 规则从 q 抽取（workplace/region/category/country/utcOffset，`detectQueryFilters`）。
+    响应带 `detected`，客户端把自动识别的条件显示为可删除标签，删除即带 `ignore=<key>` 重搜。
   - 向量 id：`collected:<cmsId>` / `community:<uuid>`。社区 JD 入库后 `waitUntil` 异步索引；采集岗位由 cron 索引，过期时删向量。
+- **混合检索（2026-10-20 二期）**：
+  - **jobIndex 镜像（api D1 表）**：两类岗位统一镜像进 D1 `jobIndex`（`packages/website/migrations/0018`），检索只查这一张表。
+    为什么不在搜索时查 CMS：CMS 只能 REST + like，做不了 FTS / 结构化数组过滤 / 跨来源一次排序；镜像后一条 SQL 搞定，
+    CMS 仍是编辑真源（cron 写 CMS 后同步 upsert jobIndex；过期置 `expired`；社区 JD 入库即 upsert、隐藏即置 `hidden`）。
+    代价是两处数据，`POST /jobs/reindex` + backfill 脚本可随时从源头重建。
+  - 三路召回、SQL 硬约束两路都套：① FTS5 `trigram`（中英文子串模糊、容忍拼写错误的部分匹配，bm25 加权 title>company>location>body）；
+    ② 短于 3 字符的词（trigram 无法索引，如「Go」）走 LIKE；③ bge-m3 + Vectorize（metadata 只下推 kind/workplace/category/postedAt，
+    国家 / 大区 / 时区在 hydrate 时由 `buildFilterSql` 过滤，保持向量原排序）。三路按 RRF（k=60）融合 → 展示层去重 → 分页。
+    向量挂了 mode=`keyword`；没有 q 时 mode=`latest`。
+  - FTS 是 external-content 表 + insert/delete/update 触发器；upsert 必须用 `ON CONFLICT DO UPDATE`（`REPLACE` 会删行，触发器链易错）。
+  - 列表列存成 `,US,CA,` 包裹形式，用 `LIKE '%,CN,%'` 匹配；`isOpenLocation=1` 表示未声明限制。
+- **地域限制**（`shared/jobs/location.ts`）：结构化字段 `workplace`、`allowedCountries[]`（ISO）、`allowedRegions[]`
+  （worldwide/americas/north-america/latam/emea/europe/apac）、`utcOffsetMin/Max`、`officeLocations`。
+  - 来源：ATS 的 location / offices / secondaryLocations / allLocations / workplaceType / isRemote + Remotive `candidate_required_location`
+    + JD 正文「限制句」规则（must be based in / authorized to work in / within N hours of CET …）。
+  - 规则没解析出、但正文有限制句的 remote 岗 → cron 调 Workers AI 小模型兜底（`llm-location.ts`），输出逐项校验。
+    每个岗位只在首次入库处理一次（dedupeKey 幂等），所以不另设缓存；单次运行 ≤20 次。
+  - 语义：坐班 / 混合岗的 `allowedCountries` = 办公地所在国；remote 岗 = 候选人须在的国家。**未声明 = 开放**（宁可多给，详情页提醒以原文为准）。
+  - 资格判定：求职者 country 命中 allowedCountries，或其所属大区命中 allowedRegions，或岗位开放；
+    时区按区间重叠（只给 country 时用该国时区范围）。「我在中国，UTC+8」会排掉仅限美国的远程岗。
 - **限流**：Workers Rate Limiting，带 key 按 userId 60/min，匿名按 IP 20/min。website 走 service binding 时没有 `cf-connecting-ip`，此时才信任 `x-muicv-client-ip`（公网请求 CF 必注入 cf-connecting-ip，伪造不了）。

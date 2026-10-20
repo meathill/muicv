@@ -18,7 +18,14 @@
 - [x] 文档：DEPLOYMENT（Vectorize / secret / migration）、DEV_NOTE
 - [ ] **用户**：按 DEPLOYMENT「统一岗位频道」建 Vectorize 索引、跑 CMS 迁移、建采集账号与 secret、依序部署、回填向量
 - [x] app：桌面端岗位库面板（左栏入口，搜索 / 筛选 / 无限滚动 / 详情 / 导入 / 投递）
-- [ ] 后续：多语言 /jobs、LLM query 解析（视效果）
+- [x] 地域限制：结构化字段（workplace / allowedCountries / allowedRegions / utcOffset / officeLocations）+ 规则解析 + LLM 兜底（cron）
+- [x] 按求职者国家 / 时区排除不可投岗位；API / shared client / 桌面端（可删除的自动识别标签）/ website /jobs 全链路
+- [x] 混合检索：D1 jobIndex 镜像 + FTS5 trigram + 短词 LIKE + 向量，SQL 硬约束，RRF 融合 + 各路与融合单测
+- [x] 索引：jobIndex 过滤列 / 唯一去重键 / FTS 触发器；CMS opportunities workplace / source / category 索引
+- [x] skill：muicv-jobs 新增 search 子任务；agent `search_jobs` 增加 country / utcOffset / workplace
+- [x] Cloudflare：Vectorize `muicv-jobs` + metadata index 已建；D1 0018 已远端执行
+- [ ] **用户**：CMS 迁移（含 ALTER，待部署时执行）、采集账号 + `CMS_API_KEY`、`JOBS_REINDEX_TOKEN`、cron 接 git 构建、回填
+- [ ] 后续：多语言 /jobs
 
 ### 模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）
 

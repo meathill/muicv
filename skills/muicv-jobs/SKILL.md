@@ -1,11 +1,11 @@
 ---
 name: muicv-jobs
-description: 目标岗位的获取、匹配分析、投递辅助。三个子任务：`fetch`（给一个 JD URL，调 Mui简历 API 抓下来并清洗成 markdown 写到 `targets/`）、`match`（对比目标 JD 与用户本地素材的覆盖度，给关键词差距清单）、`apply`（基于素材和 JD 生成 cover letter 到 `applications/`）。使用场景：用户说「抓这个岗位」「分析这份 JD 的匹配度」「我要投这个公司，帮我准备一下」「帮我写求职信」等。fetch 依赖网络 API；match / apply 是纯本地 agent 分析。
+description: 目标岗位的搜索、获取、匹配分析、投递辅助。四个子任务：`search`（在 Mui简历岗位库里按自然语言 + 地域限制搜岗位）、`fetch`（给一个 JD URL，调 Mui简历 API 抓下来并清洗成 markdown 写到 `targets/`）、`match`（对比目标 JD 与用户本地素材的覆盖度，给关键词差距清单）、`apply`（基于素材和 JD 生成 cover letter 到 `applications/`）。使用场景：用户说「帮我找远程后端岗」「我在中国，有哪些能投的海外岗位」「抓这个岗位」「分析这份 JD 的匹配度」「我要投这个公司，帮我准备一下」「帮我写求职信」等。search / fetch 依赖网络 API（search 无需 key）；match / apply 是纯本地 agent 分析。
 ---
 
 # muicv-jobs
 
-围绕「目标岗位」的三件事：拿到 JD（fetch）、评估能不能投（match）、准备投递材料（apply）。
+围绕「目标岗位」的四件事：找岗位（search）、拿到 JD（fetch）、评估能不能投（match）、准备投递材料（apply）。
 
 **边界（很重要）**：
 - **不自动投递**。无论是 LinkedIn 还是直聘网站，自动投递都涉及站点 ToS、反爬、账号安全；我们只帮用户准备好材料，投递由用户自己手动完成。
@@ -32,7 +32,56 @@ description: 目标岗位的获取、匹配分析、投递辅助。三个子任�
        "{{这个 skill 干的事}}" → "抓取 JD"，"{{这个动作}}" → "抓 JD"）
      - 格式不合法（不匹配 `/^mui_[A-Za-z0-9]{32}$/`）→ 别调 API，发格式异常文案
      - 合法 → 继续 fetch 流程
+   - `search` 是公开接口，**无需 key**（带上 key 限流额度更高：登录用户 60 次/分钟，匿名 20 次/分钟）。
    - `match` / `apply` 是本地 agent 分析，**无需 key**，跳过这条。
+
+---
+
+## 子任务：search
+
+**触发**：用户说「帮我找工作 / 看看有什么远程岗位 / 欧洲的前端岗」「我在中国 UTC+8，能投哪些海外远程岗」。
+
+岗位库 = 每日采集的国际 / 远程技术岗（Greenhouse / Lever / Ashby / Remotive）+ 社区贡献 JD，服务端做
+**关键词（FTS5 trigram，中英文模糊 / 错别字容忍）+ 语义（向量）混合检索**，地域条件是**硬约束**。
+
+### 流程
+
+1. **先确定用户所在地**：国家（ISO alpha-2，如 `CN`）和时区（UTC 偏移小时，如 `8`）。
+   - 来源优先级：本次对话 > 素材库 `profile.md` / 简历里的所在城市 > 问用户一句。
+   - 不知道就不传——但要提醒用户「没限定所在地，结果里可能有仅限某国的远程岗」。
+2. 调 API（GET 或 POST JSON 都行）：
+   ```bash
+   curl -G "${MUICV_API_BASE}/jobs/search" \
+     ${MUICV_API_KEY:+-H "Authorization: Bearer ${MUICV_API_KEY}"} \
+     --data-urlencode "q=资深后端 Go 远程" \
+     --data-urlencode "country=CN" \
+     --data-urlencode "utcOffset=8" \
+     --data-urlencode "pageSize=10"
+   ```
+   可选参数：
+   | 参数 | 取值 | 含义 |
+   |---|---|---|
+   | `q` | 自然语言 | 中英文皆可；会自动识别「远程」「欧洲」「我在中国」「UTC+8」「后端」等 |
+   | `workplace` | `remote` / `hybrid` / `onsite` | 办公方式 |
+   | `region` | `worldwide` / `americas` / `north-america` / `latam` / `emea` / `europe` / `apac` | 岗位覆盖的大区 |
+   | `category` | `engineering` / `data` / `design` / `product` / `devops` / `security` / `qa` | 职能 |
+   | `country` | ISO alpha-2 | **求职者**所在国：排除不接受该国候选人的岗位（如仅限美国的远程岗） |
+   | `utcOffset` | -12 ~ 14（可 5.5） | **求职者**时区：排除时区要求不重叠的岗位 |
+   | `kind` | `collected` / `community` | 来源 |
+   | `ignore` | 逗号分隔的上面的 key | 不要从 q 自动识别这些条件（用户说「别限定地区」时用） |
+   | `page` / `pageSize` | 1.. / 1..50 | 分页 |
+3. 返回 `{ items, page, hasMore, mode, filters, detected }`：
+   - `filters` 是实际生效的条件，`detected` 是其中从 q 自动识别的 key——**要告诉用户识别出了什么**，
+     识别错了就带 `ignore=<key>` 重搜。
+   - `mode`：`hybrid`（正常）/ `keyword`（语义暂不可用，只有关键词）/ `latest`（没给 q，按时间）。
+   - 每个 item 有 `workplace`、`allowedCountries`、`allowedRegions`、`utcOffsetMin/Max`、`officeLocations`：
+     列表展示时把地域限制说清楚（如「远程 · 仅限 欧洲 · UTC-1 ~ UTC+3」）；全空 = 未声明限制，提醒用户投前看原文。
+4. 用户挑中某个岗位 → 用它的 `url` 走 `fetch` 子任务落盘到 `targets/`，再 `match`。
+
+### 注意
+
+- 只列结果、给建议，**不替用户投递**。
+- 地域限制是从原文规则 + 模型抽取的，可能有误；关键限制（签证、工作许可）提醒用户以原 JD 为准。
 
 ---
 

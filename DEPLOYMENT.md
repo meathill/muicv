@@ -741,35 +741,45 @@ npx skills add meathill/muicv -g
 涉及 4 个部署单元：cms（新集合）、cron（新 worker `muicv-cron`）、api（`/jobs/search`）、website（/jobs 页）。
 **按下面顺序**首次上线：
 
-1. **Vectorize 索引**（bge-m3 = 1024 维，cosine），并为过滤字段建 metadata index（必须在写入向量前建，否则旧向量不参与过滤）：
+> **2026-10-20 已预置（PR feat/opportunities）**：Vectorize `muicv-jobs` 与 4 个 metadata index 已建好；
+> D1 迁移 `0018_job_index.sql`（jobIndex + FTS5 + 触发器）已在远端 `muicv` 执行。下面第 1、2 步仅供重建参考。
+
+1. **Vectorize 索引**（bge-m3 = 1024 维，cosine），并为向量侧过滤字段建 metadata index（必须在写入向量前建，否则旧向量不参与过滤）。
+   国家 / 大区 / 时区不进向量 metadata（数组 / 区间 Vectorize 表达不了），在 D1 hydrate 时用 SQL 硬过滤：
 
    ```bash
    pnpm exec wrangler vectorize create muicv-jobs --dimensions=1024 --metric=cosine
-   for p in kind remote region category; do
+   for p in kind workplace category; do
      pnpm exec wrangler vectorize create-metadata-index muicv-jobs --propertyName=$p --type=string
    done
+   pnpm exec wrangler vectorize create-metadata-index muicv-jobs --propertyName=postedAt --type=number
    ```
 
-2. **CMS 迁移**：`pnpm --filter @muicv/cms migrate`（新增 `opportunities` 表），随后部署 cms。
-3. **CMS 采集账号**：在 cms 后台新建用户（如 `jobs-bot@muicv.com`），勾选「Enable API Key」生成 key。
+2. **D1 迁移（统一检索索引）**：`cd packages/website && pnpm exec wrangler d1 migrations apply muicv --remote`
+   （`0018_job_index.sql`：`jobIndex` 表 + 过滤列索引 + `(kind, refId)` 唯一键 + FTS5 trigram + 同步触发器，纯新增）。
+3. **CMS 迁移**：`pnpm --filter @muicv/cms migrate`（新增 `opportunities` / `opportunities_tags` 表，
+   并给 `payload_locked_documents_rels` **加一列** `opportunities_id`——含 ALTER，故未代为执行），随后部署 cms。
+4. **CMS 采集账号**：在 cms 后台新建用户（如 `jobs-bot@muicv.com`），勾选「Enable API Key」生成 key。
    > 现有 access 规则是「登录即可写」，采集账号权限等同管理员；如需收紧再单独加角色。
-4. **cron secret + 部署**：
+5. **cron secret + 部署**：
 
    ```bash
-   pnpm --filter @muicv/cron exec wrangler secret put CMS_API_KEY   # 粘贴第 3 步的 key
-   pnpm --filter @muicv/cron deploy
+   pnpm --filter @muicv/cron exec wrangler secret put CMS_API_KEY   # 粘贴第 4 步的 key
    ```
 
-   频率 `17 */6 * * *`（UTC），参数见 `packages/cron/wrangler.jsonc` vars（`MAX_AGE_DAYS` / `MAX_NEW_PER_RUN`）。
+   cron 绑定：`AI`、`JOBS_INDEX`、`MUICV_API_DB`（共用 D1 `muicv`，写 jobIndex）。
+   频率 `17 */6 * * *`（UTC），参数见 `packages/cron/wrangler.jsonc` vars（`MAX_AGE_DAYS` / `MAX_NEW_PER_RUN` /
+   `LOCATION_LLM`：`off` 关闭地域限制 LLM 兜底，默认每次最多 20 次 `@cf/meta/llama-3.1-8b-instruct-fast`）。
    单次 subrequest ≈ 27 个数据源 + `MAX_NEW_PER_RUN` 次 CMS 写入，**需要 Workers Paid**（免费版上限 50）。
-5. **api secret + 部署**（`/jobs/search` 依赖 AI、`JOBS_INDEX`、两个 ratelimit 绑定）：
+   > 仓库走 git 集成部署；`muicv-cron` 是新 worker，需在 Cloudflare 后台为它接上 git 构建（root `packages/cron`）。
+6. **api secret**（`/jobs/search` 依赖 AI、`JOBS_INDEX`、`MUICV_API_DB`、两个 ratelimit 绑定）：
 
    ```bash
    pnpm --filter @muicv/api exec wrangler secret put JOBS_REINDEX_TOKEN   # 任意长随机串
    ```
 
-6. **website**：新增 service binding `MUICV_API → muicv-api`，api 先部署再部署 website。
-7. **回填已有社区 JD 与已采集岗位的向量**（幂等，可重复跑）：
+7. **website**：service binding `MUICV_API → muicv-api`，api 先部署再部署 website。
+8. **回填 jobIndex + 向量**（已有社区 JD 与已采集岗位；幂等，可重复跑）：
 
    ```bash
    node --env-file=.env.reindex packages/api/scripts/backfill-job-vectors.ts
