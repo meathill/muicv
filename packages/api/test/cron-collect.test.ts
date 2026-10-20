@@ -5,11 +5,11 @@ import { test } from 'node:test';
 
 import type { JobVector, OpportunityInput, SqlDatabase } from '@muicv/shared';
 
-import type { CmsWriter } from '../src/cms-client.ts';
-import { createCmsWriter } from '../src/cms-client.ts';
-import { collectOpportunities } from '../src/collect.ts';
-import { extractWithLlm, needsLlm } from '../src/llm-location.ts';
-import { normalizeJob } from '../src/normalize.ts';
+import type { CmsWriter } from '../src/cron/cms-client.ts';
+import { createCmsWriter } from '../src/cron/cms-client.ts';
+import { collectOpportunities } from '../src/cron/collect.ts';
+import { extractWithLlm, needsLlm } from '../src/cron/llm-location.ts';
+import { normalizeJob } from '../src/cron/normalize.ts';
 
 /** node:sqlite 包一层 D1 形状，跑真实的 0018 迁移 */
 function sqliteD1(): { db: SqlDatabase; raw: DatabaseSync } {
@@ -302,7 +302,18 @@ test('LLM 兜底：仅对规则没解析出限制、但有限制句的 remote �
 });
 
 test('runCollect：缺 CMS_API_KEY 时跳过而不是抛错', async () => {
-  const { runCollect } = await import('../src/index.ts');
+  const { runScheduledCollect: runCollect } = await import('../src/cron/index.ts');
   const result = await runCollect({ MUICV_CMS_URL: 'https://cms.test' } as never);
   assert.equal(result, null);
+});
+
+test('子请求预算：Paid 留余量，Free 计划自动压低写入条数并关掉 LLM', async () => {
+  const { planCollectBudget } = await import('../src/cron/budget.ts');
+  const paid = planCollectBudget({ budget: 900, sources: 28, maxNew: 150, maxLlm: 20 });
+  assert.deepEqual([paid.maxNew, paid.maxLlm], [150, 20]);
+  const free = planCollectBudget({ budget: 50, sources: 28, maxNew: 150, maxLlm: 20 });
+  assert.equal(free.maxNew, 13);
+  assert.equal(free.maxLlm, 0);
+  // 总子请求 ≤ 预算
+  assert.ok(28 + 8 + Math.ceil(free.maxNew * 1.02) + free.maxLlm <= 50);
 });

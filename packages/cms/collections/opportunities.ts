@@ -2,7 +2,7 @@ import { JOB_CATEGORIES, OPPORTUNITY_SOURCES, WORKPLACES } from '@muicv/shared';
 import type { Access, CollectionConfig, Where } from 'payload';
 
 /**
- * 采集来的国际 / 远程技术岗（由 packages/cron 定时写入）。
+ * 采集来的国际 / 远程技术岗（由 api worker 的 scheduled 采集（packages/api/src/cron）定时写入）。
  * 与社区贡献 JD（api D1 communityJd）在 /jobs 合并展示，并统一进 Vectorize 做自然语言搜索。
  * 匿名只能读 published；expired 由 cron 按 postedAt 自动标记。
  */

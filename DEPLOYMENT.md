@@ -738,7 +738,8 @@ npx skills add meathill/muicv -g
 
 ## 统一岗位频道 /jobs（采集 + 社区 + 自然语言搜索）
 
-涉及 4 个部署单元：cms（新集合）、cron（新 worker `muicv-cron`）、api（`/jobs/search`）、website（/jobs 页）。
+涉及 3 个部署单元：cms（新集合）、api（`/jobs/search` + scheduled 岗位采集，`src/cron`）、website（/jobs 页）。
+没有独立的 cron worker：采集是 api worker 的 `scheduled` 处理器。
 **按下面顺序**首次上线：
 
 > **2026-10-20 已预置（PR feat/opportunities）**：Vectorize `muicv-jobs` 与 4 个 metadata index 已建好；
@@ -761,23 +762,20 @@ npx skills add meathill/muicv -g
    并给 `payload_locked_documents_rels` **加一列** `opportunities_id`——含 ALTER，故未代为执行），随后部署 cms。
 4. **CMS 采集账号**：在 cms 后台新建用户（如 `jobs-bot@muicv.com`），勾选「Enable API Key」生成 key。
    > 现有 access 规则是「登录即可写」，采集账号权限等同管理员；如需收紧再单独加角色。
-5. **cron secret + 部署**：
+5. **api secret**（采集与重建索引）：
 
    ```bash
-   pnpm --filter @muicv/cron exec wrangler secret put CMS_API_KEY   # 粘贴第 4 步的 key
+   pnpm --filter @muicv/api exec wrangler secret put CMS_API_KEY          # 粘贴第 4 步的 key；未设置时 scheduled 安静跳过
+   pnpm --filter @muicv/api exec wrangler secret put JOBS_REINDEX_TOKEN   # 任意长随机串；未设置时 reindex 一律 403
    ```
 
-   cron 绑定：`AI`、`JOBS_INDEX`、`MUICV_API_DB`（共用 D1 `muicv`，写 jobIndex）。
-   频率 `17 */6 * * *`（UTC），参数见 `packages/cron/wrangler.jsonc` vars（`MAX_AGE_DAYS` / `MAX_NEW_PER_RUN` /
-   `LOCATION_LLM`：`off` 关闭地域限制 LLM 兜底，默认每次最多 20 次 `@cf/meta/llama-3.1-8b-instruct-fast`）。
-   单次 subrequest ≈ 27 个数据源 + `MAX_NEW_PER_RUN` 次 CMS 写入，**需要 Workers Paid**（免费版上限 50）。
-   > 仓库走 git 集成部署；`muicv-cron` 是新 worker，需在 Cloudflare 后台为它接上 git 构建（root `packages/cron`）。
-6. **api secret**（`/jobs/search` 依赖 AI、`JOBS_INDEX`、`MUICV_API_DB`、两个 ratelimit 绑定）：
-
-   ```bash
-   pnpm --filter @muicv/api exec wrangler secret put JOBS_REINDEX_TOKEN   # 任意长随机串
-   ```
-
+6. **采集参数**（`packages/api/wrangler.jsonc`）：`triggers.crons = 17 */6 * * *`（UTC）；vars
+   `JOBS_MAX_AGE_DAYS` / `JOBS_MAX_NEW_PER_RUN` / `JOBS_LOCATION_LLM`（`off` 关 LLM 兜底）/
+   `JOBS_SUBREQUEST_BUDGET`（单次子请求预算，默认 900 适配 Workers Paid 的 1000；**Free 计划改成 50**，
+   写入条数与 LLM 次数会按预算自动压低，见 `src/cron/budget.ts`）。
+   绑定沿用 api 已有的 `AI`、`JOBS_INDEX`、`MUICV_API_DB`。手动触发一次：Cloudflare 后台 api worker →
+   Settings → Triggers → Cron 的「Trigger」，或本地 `pnpm --filter @muicv/api exec wrangler dev --test-scheduled`
+   后访问 `/__scheduled`。
 7. **website**：service binding `MUICV_API → muicv-api`，api 先部署再部署 website。
 8. **回填 jobIndex + 向量**（已有社区 JD 与已采集岗位；幂等，可重复跑）：
 
@@ -785,4 +783,4 @@ npx skills add meathill/muicv -g
    node --env-file=.env.reindex packages/api/scripts/backfill-job-vectors.ts
    ```
 
-本地试跑采集（真实拉数据源，不写 CMS / Vectorize）：`pnpm --filter @muicv/cron dev`。
+本地试跑采集（真实拉数据源，不写 CMS / Vectorize）：`pnpm --filter @muicv/api jobs:collect:dry`。

@@ -17,7 +17,11 @@
   "ai": {
     "binding": "AI"
   },
-  // 统一岗位搜索的向量索引，与 packages/cron 共用（创建命令见 DEPLOYMENT.md）。
+  // 统一岗位搜索的向量索引，采集（scheduled，src/cron）与搜索共用（创建命令见 DEPLOYMENT.md）。
+  // 每 6 小时采集一次岗位（UTC）
+  "triggers": {
+    "crons": ["17 */6 * * *"]
+  },
   "vectorize": [
     {
       "binding": "JOBS_INDEX",
@@ -87,7 +91,12 @@
     "RENDER_BASE_URL": "https://muicv.com",
     "PHOTOS_PUBLIC_BASE_URL": "https://i.muicv.com",
     "PREVIEW_PUBLIC_BASE_URL": "https://muicv.com",
-    "MUICV_CMS_URL": "https://cms.muicv.com"
+    "MUICV_CMS_URL": "https://cms.muicv.com",
+    // 岗位采集（scheduled）：见 src/cron。JOBS_SUBREQUEST_BUDGET 按计划设（Paid 1000 / Free 50）
+    "JOBS_MAX_AGE_DAYS": "30",
+    "JOBS_MAX_NEW_PER_RUN": "150",
+    "JOBS_LOCATION_LLM": "on",
+    "JOBS_SUBREQUEST_BUDGET": "900"
     // Stripe priceId → plan 的反查表已下沉到 @muicv/shared（src/stripe-prices.ts），
     // 与 packages/website 共用同一份，不再放 env vars（历史上两边 ID 代际不同步，
     // 导致 Pro 订阅在桌面 app 显示为免费版）。
