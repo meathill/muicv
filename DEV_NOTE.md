@@ -997,6 +997,10 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
   | Himalayas | `https://himalayas.app/jobs/api`（每页 20，cursor，取 3 页） | API 文档明确允许回填其他岗位板，须链回 + 注明来源 |
   | Jobicy | `https://jobicy.com/api/v2/remote-jobs?industry=engineering` | Fair use：保留原帖 URL、注明 Jobicy、申请跳原帖 |
   | Golangprojects | `https://www.golangprojects.com/rss.xml` | robots 仅屏蔽特定爬虫；无 ToS 限制；注明来源 + 链回 |
+  - **Supabase（Ashby，`api.ashbyhq.com/posting-api/job-board/supabase`）**：移出 6 小时 ATS 组、放进每天 2 次组。
+    岗位常年挂着（2026-10 实测 52 个，30 天内仅 14 个），故该种子 `maxAgeDays: 365`：不参与全局 30 天过期，
+    改为「超过 365 天或已从岗位板下架」才过期（仅在本轮成功抓到其岗位板时执行，抓取失败不误杀）。
+    其他公司要同样处理时给种子加 `maxAgeDays` 即可。
   - **跳过**：ElixirJobs（RSS 无公司字段，无法入库）、RustJobs.dev（feed 返回 429 反爬）、React Jobs Board / JS Remotely（无官方 feed，只能抓页面）、python.org Jobs（站点内容归 PSF 版权、无转载授权）。
   - 共同做法：applyUrl 用岗位板原帖（不直链雇主 ATS），「via 来源」署名；**只有雇主 ATS（Greenhouse / Lever / Ashby）可被收录**，
     第三方岗位板详情页一律 noindex、不进 sitemap（`isIndexableSource`）。外链 `rel="noreferrer"`，不加 nofollow。

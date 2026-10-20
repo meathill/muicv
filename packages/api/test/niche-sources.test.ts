@@ -34,6 +34,7 @@ const ROUTES: Record<string, string> = {
   'https://remoteok.com/api': 'remoteok.json',
   'https://himalayas.app/jobs/api?limit=20': 'himalayas.json',
   'https://jobicy.com/api/v2/remote-jobs?count=50&industry=engineering': 'jobicy.json',
+  'https://api.ashbyhq.com/posting-api/job-board/supabase': 'supabase.json',
 };
 
 const calls: string[] = [];
@@ -119,10 +120,16 @@ test('cron 分组：0 0,12 跑垂直岗位板，其余跑 ATS；niche 组只请�
   assert.equal(groupForCron(NICHE_CRON), 'niche');
   assert.equal(groupForCron('17 */6 * * *'), 'ats');
   assert.equal(groupForCron(undefined), 'ats');
-  assert.equal(nicheFeedRequests(NICHE_FEEDS), 10);
+  assert.equal(nicheFeedRequests(NICHE_FEEDS), 11);
 
   calls.length = 0;
   const created: OpportunityInput[] = [];
+  const expireCalls: Array<{
+    except?: Array<{ source: string; company: string }>;
+    company?: string;
+    keep?: string[];
+    cutoff: string;
+  }> = [];
   const cms: CmsWriter = {
     async listExistingKeys() {
       return { dedupeKeys: new Set(), fingerprints: new Set() };
@@ -131,8 +138,13 @@ test('cron 分组：0 0,12 跑垂直岗位板，其余跑 ATS；niche 组只请�
       created.push(doc);
       return String(created.length);
     },
-    async expireBefore() {
+    async expireBefore(cutoff, except) {
+      expireCalls.push({ cutoff, ...(except ? { except } : {}) });
       return [];
+    },
+    async expireCompany(_source, company, keep, cutoff) {
+      expireCalls.push({ company, keep, cutoff });
+      return ['99'];
     },
   };
   const report = await collectOpportunities({
@@ -150,6 +162,7 @@ test('cron 分组：0 0,12 跑垂直岗位板，其余跑 ATS；niche 组只请�
   assert.deepEqual(report.errors, []);
   assert.equal(report.skippedDuplicate, 1, 'WWR 两个分类里的同一岗位按 dedupeKey 折叠');
   assert.deepEqual([...new Set(created.map((d) => d.source))].sort(), [
+    'ashby',
     'golangprojects',
     'himalayas',
     'jobicy',
@@ -158,4 +171,33 @@ test('cron 分组：0 0,12 跑垂直岗位板，其余跑 ATS；niche 组只请�
     'vuejobs',
     'weworkremotely',
   ]);
+  // Supabase：7 个月前的岗位按 365 天窗口保留，超过一年的照旧丢弃
+  assert.deepEqual(
+    created
+      .filter((d) => d.company === 'Supabase')
+      .map((d) => d.sourceId)
+      .sort(),
+    ['s1', 's2'],
+  );
+  // 全局过期排除 Supabase；Supabase 按「下架或超过 365 天」单独过期
+  assert.deepEqual(expireCalls[0]?.except, [{ source: 'ashby', company: 'Supabase' }]);
+  assert.equal(expireCalls[1]?.company, 'Supabase');
+  assert.deepEqual(expireCalls[1]?.keep?.sort(), ['s1', 's2', 's3']);
+  assert.equal(expireCalls[1]?.cutoff, '2025-10-20T13:00:00.000Z');
+  assert.equal(report.expired, 1);
+});
+
+test('CMS 过期查询：全局排除长期公司，长期公司按下架或超龄过期', async () => {
+  const { createCmsWriter } = await import('../src/cron/cms-client.ts');
+  const urls: string[] = [];
+  const writer = createCmsWriter('https://cms.test', 'k', async (input) => {
+    urls.push(decodeURIComponent(String(input)));
+    return Response.json({ docs: [{ id: 7 }] });
+  });
+  assert.deepEqual(await writer.expireBefore('2026-09-20', [{ source: 'ashby', company: 'Supabase' }]), ['7']);
+  assert.match(urls[0] ?? '', /where\[or\]\[0\]\[company\]\[not_in\]=Supabase/);
+  assert.match(urls[0] ?? '', /where\[or\]\[1\]\[source\]\[not_in\]=ashby/);
+  await writer.expireCompany?.('ashby', 'Supabase', ['s1', 's2'], '2025-10-20');
+  assert.match(urls[1] ?? '', /where\[and\]\[2\]\[company\]\[equals\]=Supabase/);
+  assert.match(urls[1] ?? '', /where\[and\]\[3\]\[or\]\[1\]\[sourceId\]\[not_in\]=s1,s2/);
 });
