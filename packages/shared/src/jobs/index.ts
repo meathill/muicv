@@ -8,6 +8,7 @@ export * from './labels.ts';
 export * from './location.ts';
 export * from './opportunity-cms.ts';
 export * from './rrf.ts';
+export * from './submit.ts';
 export * from './text.ts';
 export * from './types.ts';
 export * from './vector.ts';

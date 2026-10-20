@@ -4,6 +4,22 @@
 
 ## 当前进行中
 
+### 扩展重做：任意页面提交岗位 + 服务端识别 / 计费（2026-10-20）
+
+目标：扩展脱离桌面端，凭 muicv API key 独立工作；用户可提交任意页面，服务端识别岗位并按规则计费 / 奖励。
+
+- [x] shared：提交请求 / 响应类型、计费常量与结算规则（纯函数）
+- [x] D1 迁移 0019：jobSubmission（提交与结算记录）、savedJob（私藏）、jobLinkCache（外链抓取缓存）
+- [x] api：`POST /jobs/submit` 流水线——JSON-LD / 已知 ATS 确定性识别 → Workers AI 判别 + 抽取（可多岗位）→
+      候选链接（≤3，SSRF 防护、大小 / 超时限制、缓存）→ 地域解析 → 公共池（去重、jobIndex + 向量）/ 私藏
+- [x] api：计费——预扣估算、余额不足早拒；公共且识别到岗位全免、有新岗位发奖；未识别 / 私藏按实际 AI 成本结算；幂等流水；限流
+- [x] api：`GET /jobs/saved` 私藏列表；CORS 放行扩展来源
+- [x] extension：去掉桌面端连接（bridge / 队列 / content script），只留 activeTab + scripting；
+      点击时注入抽取脚本（Readability → turndown，截断）+ JSON-LD + 外链
+- [x] extension：popup 重做（页面信息、公共 / 私藏切换、计费说明、进度、结果、错误、API key 设置），用新图标
+- [x] 测试（每个计费分支）、typecheck、构建、dry-run、远端执行新增迁移、推送并验证部署
+
+
 ### 统一岗位频道 /jobs + 自然语言搜索（2026-10-20，分支 feat/opportunities）
 
 目标：采集国际 / 远程技术岗进 CMS，与社区贡献 JD 合并为一个 /jobs 频道；

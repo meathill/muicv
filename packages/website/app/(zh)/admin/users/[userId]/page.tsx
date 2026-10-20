@@ -26,6 +26,9 @@ const LEDGER_TYPE_LABEL: Record<string, string> = {
   tts: '语音合成',
   feedback_reward: '反馈奖励',
   jd_contribute: '贡献岗位',
+  job_submit: '提交岗位',
+  job_submit_refund: '提交岗位退回',
+  job_submit_reward: '提交岗位奖励',
   admin_grant: '后台补发',
   admin_deduct: '后台扣款',
 };

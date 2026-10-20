@@ -6,14 +6,25 @@
 
 ---
 
-## 浏览器扩展（采集 JD）
+## 浏览器扩展（任意页面提交岗位，2026-10-20 重做）
 
-- 扩展不持有 `mui_` key。Chrome MV3 content script 抽 DOM，background 把 `CapturedJd` POST 到桌面端 loopback。
-- 桌面端 `127.0.0.1:29876-29880`，health 响应带 `magic: muicv-extension-bridge`。CORS 只放行 `chrome-extension://` / `moz-extension://`。
-- 配对：`POST /pair/begin` → renderer 确认 → pairing token 写入 electron-store `muicv-extension`。重启后 token 仍有效。
-- 匹配是一次 JSON LLM 调用（`DEFAULT_LLM_MODEL`），**不**新开 `/jobs/match` Worker，也不把整份素材库上云。
-- 社区表 `communityJd` + FTS5，migration `0017_community_jd.sql`。贡献奖励 `JD_CONTRIBUTE_REWARD=2000`，日封顶 8，ledger type `jd_contribute`，ledgerId = 行 id。
-- `/jobs/fetch` 仍给 skill / CLI 用；扩展路径不扣 `JD_FETCH_COST`。
+- **不再连接桌面端**：扩展独立工作，用户在 popup 填自己的 `mui_` API key（存 `chrome.storage.local`），直连 `api.muicv.com`。
+  API CORS 放行 `chrome-extension://` / `moz-extension://`（Bearer 鉴权、不带 cookie）。桌面端的 loopback bridge（`extension-bridge.ts`）已无调用方，暂留待清理。
+- 权限只有 `storage` / `activeTab` / `scripting`，无 host_permissions、无 content script。用户点开 popup 才注入 `inject.js`：
+  Readability 正文 → turndown markdown（截断 20k 字符）+ 标题 + URL + 仅含 JobPosting 的 JSON-LD + 外链（≤200）。不上传整页 HTML。
+- `POST /jobs/submit`（requireApiKey，`JOBS_SUBMIT_LIMITER` 每用户 6 次/分钟）流水线：
+  JSON-LD JobPosting → 已知 ATS URL（Greenhouse / Lever / Ashby 单条公开接口，复用采集器映射）→ Workers AI
+  `llama-3.1-8b-instruct-fast` 一次调用判别 + 抽取（可多岗位）→ 跟进 ≤3 条详情链接（必须出自提交的外链列表；
+  `safe-fetch.ts` SSRF 防护：仅 http(s) 默认端口、拒私网 / 回环 / 链路本地 / 非常规 IP 写法、手动重定向逐跳校验、8s 超时、512KB 上限；
+  `jobLinkCache` 缓存 6h）→ 地域解析（`parseLocationRestrictions`）。
+- 入库：public → `communityJd`（去重：communityJd urlHash/contentHash + jobIndex urlKey/指纹，覆盖采集岗位）→ `indexCommunityJdById` 写 jobIndex + 向量；
+  private → `savedJob`（userId 作用域，不进搜索），`GET /jobs/saved` 列表。
+- 计费（`shared/jobs/submit.ts`）：按 markdown 长度预扣最坏情况（1 次判别 + 3 次链接抽取），余额不足 402；
+  公共 + 识别到岗位全免（重复 / 入库失败也不扣），有新岗位发 `JOB_SUBMIT_REWARD`=2000 起（每多 1 条 +500，最多算 5 条，日封顶 8 次）；
+  未识别 / 私藏按实际 AI 用量（输入 0.01、输出 0.08 显示 token / token，≈Workers AI 刊例 2 倍），不超过预扣额。
+  流水 id `jobsub:<id>:hold|refund|reward` 幂等；`jobSubmission.status` held → settled/failed 只转一次；定时任务退回 30 分钟以上的残留预扣。
+- 旧的 `/jobs/contribute`（`JD_CONTRIBUTE_REWARD`，ledger `jd_contribute`）保留给桌面端 / skill；扩展提交走新流水线，不重复发奖。
+- 表：migration `0019_job_submit.sql`（jobSubmission / savedJob / jobLinkCache，纯新增）。
 
 ## 内容中心 / Skill 目录 / Payload CMS（Phase 17）
 

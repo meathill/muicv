@@ -451,7 +451,11 @@ export type LedgerType =
   | 'admin_grant'
   | 'admin_deduct'
   | 'feedback_reward'
-  | 'jd_contribute';
+  | 'jd_contribute'
+  /** 扩展提交岗位：预扣（负）/ 结算退回（正）/ 新岗位奖励（正）。 */
+  | 'job_submit'
+  | 'job_submit_refund'
+  | 'job_submit_reward';
 
 /**
  * LLM 上游用量 → μtoken 实扣金额。

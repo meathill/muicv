@@ -95,10 +95,20 @@ export async function charge(
   amount: number,
   type: LedgerType,
   meta?: CreditMeta,
+  ledgerId?: string,
 ): Promise<ChargeResult> {
   if (amount <= 0) {
     const cur = await readBalance(env, userId);
     return { ok: true, balance: cur?.balance ?? 0 };
+  }
+
+  // 幂等：同一 ledgerId 已扣过就不再扣（重试 / 重放安全）
+  if (ledgerId) {
+    const dup = await env.MUICV_API_DB.prepare('SELECT 1 FROM tokenLedger WHERE id = ? LIMIT 1').bind(ledgerId).first();
+    if (dup) {
+      const cur = await readBalance(env, userId);
+      return { ok: true, balance: cur?.balance ?? 0 };
+    }
   }
 
   const now = Date.now();
@@ -123,7 +133,7 @@ export async function charge(
     `INSERT INTO tokenLedger (id, userId, delta, type, meta, createdAt)
      VALUES (?, ?, ?, ?, ?, ?)`,
   )
-    .bind(crypto.randomUUID(), userId, -amount, type, meta ? JSON.stringify(meta) : null, now)
+    .bind(ledgerId ?? crypto.randomUUID(), userId, -amount, type, meta ? JSON.stringify(meta) : null, now)
     .run()
     .catch(() => {});
 

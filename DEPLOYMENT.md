@@ -785,3 +785,11 @@ npx skills add meathill/muicv -g
    ```
 
 本地试跑采集（真实拉数据源，不写 CMS / Vectorize）：`pnpm --filter @muicv/api jobs:collect:dry`。
+
+## 浏览器扩展：任意页面提交岗位（`POST /jobs/submit`）
+
+- D1 迁移 `packages/website/migrations/0019_job_submit.sql`（jobSubmission / savedJob / jobLinkCache，纯新增），已在远端 `muicv` 执行：
+  `pnpm --filter @muicv/website exec wrangler d1 execute muicv --remote --file=migrations/0019_job_submit.sql`
+- api 新增限流绑定 `JOBS_SUBMIT_LIMITER`（namespace 1103，每用户 6 次/分钟），随 api 部署生效；无需新 secret，复用 `AI` / `JOBS_INDEX`。
+- 扩展打包：`pnpm --filter @muicv/extension build` → `packages/extension/dist`，上架素材在 `packages/extension/store-assets/`。
+  扩展直连 `https://api.muicv.com`，依赖 api 的 CORS 放行 `chrome-extension://`（本次已加），所以要先部署 api 再发扩展。

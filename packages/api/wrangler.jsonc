@@ -30,6 +30,20 @@
     }
   ],
   // /jobs/search 速率限制：带 key 按 userId，匿名按 IP。namespace_id 是账户内自定义整数。
+  // 扩展提交岗位的异步处理：需要 AI / 外链抓取的提交入队，同一 worker 消费；失败 3 次进 DLQ 全额退回预扣
+  "queues": {
+    "producers": [{ "binding": "JOB_SUBMIT_QUEUE", "queue": "muicv-job-submit" }],
+    "consumers": [
+      {
+        "queue": "muicv-job-submit",
+        "max_batch_size": 5,
+        "max_batch_timeout": 2,
+        "max_retries": 3,
+        "dead_letter_queue": "muicv-job-submit-dlq"
+      },
+      { "queue": "muicv-job-submit-dlq", "max_batch_size": 10, "max_batch_timeout": 5, "max_retries": 5 }
+    ]
+  },
   "ratelimits": [
     {
       "name": "JOBS_SEARCH_LIMITER",
@@ -40,6 +54,12 @@
       "name": "JOBS_SEARCH_ANON_LIMITER",
       "namespace_id": "1102",
       "simple": { "limit": 20, "period": 60 }
+    },
+    {
+      // 扩展提交岗位：每用户每分钟 6 次（每次可能触发 AI + 3 条外链抓取）
+      "name": "JOBS_SUBMIT_LIMITER",
+      "namespace_id": "1103",
+      "simple": { "limit": 6, "period": 60 }
     }
   ],
   // BrowserContainer 已下线；v1/v2 migration 必须留着，否则 Cloudflare 会拒部署。

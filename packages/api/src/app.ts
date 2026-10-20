@@ -12,6 +12,7 @@ import {
 } from './routes/content.ts';
 import { handleComment, handleRate } from './routes/feedback.ts';
 import { handleJobsReindex, handleJobsSearch } from './routes/job-search.ts';
+import { handleJobsSubmit, handleJobsSubmitStatus, handleSavedJobs } from './routes/job-submit.ts';
 import { handleJobsFetch } from './routes/jobs.ts';
 import { handleLlmProxy } from './routes/llm.ts';
 import { handleMe } from './routes/me.ts';
@@ -71,6 +72,8 @@ app.use(
       if (origin === 'https://muicv.com') return origin;
       if (origin.endsWith('.muicv.com') && origin.startsWith('https://')) return origin;
       if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return origin;
+      // 浏览器扩展（popup 直接调 API，Bearer key 鉴权，不带 cookie）
+      if (/^(chrome|moz)-extension:\/\/[a-z0-9-]+$/i.test(origin)) return origin;
       return null;
     },
     allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
@@ -223,6 +226,9 @@ app.get('/jobs/community/:id', handleJobsCommunityGet);
 app.get('/jobs/search', optionalApiKey, handleJobsSearch);
 app.post('/jobs/search', optionalApiKey, handleJobsSearch);
 app.post('/jobs/search/reindex', handleJobsReindex);
+app.post('/jobs/submit', requireApiKey, handleJobsSubmit);
+app.get('/jobs/submit/:id', requireApiKey, handleJobsSubmitStatus);
+app.get('/jobs/saved', requireApiKey, handleSavedJobs);
 
 /**
  * POST /audio/transcribe —— STT 转写（issue #1 M1）。
