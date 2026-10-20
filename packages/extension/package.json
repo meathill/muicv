@@ -1,21 +1,27 @@
 {
   "name": "@muicv/extension",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Mui简历浏览器扩展：采集当前招聘页 JD，发给桌面端匹配并生成针对性简历。",
+  "description": "Mui简历浏览器扩展：把任意网页上的招聘信息提交到 Mui简历岗位库（公共岗位池 / 私藏）。",
   "scripts": {
     "dev": "node scripts/build.ts",
     "build": "node scripts/build.ts",
+    "release": "node scripts/build.ts --release",
     "test": "node --test test/**/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@muicv/shared": "workspace:*"
+    "@mozilla/readability": "^0.6.0",
+    "@muicv/shared": "workspace:*",
+    "turndown": "^7.2.4"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.24",
     "@types/node": "^26.5.1",
+    "@types/turndown": "^5.0.6",
+    "fflate": "^0.8.3",
+    "linkedom": "^0.18.13",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"
   }

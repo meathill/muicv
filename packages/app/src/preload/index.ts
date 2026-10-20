@@ -1,4 +1,4 @@
-import type { ExtensionJobState, JobKind, JobSearchRequest } from '@muicv/shared';
+import type { JdPipelineState, JobKind, JobSearchRequest } from '@muicv/shared';
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   AgentChunk,
@@ -214,24 +214,16 @@ const api: RendererApi = {
       return () => ipcRenderer.removeListener('whisperEngine:progress', listener);
     },
   },
-  extension: {
-    pairDecide: (nonce: string, approved: boolean) =>
-      ipcRenderer.invoke('extension:pairDecide', nonce, approved) as Promise<boolean>,
-    onPairRequest: (handler: (payload: { nonce: string }) => void) => {
-      const listener = (_e: Electron.IpcRendererEvent, payload: { nonce: string }) => handler(payload);
-      ipcRenderer.on('extension:pairRequest', listener);
-      return () => ipcRenderer.removeListener('extension:pairRequest', listener);
-    },
-    onJob: (handler: (payload: ExtensionJobState & { title?: string; company?: string }) => void) => {
+  jobs: {
+    /** 岗位导入流水线（落盘 → 匹配 → 生成）的状态推送 */
+    onPipeline: (handler: (payload: JdPipelineState & { title?: string; company?: string }) => void) => {
       const listener = (
         _e: Electron.IpcRendererEvent,
-        payload: ExtensionJobState & { title?: string; company?: string },
+        payload: JdPipelineState & { title?: string; company?: string },
       ) => handler(payload);
-      ipcRenderer.on('extension:job', listener);
-      return () => ipcRenderer.removeListener('extension:job', listener);
+      ipcRenderer.on('jobs:pipeline', listener);
+      return () => ipcRenderer.removeListener('jobs:pipeline', listener);
     },
-  },
-  jobs: {
     search: (req: JobSearchRequest) => ipcRenderer.invoke('jobs:search', req) as Promise<JobSearchResult>,
     detail: (kind: JobKind, id: string) => ipcRenderer.invoke('jobs:detail', kind, id) as Promise<JobDetailResult>,
     import: (kind: JobKind, id: string) => ipcRenderer.invoke('jobs:import', kind, id) as Promise<JobImportResult>,

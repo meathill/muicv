@@ -6,8 +6,8 @@ import {
   buildTargetMarkdown,
   type CapturedJd,
   DEFAULT_LLM_MODEL,
-  type ExtensionJobState,
   type JdMatchResult,
+  type JdPipelineState,
   parseMatchJson,
   targetSlugFor,
 } from '@muicv/shared';
@@ -22,7 +22,7 @@ import { getActiveProfile, getConfig } from './store.ts';
 
 const jobs = new Map<string, JobRecord>();
 
-type JobRecord = ExtensionJobState & {
+type JobRecord = JdPipelineState & {
   jd: CapturedJd;
 };
 
@@ -34,10 +34,6 @@ const MATCH_SYSTEM = `你是求职匹配助手。根据用户本地职业素材�
 - gaps: JD 要求但素材没有的关键词数组
 - reason: 不超过 80 字的中文理由
 suitable = 核心要求大部分覆盖；weak = 能投但缺口明显；poor = 明显不匹配。`;
-
-export function getJob(jobId: string): JobRecord | undefined {
-  return jobs.get(jobId);
-}
 
 function notifyRenderer(channel: string, payload: unknown): void {
   const win = BrowserWindow.getAllWindows()[0];
@@ -74,13 +70,13 @@ export async function ingestCapturedJd(jd: CapturedJd): Promise<JobRecord> {
     jd,
   };
   jobs.set(job.jobId, job);
-  notifyRenderer('extension:job', { jobId: job.jobId, targetPath: relPath, title: jd.title, company: jd.company });
+  notifyRenderer('jobs:pipeline', { jobId: job.jobId, targetPath: relPath, title: jd.title, company: jd.company });
   void runMatchThenMaybeGenerate(job.jobId).catch((err) => {
     const rec = jobs.get(job.jobId);
     if (!rec) return;
     rec.status = 'error';
     rec.error = err instanceof Error ? err.message : String(err);
-    notifyRenderer('extension:job', rec);
+    notifyRenderer('jobs:pipeline', rec);
   });
   return job;
 }
@@ -152,13 +148,13 @@ async function runMatchThenMaybeGenerate(jobId: string): Promise<void> {
   const cfg = getConfig();
   if (!rec || !cfg.workspaceDir) return;
   rec.status = 'matching';
-  notifyRenderer('extension:job', rec);
+  notifyRenderer('jobs:pipeline', rec);
 
   const client = llmClient();
   if (!client) {
     rec.status = 'error';
     rec.error = '未登录，无法判断匹配度。';
-    notifyRenderer('extension:job', rec);
+    notifyRenderer('jobs:pipeline', rec);
     return;
   }
 
@@ -179,7 +175,7 @@ async function runMatchThenMaybeGenerate(jobId: string): Promise<void> {
   if (!match) {
     rec.status = 'error';
     rec.error = '匹配结果无法解析。';
-    notifyRenderer('extension:job', rec);
+    notifyRenderer('jobs:pipeline', rec);
     return;
   }
   rec.match = match;
@@ -187,15 +183,15 @@ async function runMatchThenMaybeGenerate(jobId: string): Promise<void> {
 
   if (match.verdict === 'suitable') {
     rec.status = 'suitable';
-    notifyRenderer('extension:job', rec);
+    notifyRenderer('jobs:pipeline', rec);
     await startGenerate(jobId);
     return;
   }
   rec.status = 'weak';
-  notifyRenderer('extension:job', rec);
+  notifyRenderer('jobs:pipeline', rec);
 }
 
-export async function startGenerate(jobId: string): Promise<JobRecord> {
+async function startGenerate(jobId: string): Promise<JobRecord> {
   const rec = jobs.get(jobId);
   if (!rec) throw Object.assign(new Error('job-not-found'), { status: 404 });
   const cfg = getConfig();
@@ -205,7 +201,7 @@ export async function startGenerate(jobId: string): Promise<JobRecord> {
     throw Object.assign(new Error('no-workspace'), { status: 409 });
   }
   rec.status = 'generating';
-  notifyRenderer('extension:job', rec);
+  notifyRenderer('jobs:pipeline', rec);
 
   const conv = await createConversation({
     profileId: profile.id,
@@ -231,40 +227,6 @@ export async function startGenerate(jobId: string): Promise<JobRecord> {
   });
   rec.status = 'ready';
   rec.versionPath = `versions/${targetSlugFor(rec.jd)}-*.md`;
-  notifyRenderer('extension:job', rec);
+  notifyRenderer('jobs:pipeline', rec);
   return rec;
-}
-
-export async function contributeJob(jobId: string): Promise<{ awarded: number; duplicate: boolean; id?: string }> {
-  const rec = jobs.get(jobId);
-  if (!rec) throw Object.assign(new Error('job-not-found'), { status: 404 });
-  const cfg = getConfig();
-  if (!cfg.muicvApiKey) throw Object.assign(new Error('no-api-key'), { status: 401 });
-  const res = await fetch(`${cfg.muicvApiBase.replace(/\/$/, '')}/jobs/contribute`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${cfg.muicvApiKey}`,
-    },
-    body: JSON.stringify({ capturedJd: rec.jd }),
-  });
-  const body = (await res.json().catch(() => ({}))) as {
-    awarded?: number;
-    duplicate?: boolean;
-    id?: string;
-    error?: string;
-  };
-  if (!res.ok) {
-    throw Object.assign(new Error(body.error ?? `contribute ${res.status}`), { status: res.status });
-  }
-  return {
-    awarded: body.awarded ?? 0,
-    duplicate: Boolean(body.duplicate),
-    ...(body.id !== undefined ? { id: body.id } : {}),
-  };
-}
-
-/** 测试用：塞一条记录。 */
-export function upsertJobForTest(rec: JobRecord): void {
-  jobs.set(rec.jobId, rec);
 }

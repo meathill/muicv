@@ -194,13 +194,14 @@ function ExtensionInstall() {
   return (
     <section className="mt-12 rounded-xl border-2 border-ink bg-cream p-6 shadow-[0_4px_0_0_var(--color-ink)]">
       <p className="font-mono text-[12px] font-bold uppercase tracking-[0.18em] text-yellow-deep">浏览器扩展</p>
-      <h2 className="mt-2 text-[16px] font-extrabold text-ink">把招聘页发给桌面端</h2>
+      <h2 className="mt-2 text-[16px] font-extrabold text-ink">把任意网页上的岗位收进岗位库</h2>
       <p className="mt-2 text-[14px] leading-[1.7] text-ink-soft">
         Chrome / Edge 打开{' '}
         <code className="rounded bg-paper px-1.5 py-0.5 font-mono text-[12px]">chrome://extensions</code>
         ，打开「开发者模式」，加载{' '}
         <code className="rounded bg-paper px-1.5 py-0.5 font-mono text-[12px]">packages/extension/dist</code>
-        。先打开 Mui简历桌面端，再在 Boss / LinkedIn / Greenhouse 等岗位页点「发给 Mui简历」。
+        。在任意招聘页、招聘账号主页点扩展图标，选「公共岗位池」或「私藏」提交，用你的 muicv API key
+        登录，不需要打开桌面端。
       </p>
     </section>
   );

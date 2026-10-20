@@ -178,8 +178,6 @@ export async function handleDeepLink(url: string): Promise<void> {
     await handleMuirouterLinked(parsed);
   } else if (action === 'set-default-template') {
     handleSetDefaultTemplate(parsed);
-  } else if (action === 'extension-wake') {
-    /* 只把窗口提到前台，下面统一 focus */
   } else if (action === 'import-jd') {
     await handleImportCommunityJd(parsed);
   } else {

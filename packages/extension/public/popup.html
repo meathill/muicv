@@ -5,83 +5,92 @@
     <title>Mui简历</title>
     <style>
       :root {
-        --cream: #fdfaf2;
-        --paper: #f6efde;
         --ink: #3a2e23;
-        --ink-soft: #5a4938;
-        --mute: #766852;
-        --yellow: #e6c34a;
-        --rule: #e0d3b8;
-        --radius: 6px;
+        --muted: #766852;
+        --paper: #fdfaf2;
+        --card: #fff8e6;
+        --line: #e8dcc0;
+        --sun: #e6c34a;
+        --orange: #e8863a;
+        --green: #4f8a4b;
+        --red: #b5462f;
       }
       * { box-sizing: border-box; }
       body {
-        margin: 0;
-        width: 320px;
-        font: 14px/1.5 Nunito, "PingFang SC", "Hiragino Sans GB", sans-serif;
-        color: var(--ink);
-        background: var(--cream);
+        margin: 0; width: 360px; min-height: 200px;
+        font: 14px/1.5 Nunito, "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--ink); background: var(--paper);
       }
       header {
-        padding: 12px 14px 8px;
-        border-bottom: 1px solid var(--rule);
+        display: flex; align-items: center; gap: 8px;
+        padding: 12px 16px; border-bottom: 2px solid var(--line);
       }
-      .eyebrow {
-        font-family: ui-monospace, Menlo, monospace;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: #b3851c;
-        margin: 0 0 4px;
+      header img { width: 28px; height: 28px; }
+      header .brand { flex: 1; margin: 0; font-weight: 800; font-size: 16px; }
+      header .brand small { display: block; font-weight: 600; font-size: 12px; color: var(--muted); }
+      .icon-btn {
+        appearance: none; border: 0; background: transparent; color: var(--muted);
+        font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
       }
-      h1 { font-size: 16px; margin: 0; }
-      main { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
-      .card {
-        border: 2px solid var(--ink);
-        border-radius: var(--radius);
-        background: var(--paper);
-        padding: 10px 12px;
+      .icon-btn:hover { background: var(--card); color: var(--ink); }
+      main { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+      p { margin: 0; }
+      a { color: #a05a1c; }
+      .page { background: var(--card); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+      .page-title { font-weight: 800; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+      .page-url { font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+      .chip { font-size: 12px; background: #eaf3df; color: var(--green); border-radius: 6px; padding: 0 6px; }
+      .segs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--card); border: 2px solid var(--line); border-radius: 10px; }
+      .seg { appearance: none; border: 0; border-radius: 6px; padding: 6px 0; background: transparent; color: var(--muted); font: 700 14px/1.4 inherit; font-family: inherit; cursor: pointer; }
+      .seg.on { background: var(--ink); color: var(--paper); }
+      .seg:disabled { cursor: default; }
+      .hint { font-size: 12px; color: var(--muted); background: #fff3d6; border-left: 4px solid var(--sun); border-radius: 6px; padding: 8px 12px; }
+      .hint b { color: var(--ink); }
+      .primary {
+        appearance: none; width: 100%; border: 2px solid var(--ink); border-radius: 10px;
+        background: var(--sun); color: var(--ink); font: 800 14px/1 inherit; font-family: inherit;
+        padding: 12px; cursor: pointer; box-shadow: 0 4px 0 0 var(--ink);
       }
-      .mute { color: var(--mute); font-size: 12px; }
-      .status { font-size: 12px; }
-      button {
-        appearance: none;
-        border: 2px solid var(--ink);
-        border-radius: var(--radius);
-        background: var(--yellow);
-        color: var(--ink);
-        font: 700 14px/1 Nunito, sans-serif;
-        padding: 8px 12px;
-        cursor: pointer;
-        box-shadow: 0 3px 0 0 var(--ink);
-      }
-      button:active { transform: translateY(2px); box-shadow: 0 1px 0 0 var(--ink); }
-      button.ghost { background: var(--cream); }
-      button:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+      .primary:active { transform: translateY(2px); box-shadow: 0 2px 0 0 var(--ink); }
+      .primary:disabled { opacity: .6; cursor: default; transform: none; box-shadow: none; }
+      .secondary { display: inline-block; text-align: center; flex: 1; padding: 10px; border: 2px solid var(--ink); border-radius: 10px; color: var(--ink); text-decoration: none; font-weight: 800; background: var(--paper); }
       .row { display: flex; gap: 8px; }
-      .row button { flex: 1; }
-      a { color: var(--ink); }
+      .row .primary { flex: 1; }
+      .muted { color: var(--muted); }
+      .small { font-size: 12px; }
+      .center { text-align: center; padding: 8px 0; }
+      .big { font-size: 18px; font-weight: 800; }
+      .error { color: var(--red); background: #fbe9e3; border-radius: 6px; padding: 8px 12px; font-size: 12px; }
+      .steps { list-style: none; margin: 0; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; background: var(--card); border-radius: 10px; }
+      .steps li { color: var(--muted); }
+      .steps li.done { color: var(--green); }
+      .steps li.now { color: var(--ink); font-weight: 800; }
+      .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); animation: pulse 1s infinite alternate; }
+      @keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
+      .pills { display: flex; flex-wrap: wrap; gap: 4px; }
+      .pill { font-size: 12px; font-weight: 800; border-radius: 6px; padding: 2px 8px; background: var(--ink); color: var(--paper); }
+      .pill.reward { background: var(--orange); }
+      .pill.ghost { background: var(--card); color: var(--muted); border: 1px solid var(--line); }
+      .jobs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+      .jobs li { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border: 2px solid var(--line); border-radius: 10px; background: #fff; }
+      .tag { flex: none; font-size: 12px; font-weight: 800; border-radius: 6px; padding: 0 6px; background: var(--line); color: var(--muted); }
+      .tag.new { background: #eaf3df; color: var(--green); }
+      .tag.warn { background: #fbe9e3; color: var(--red); }
+      .job-title { font-weight: 800; }
+      .job-title a { color: var(--ink); }
+      .job-meta { font-size: 12px; color: var(--muted); }
+      .setup { display: flex; flex-direction: column; gap: 8px; }
+      input { width: 100%; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; font: 14px ui-monospace, Menlo, monospace; background: #fff; color: var(--ink); }
+      input:focus { outline: none; border-color: var(--ink); }
     </style>
   </head>
   <body>
     <header>
-      <p class="eyebrow">Mui简历</p>
-      <h1>发给桌面端</h1>
+      <img src="icons/icon-48.png" alt="" />
+      <p class="brand"><span id="brand">Mui</span><small id="tagline"></small></p>
+      <button type="button" class="icon-btn" id="settings" >⚙</button>
     </header>
-    <main>
-      <div class="card">
-        <div id="pair" class="status">正在连接桌面端…</div>
-      </div>
-      <div class="card">
-        <div id="page" class="status mute">当前页尚未识别为岗位。</div>
-      </div>
-      <div class="row">
-        <button id="capture" type="button" disabled>发给 Mui简历</button>
-        <button id="contribute" class="ghost" type="button" disabled>贡献给社区</button>
-      </div>
-      <p class="mute" id="hint">贡献不会自动勾选。桌面端没开时会先排队。</p>
-    </main>
-    <script src="./popup.js"></script>
+    <main id="app"></main>
+    <script src="popup.js"></script>
   </body>
 </html>

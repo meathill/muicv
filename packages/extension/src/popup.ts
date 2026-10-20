@@ -1,103 +1,183 @@
-import type { CapturedJd } from '@muicv/shared';
+import type { JobSubmitVisibility } from '@muicv/shared';
 
-const pairEl = document.getElementById('pair');
-const pageEl = document.getElementById('page');
-const captureBtn = document.getElementById('capture') as HTMLButtonElement | null;
-const contributeBtn = document.getElementById('contribute') as HTMLButtonElement | null;
+import type { ExtractedPage } from './extract/page.ts';
+import { setFallbackLocale, t, uiLocale } from './i18n.ts';
+import {
+  API_KEY_PATTERN,
+  ApiError,
+  fetchMe,
+  getSubmission,
+  loadSettings,
+  type Settings,
+  saveSettings,
+  submitJobs,
+} from './popup/api.ts';
+import { mockState } from './popup/mock.ts';
+import { addPending, latestPending, type PendingSubmission, pollSubmission, removePending } from './popup/pending.ts';
+import { type PageInfo, type PopupState, render } from './popup/view.ts';
 
-let lastJobId: string | null = null;
+/**
+ * popup 控制器：读取当前页（activeTab + scripting 注入）→ 选择公共 / 私藏 → 提交到 muicv API。
+ * 需要 AI 的提交在服务端排队：id 存进 chrome.storage，带退避轮询；关掉再打开会接着查结果。
+ */
 
-function setPair(text: string): void {
-  if (pairEl) pairEl.textContent = text;
+const root = document.getElementById('app') as HTMLElement;
+const settingsBtn = document.getElementById('settings') as HTMLButtonElement | null;
+const VIS_KEY = 'muicvVisibility';
+
+let state: PopupState = { kind: 'loading' };
+let settings: Settings = { apiKey: '', apiBase: '' };
+let page: ExtractedPage | null = null;
+let visibility: JobSubmitVisibility = 'public';
+
+function localizeChrome(): void {
+  document.documentElement.lang = uiLocale().replace('_', '-');
+  const tagline = document.getElementById('tagline');
+  if (tagline) tagline.textContent = t('tagline');
+  const brand = document.getElementById('brand');
+  if (brand) brand.textContent = t('extName').split(/\s[–·]\s/)[0] ?? 'Mui';
+  settingsBtn?.setAttribute('title', t('settingsTitle'));
 }
-function setPage(text: string): void {
-  if (pageEl) pageEl.textContent = text;
+
+function setState(next: PopupState): void {
+  state = next;
+  root.innerHTML = render(state);
+  bind();
 }
 
-async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tabs[0];
-}
-
-chrome.runtime.sendMessage({ type: 'connect' }, (conn: { ok?: boolean; reason?: string }) => {
-  if (conn?.ok) {
-    setPair('已连接桌面端。');
-    chrome.runtime.sendMessage({ type: 'drain' });
-  } else if (conn?.reason === 'rejected') {
-    setPair('桌面端拒绝了这次连接。');
-  } else if (conn?.reason === 'unpaired') {
-    setPair('等待你在桌面端点「允许」。');
-  } else {
-    setPair('桌面端没开。打开 Mui简历后再试。');
+function bind(): void {
+  for (const el of Array.from(root.querySelectorAll<HTMLButtonElement>('[data-visibility]'))) {
+    el.addEventListener('click', () => {
+      visibility = el.dataset.visibility === 'private' ? 'private' : 'public';
+      void globalThis.chrome?.storage?.local.set({ [VIS_KEY]: visibility });
+      if (state.kind === 'ready') setState({ ...state, visibility });
+    });
   }
-});
+  root.querySelector('#submit')?.addEventListener('click', () => void submit());
+  root.querySelector('#retry')?.addEventListener('click', () => void start());
+  root.querySelector('#save-key')?.addEventListener('click', () => void saveKey());
+}
 
-void (async () => {
-  const tab = await activeTab();
-  if (!tab?.id || !tab.url || !/^https?:/i.test(tab.url)) {
-    setPage('请打开一个招聘页面。');
+async function saveKey(): Promise<void> {
+  const apiKey = root.querySelector<HTMLInputElement>('#api-key')?.value.trim() ?? '';
+  if (!API_KEY_PATTERN.test(apiKey)) {
+    setState({ kind: 'needs-key', error: t('keyInvalidFormat') });
     return;
   }
-  chrome.tabs.sendMessage(
-    tab.id,
-    { type: 'extract' },
-    (res: { offered?: boolean; jd?: CapturedJd | null } | undefined) => {
-      void chrome.runtime.lastError;
-      if (res?.jd) {
-        setPage(`${res.jd.company ?? '未知公司'} · ${res.jd.title ?? '岗位'}`);
-        if (captureBtn) captureBtn.disabled = false;
-        return;
-      }
-      if (res?.offered) {
-        setPage('识别到岗位页，但正文还不够，仍可试发。');
-        if (captureBtn) captureBtn.disabled = false;
-        return;
-      }
-      setPage('当前页尚未识别为岗位。可在支持的招聘站打开 JD。');
-    },
-  );
-})();
+  const next = { ...settings, apiKey };
+  try {
+    await fetchMe(next);
+  } catch (err) {
+    setState({ kind: 'needs-key', error: err instanceof Error ? err.message : t('keyVerifyFailed') });
+    return;
+  }
+  settings = next;
+  await saveSettings(settings);
+  await start();
+}
 
-captureBtn?.addEventListener('click', async () => {
-  const tab = await activeTab();
-  if (!tab?.id) return;
-  captureBtn.disabled = true;
-  setPage('正在抽取当前页…');
-  chrome.tabs.sendMessage(tab.id, { type: 'extract' }, (extracted: { jd?: CapturedJd | null } | undefined) => {
-    const jd = extracted?.jd;
-    if (!jd) {
-      setPage(chrome.runtime.lastError?.message ?? '没抽到足够的 JD 正文。');
-      captureBtn.disabled = false;
+async function extractActiveTab(): Promise<ExtractedPage | string> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !tab.url || !/^https?:/i.test(tab.url)) return t('unsupportedPage');
+  try {
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['inject.js'] });
+    const [res] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => (globalThis as { __muicvExtractPage?: () => unknown }).__muicvExtractPage?.() ?? null,
+    });
+    return (res?.result as ExtractedPage | null | undefined) ?? t('extractFailed');
+  } catch (err) {
+    return t('pageBlocked', err instanceof Error ? err.message : String(err));
+  }
+}
+
+function showError(err: unknown, current: PageInfo | null): void {
+  if (err instanceof ApiError && err.status === 401) {
+    setState({ kind: 'needs-key', error: err.message });
+    return;
+  }
+  const message = err instanceof Error ? err.message : String(err);
+  setState({ kind: 'error', page: current, message, needsTopup: err instanceof ApiError && err.status === 402 });
+}
+
+async function follow(pending: PendingSubmission, immediate: boolean): Promise<void> {
+  const info: PageInfo = { url: pending.url, title: pending.title };
+  setState({ kind: 'submitting', page: info, visibility: pending.visibility, step: 1, queued: true });
+  const outcome = await pollSubmission(
+    async () => {
+      try {
+        return await getSubmission(settings, pending.id);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return null;
+        throw err;
+      }
+    },
+    { immediate },
+  );
+  if (outcome.kind === 'timeout') {
+    setState({ kind: 'error', page: info, message: t('errTimeout') });
+    return;
+  }
+  await removePending(chrome.storage.local, pending.id);
+  if (outcome.kind === 'missing') {
+    await start();
+    return;
+  }
+  setState({ kind: 'result', page: info, result: outcome.result });
+}
+
+async function submit(): Promise<void> {
+  if (!page) return;
+  const current = page;
+  setState({ kind: 'submitting', page: current, visibility, step: 1 });
+  try {
+    const outcome = await submitJobs(settings, { ...current, visibility });
+    if (outcome.kind === 'done') {
+      setState({ kind: 'result', page: current, result: outcome.result });
       return;
     }
-    chrome.runtime.sendMessage(
-      { type: 'capture', jd },
-      (res: { ok?: boolean; jobId?: string; queued?: boolean; error?: string }) => {
-        if (res?.ok && res.jobId) {
-          lastJobId = res.jobId;
-          setPage('已发给桌面端。');
-          if (contributeBtn) contributeBtn.disabled = false;
-        } else if (res?.queued) {
-          setPage('桌面端没开，已排队。');
-        } else {
-          setPage(res?.error ?? '发送失败。');
-        }
-        captureBtn.disabled = false;
-      },
-    );
-  });
-});
+    const pending = { id: outcome.id, url: current.url, title: current.title, visibility, createdAt: Date.now() };
+    await addPending(chrome.storage.local, pending);
+    await follow(pending, false);
+  } catch (err) {
+    showError(err, current);
+  }
+}
 
-contributeBtn?.addEventListener('click', () => {
-  if (!lastJobId) return;
-  contributeBtn.disabled = true;
-  chrome.runtime.sendMessage(
-    { type: 'contribute', jobId: lastJobId },
-    (res: { ok?: boolean; awarded?: number; duplicate?: boolean; error?: string }) => {
-      if (res?.ok && res.duplicate) setPage('这条 JD 社区里已有，未重复发奖。');
-      else if (res?.ok) setPage(`已贡献给社区，奖励 ${res.awarded ?? 0} token。`);
-      else setPage(res?.error ?? '贡献失败。');
-      contributeBtn.disabled = false;
-    },
-  );
-});
+async function start(): Promise<void> {
+  setState({ kind: 'loading' });
+  settings = await loadSettings();
+  const stored = (await chrome.storage.local.get(VIS_KEY))[VIS_KEY];
+  visibility = stored === 'private' ? 'private' : 'public';
+  if (!settings.apiKey) {
+    setState({ kind: 'needs-key' });
+    return;
+  }
+  const pending = await latestPending(chrome.storage.local);
+  if (pending) {
+    await follow(pending, true).catch((err: unknown) => showError(err, { url: pending.url, title: pending.title }));
+    return;
+  }
+  const extracted = await extractActiveTab();
+  if (typeof extracted === 'string') {
+    setState({ kind: 'unsupported', message: extracted });
+    return;
+  }
+  page = extracted;
+  setState({ kind: 'ready', page, visibility, balance: null });
+  const me = await fetchMe(settings).catch(() => null);
+  if (me && state.kind === 'ready') setState({ ...state, balance: me.balance });
+}
+
+settingsBtn?.addEventListener('click', () => setState({ kind: 'needs-key' }));
+
+if (typeof chrome === 'undefined' || !chrome.tabs) {
+  // 预览模式：popup.html?state=ready|submitting|queued|result|empty|error|key&lang=en
+  const params = new URLSearchParams(location.search);
+  setFallbackLocale(params.get('lang') ?? 'zh_CN');
+  localizeChrome();
+  setState(mockState(params.get('state'), uiLocale()));
+} else {
+  localizeChrome();
+  void start();
+}

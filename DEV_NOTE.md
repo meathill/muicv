@@ -9,7 +9,7 @@
 ## 浏览器扩展（任意页面提交岗位，2026-10-20 重做）
 
 - **不再连接桌面端**：扩展独立工作，用户在 popup 填自己的 `mui_` API key（存 `chrome.storage.local`），直连 `api.muicv.com`。
-  API CORS 放行 `chrome-extension://` / `moz-extension://`（Bearer 鉴权、不带 cookie）。桌面端的 loopback bridge（`extension-bridge.ts`）已无调用方，暂留待清理。
+  API CORS 放行 `chrome-extension://` / `moz-extension://`（Bearer 鉴权、不带 cookie）。桌面端的 loopback bridge / 配对 / `extension:*` IPC 已删除；桌面端只保留岗位导入流水线（`jd-pipeline.ts`，deep link `muicv://import-jd` 与岗位搜索面板共用，推送 `jobs:pipeline`）。
 - 权限只有 `storage` / `activeTab` / `scripting`，无 host_permissions、无 content script。用户点开 popup 才注入 `inject.js`：
   Readability 正文 → turndown markdown（截断 20k 字符）+ 标题 + URL + 仅含 JobPosting 的 JSON-LD + 外链（≤200）。不上传整页 HTML。
 - `POST /jobs/submit`（requireApiKey，`JOBS_SUBMIT_LIMITER` 每用户 6 次/分钟）流水线：

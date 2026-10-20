@@ -4,7 +4,7 @@
 
 import {
   DEFAULT_LLM_MODEL,
-  type ExtensionJobState,
+  type JdPipelineState,
   type ReasoningEffort,
   type SkillAppAvailability,
   type SkillDistributionMode,
@@ -852,6 +852,8 @@ export type RendererApi = {
     comment(args: { messageId: string; conversationId: string; text: string }): Promise<FeedbackCommentOutcome>;
   };
   jobs: {
+    /** 订阅岗位导入流水线状态。返回 unsubscribe。 */
+    onPipeline(handler: (payload: JdPipelineState & { title?: string; company?: string }) => void): () => void;
     search(req: import('@muicv/shared').JobSearchRequest): Promise<JobSearchResult>;
     detail(kind: import('@muicv/shared').JobKind, id: string): Promise<JobDetailResult>;
     /** 导入到当前档案 targets/，并触发 match → generate */
@@ -912,10 +914,5 @@ export type RendererApi = {
     uninstallAll(): Promise<WhisperEngineStatus>;
     /** 订阅安装进度。返回 unsubscribe。 */
     onProgress(handler: (e: WhisperProgressEvent) => void): () => void;
-  };
-  extension: {
-    pairDecide(nonce: string, approved: boolean): Promise<boolean>;
-    onPairRequest(handler: (payload: { nonce: string }) => void): () => void;
-    onJob(handler: (payload: ExtensionJobState & { title?: string; company?: string }) => void): () => void;
   };
 };

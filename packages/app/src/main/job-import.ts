@@ -1,6 +1,6 @@
 import { type CapturedJd, fetchCmsOpportunityById, type JobKind, siteIdForHost } from '@muicv/shared';
 
-import { ingestCapturedJd } from './extension-jobs.ts';
+import { ingestCapturedJd } from './jd-pipeline.ts';
 import { getConfig } from './store.ts';
 
 /**

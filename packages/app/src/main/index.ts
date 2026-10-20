@@ -3,18 +3,9 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { app, BrowserWindow, ipcMain, protocol, shell } from 'electron';
-import Store from 'electron-store';
+import { app, BrowserWindow, protocol, shell } from 'electron';
 
 import { handleDeepLink, registerScheme, setMainWindowGetter } from './deep-link.ts';
-import {
-  decidePair,
-  setBridgeJobHandlers,
-  setBridgeNotifier,
-  setTokenPersist,
-  startExtensionBridge,
-} from './extension-bridge.ts';
-import { contributeJob, getJob, ingestCapturedJd, startGenerate } from './extension-jobs.ts';
 
 import { registerAgentConversationIpc } from './ipc/agent-conversation.ts';
 import { registerAudioPreviewIpc } from './ipc/audio-preview.ts';
@@ -215,23 +206,6 @@ app.whenReady().then(() => {
   }
 
   createWindow();
-
-  const pairStore = new Store<{ tokens: string[] }>({ name: 'muicv-extension', defaults: { tokens: [] } });
-  setTokenPersist({
-    load: () => pairStore.get('tokens') ?? [],
-    save: (tokens) => pairStore.set('tokens', tokens),
-  });
-  setBridgeNotifier((channel, payload) => {
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
-  });
-  setBridgeJobHandlers({
-    ingest: ingestCapturedJd,
-    get: getJob,
-    contribute: contributeJob,
-    generate: startGenerate,
-  });
-  ipcMain.handle('extension:pairDecide', (_e, nonce: string, approved: boolean) => decidePair(nonce, approved));
-  startExtensionBridge();
 
   // 自动更新：注册 IPC + 事件监听；延迟 10s 触发首次检查，让登录 / OAuth /
   // workspace 加载先跑完。dev 模式下 setupUpdater 内部直接 short-circuit。

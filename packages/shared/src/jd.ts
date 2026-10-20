@@ -23,26 +23,23 @@ export type JobSiteDef = {
   id: Exclude<JobSiteId, 'generic'>;
   label: string;
   hosts: readonly string[];
-  /** 路径命中才当岗位页（host 命中但路径不对 → 不弹提示条）。 */
-  pathIncludes: readonly string[];
 };
 
 export const JOB_SITES: readonly JobSiteDef[] = [
-  { id: 'boss', label: 'Boss直聘', hosts: ['zhipin.com'], pathIncludes: ['/job_detail/', '/job/'] },
-  { id: 'zhilian', label: '智联招聘', hosts: ['zhaopin.com'], pathIncludes: ['/job/', '/jobs/'] },
-  { id: 'liepin', label: '猎聘', hosts: ['liepin.com'], pathIncludes: ['/job/', '/a/'] },
-  { id: 'lagou', label: '拉勾', hosts: ['lagou.com'], pathIncludes: ['/jobs/', '/wn/jobs/'] },
-  { id: 'job51', label: '前程无忧', hosts: ['51job.com'], pathIncludes: ['/job/', '/jobs/'] },
-  { id: 'linkedin', label: 'LinkedIn', hosts: ['linkedin.com'], pathIncludes: ['/jobs/view/', '/jobs/collections/'] },
-  { id: 'indeed', label: 'Indeed', hosts: ['indeed.com'], pathIncludes: ['/viewjob', '/job/', '/rc/clk'] },
+  { id: 'boss', label: 'Boss直聘', hosts: ['zhipin.com'] },
+  { id: 'zhilian', label: '智联招聘', hosts: ['zhaopin.com'] },
+  { id: 'liepin', label: '猎聘', hosts: ['liepin.com'] },
+  { id: 'lagou', label: '拉勾', hosts: ['lagou.com'] },
+  { id: 'job51', label: '前程无忧', hosts: ['51job.com'] },
+  { id: 'linkedin', label: 'LinkedIn', hosts: ['linkedin.com'] },
+  { id: 'indeed', label: 'Indeed', hosts: ['indeed.com'] },
   {
     id: 'greenhouse',
     label: 'Greenhouse',
     hosts: ['greenhouse.io', 'job-boards.greenhouse.io'],
-    pathIncludes: ['/jobs/', '/job/'],
   },
-  { id: 'lever', label: 'Lever', hosts: ['lever.co'], pathIncludes: ['/'] },
-  { id: 'ashby', label: 'Ashby', hosts: ['ashbyhq.com', 'jobs.ashbyhq.com'], pathIncludes: ['/'] },
+  { id: 'lever', label: 'Lever', hosts: ['lever.co'] },
+  { id: 'ashby', label: 'Ashby', hosts: ['ashbyhq.com', 'jobs.ashbyhq.com'] },
 ];
 
 export type CapturedJd = {
@@ -57,9 +54,6 @@ export type CapturedJd = {
   extractedAt: string;
 };
 
-export const EXTENSION_BRIDGE_PORTS = [29876, 29877, 29878, 29879, 29880] as const;
-export const EXTENSION_BRIDGE_MAGIC = 'muicv-extension-bridge';
-
 export const JD_STATUSES = ['queued', 'matching', 'suitable', 'weak', 'generating', 'ready', 'error'] as const;
 export type JdJobStatus = (typeof JD_STATUSES)[number];
 
@@ -73,7 +67,8 @@ export type JdMatchResult = {
   reason: string;
 };
 
-export type ExtensionJobState = {
+/** 桌面端 JD 导入流水线（落盘 → 匹配 → 生成）的状态，推给 renderer。 */
+export type JdPipelineState = {
   jobId: string;
   status: JdJobStatus;
   targetPath?: string;
@@ -83,26 +78,8 @@ export type ExtensionJobState = {
   error?: string;
 };
 
-/** 扩展 → app 的本机协议路径。 */
-export const EXTENSION_ROUTES = {
-  health: '/health',
-  pairBegin: '/pair/begin',
-  pairStatus: '/pair/status',
-  jd: '/jd',
-  generate: '/generate',
-  contribute: '/contribute',
-} as const;
-
 const TRACKING_PARAM =
   /^(utm_|utm$|fbclid|gclid|gclsrc|dclid|msclkid|twclid|li_fat_id|mc_|pk_|_from|from|scene|sid|sessionid|ka|ref|referer|referrer|source|spm|clickid|traceid)/i;
-
-export function hostnameOf(url: string): string | null {
-  try {
-    return new URL(url).hostname.toLowerCase().replace(/^www\./, '');
-  } catch {
-    return null;
-  }
-}
 
 export function siteIdForHost(hostname: string): JobSiteId {
   const host = hostname.toLowerCase().replace(/^www\./, '');
@@ -110,28 +87,6 @@ export function siteIdForHost(hostname: string): JobSiteId {
     if (site.hosts.some((h) => host === h || host.endsWith(`.${h}`))) return site.id;
   }
   return 'generic';
-}
-
-export function findJobSite(url: string): JobSiteDef | null {
-  const host = hostnameOf(url);
-  if (!host) return null;
-  return JOB_SITES.find((site) => site.hosts.some((h) => host === h || host.endsWith(`.${h}`))) ?? null;
-}
-
-/** 已知站点：host + 路径像岗位页。通用站点不在这里判，由 JSON-LD 决定。 */
-export function isLikelyJobUrl(url: string): boolean {
-  const site = findJobSite(url);
-  if (!site) return false;
-  let path: string;
-  try {
-    path = new URL(url).pathname.toLowerCase();
-  } catch {
-    return false;
-  }
-  if (site.id === 'lever' || site.id === 'ashby') {
-    return path.split('/').filter(Boolean).length >= 1 && !path.includes('/location') && path !== '/';
-  }
-  return site.pathIncludes.some((p) => path.includes(p));
 }
 
 export function canonicalizeUrl(raw: string): string {

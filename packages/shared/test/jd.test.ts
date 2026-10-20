@@ -4,7 +4,6 @@ import { describe, it } from 'node:test';
 import {
   buildTargetMarkdown,
   canonicalizeUrl,
-  isLikelyJobUrl,
   parseMatchJson,
   siteIdForHost,
   slugifyJd,
@@ -41,20 +40,7 @@ describe('canonicalizeUrl', () => {
   });
 });
 
-describe('isLikelyJobUrl / siteIdForHost', () => {
-  it('识别第一波站点的岗位路径', () => {
-    assert.equal(isLikelyJobUrl('https://www.zhipin.com/job_detail/abc.html'), true);
-    assert.equal(isLikelyJobUrl('https://www.linkedin.com/jobs/view/1'), true);
-    assert.equal(isLikelyJobUrl('https://boards.greenhouse.io/acme/jobs/123'), true);
-    assert.equal(isLikelyJobUrl('https://jobs.ashbyhq.com/acme/123-role'), true);
-  });
-
-  it('同站非岗位页不弹', () => {
-    assert.equal(isLikelyJobUrl('https://www.zhipin.com/web/geek/job'), false);
-    assert.equal(isLikelyJobUrl('https://www.linkedin.com/feed/'), false);
-    assert.equal(isLikelyJobUrl('https://example.com/blog/hello'), false);
-  });
-
+describe('siteIdForHost', () => {
   it('host → site id', () => {
     assert.equal(siteIdForHost('www.zhipin.com'), 'boss');
     assert.equal(siteIdForHost('job-boards.greenhouse.io'), 'greenhouse');
