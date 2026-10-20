@@ -16,8 +16,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`title\` text NOT NULL,
   	\`company\` text NOT NULL,
   	\`location\` text,
-  	\`remote\` text DEFAULT 'onsite' NOT NULL,
-  	\`region\` text DEFAULT 'other' NOT NULL,
+  	\`workplace\` text DEFAULT 'onsite' NOT NULL,
+  	\`allowed_countries\` text,
+  	\`allowed_regions\` text,
+  	\`utc_offset_min\` numeric,
+  	\`utc_offset_max\` numeric,
+  	\`office_locations\` text,
   	\`category\` text DEFAULT 'engineering' NOT NULL,
   	\`employment_type\` text,
   	\`summary\` text,
@@ -34,6 +38,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
   `);
   await db.run(sql`CREATE INDEX \`opportunities_company_idx\` ON \`opportunities\` (\`company\`);`);
+  await db.run(sql`CREATE INDEX \`opportunities_workplace_idx\` ON \`opportunities\` (\`workplace\`);`);
+  await db.run(sql`CREATE INDEX \`opportunities_category_idx\` ON \`opportunities\` (\`category\`);`);
+  await db.run(sql`CREATE INDEX \`opportunities_source_idx\` ON \`opportunities\` (\`source\`);`);
   await db.run(sql`CREATE UNIQUE INDEX \`opportunities_dedupe_key_idx\` ON \`opportunities\` (\`dedupe_key\`);`);
   await db.run(sql`CREATE INDEX \`opportunities_fingerprint_idx\` ON \`opportunities\` (\`fingerprint\`);`);
   await db.run(sql`CREATE INDEX \`opportunities_posted_at_idx\` ON \`opportunities\` (\`posted_at\`);`);

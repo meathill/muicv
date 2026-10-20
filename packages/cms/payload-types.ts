@@ -320,8 +320,45 @@ export interface Opportunity {
   title: string;
   company: string;
   location?: string | null;
-  remote: 'remote' | 'hybrid' | 'onsite';
-  region: 'global' | 'americas' | 'europe' | 'apac' | 'other';
+  workplace: 'remote' | 'hybrid' | 'onsite';
+  /**
+   * ISO alpha-2 数组，如 ["US","CA"]；空 = 未声明限制
+   */
+  allowedCountries?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * worldwide / americas / north-america / latam / emea / europe / apac
+   */
+  allowedRegions?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * 可接受的候选人时区下限（UTC 小时）
+   */
+  utcOffsetMin?: number | null;
+  utcOffsetMax?: number | null;
+  officeLocations?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   category: 'engineering' | 'data' | 'design' | 'product' | 'devops' | 'security' | 'qa' | 'other';
   employmentType?: string | null;
   summary?: string | null;
@@ -620,8 +657,12 @@ export interface OpportunitiesSelect<T extends boolean = true> {
   title?: T;
   company?: T;
   location?: T;
-  remote?: T;
-  region?: T;
+  workplace?: T;
+  allowedCountries?: T;
+  allowedRegions?: T;
+  utcOffsetMin?: T;
+  utcOffsetMax?: T;
+  officeLocations?: T;
   category?: T;
   employmentType?: T;
   summary?: T;
