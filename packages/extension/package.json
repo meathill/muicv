@@ -8,6 +8,7 @@
     "dev": "node scripts/build.ts",
     "build": "node scripts/build.ts",
     "release": "node scripts/build.ts --release",
+    "store:assets": "node scripts/store-assets.ts",
     "test": "node --test test/**/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

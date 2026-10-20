@@ -791,5 +791,12 @@ npx skills add meathill/muicv -g
 - D1 迁移 `packages/website/migrations/0019_job_submit.sql`（jobSubmission / savedJob / jobLinkCache，纯新增），已在远端 `muicv` 执行：
   `pnpm --filter @muicv/website exec wrangler d1 execute muicv --remote --file=migrations/0019_job_submit.sql`
 - api 新增限流绑定 `JOBS_SUBMIT_LIMITER`（namespace 1103，每用户 6 次/分钟），随 api 部署生效；无需新 secret，复用 `AI` / `JOBS_INDEX`。
-- 扩展打包：`pnpm --filter @muicv/extension build` → `packages/extension/dist`，上架素材在 `packages/extension/store-assets/`。
+- 扩展打包：`pnpm --filter @muicv/extension release` → `packages/extension/release/muicv-extension-<ver>.zip`（+ `-firefox.zip`）；上架文案/素材/清单见 `packages/extension/store/README.md`。
   扩展直连 `https://api.muicv.com`，依赖 api 的 CORS 放行 `chrome-extension://`（本次已加），所以要先部署 api 再发扩展。
+
+### 2026-10 · /jobs/submit 异步队列
+
+- Cloudflare Queues（已用 API 创建）：`muicv-job-submit`（id babe7e9bd21c4e9d805cae3787f048e3）、死信 `muicv-job-submit-dlq`（id 43b82f42d6f548738c4a34a9c1cdac0b）。
+- api `wrangler.jsonc`：producer 绑定 `JOB_SUBMIT_QUEUE`；同一 worker 消费主队列（batch 5，max_retries 3，DLQ）和死信队列（进入死信即全额退还预扣）。
+- 部署用的 token 需要 Workers Queues 编辑权限，否则 git 自动部署会因为队列绑定失败。
+- 新接口：`POST /jobs/submit`（确定性结果 200 / AI 路径 202 `{id,status:"queued"}`）、`GET /jobs/submit/:id`。

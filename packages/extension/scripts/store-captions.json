@@ -1,0 +1,92 @@
+{
+  "en": {
+    "brand": "Mui Resume",
+    "c1": ["Save jobs from any page", "Open the extension on a careers page, job board or an X profile."],
+    "c2": ["Free in the public pool", "Found a job? It costs nothing — new jobs even earn token rewards."],
+    "c3": ["Or keep it private", "Private saves stay in your account, never in public search."],
+    "c4": ["Close it, come back later", "Longer pages are processed in the background; the result waits for you."],
+    "c5": ["Your account, your key", "Paste your muicv API key once. It stays in this browser."],
+    "promo": "Save jobs from any page",
+    "marquee": ["Every job post you find,", "saved in one click."]
+  },
+  "zh_CN": {
+    "brand": "Mui简历",
+    "c1": ["任意网页，一键收藏岗位", "公司招聘页、招聘网站、X 上的招聘账号都行。"],
+    "c2": ["公共岗位池，识别到就免费", "重复也不扣；新岗位入库还有 token 奖励。"],
+    "c3": ["也可以私藏", "私藏只在你自己的账号里，不进公开搜索。"],
+    "c4": ["关掉弹窗，稍后回来看", "内容多的页面在后台处理，结果会一直等你。"],
+    "c5": ["你的账号，你的 key", "粘贴一次 muicv API key，只保存在本机浏览器。"],
+    "promo": "任意网页，一键收藏岗位",
+    "marquee": ["看到的每一个岗位，", "一键收进岗位库。"]
+  },
+  "ja": {
+    "brand": "Mui履歴書",
+    "c1": ["どのページの求人も保存", "採用ページ、求人サイト、X のプロフィールでも。"],
+    "c2": ["公開プールは無料", "求人が見つかれば課金なし。新規求人には報酬も。"],
+    "c3": ["プライベート保存も", "自分のアカウントだけに保存し、公開検索には出ません。"],
+    "c4": ["閉じて、あとで確認", "長いページはバックグラウンドで処理。結果は残ります。"],
+    "c5": ["自分のアカウントとキー", "API キーを一度貼るだけ。このブラウザにだけ保存。"],
+    "promo": "どのページの求人も保存",
+    "marquee": ["見つけた求人を、", "ワンクリックで保存。"]
+  },
+  "de": {
+    "brand": "Mui Lebenslauf",
+    "c1": ["Jobs von jeder Seite merken", "Karriereseite, Jobbörse oder X-Profil – egal wo."],
+    "c2": ["Im öffentlichen Pool gratis", "Job erkannt? Kostenlos – neue Jobs bringen sogar Tokens."],
+    "c3": ["Oder privat speichern", "Private Einträge bleiben in deinem Konto."],
+    "c4": ["Schließen, später ansehen", "Lange Seiten laufen im Hintergrund; das Ergebnis wartet."],
+    "c5": ["Dein Konto, dein Schlüssel", "API-Schlüssel einmal einfügen – bleibt im Browser."],
+    "promo": "Jobs von jeder Seite merken",
+    "marquee": ["Jede Stelle, die du findest –", "mit einem Klick gespeichert."]
+  },
+  "fr": {
+    "brand": "Mui CV",
+    "c1": ["Enregistrez les offres de toute page", "Page carrière, site d'emploi ou profil X."],
+    "c2": ["Gratuit dans le pool public", "Offre trouvée ? C'est gratuit — et récompensé si elle est nouvelle."],
+    "c3": ["Ou gardez-la privée", "Les enregistrements privés restent dans votre compte."],
+    "c4": ["Fermez, revenez plus tard", "Les pages longues sont traitées en arrière-plan."],
+    "c5": ["Votre compte, votre clé", "Collez votre clé API une fois ; elle reste dans ce navigateur."],
+    "promo": "Enregistrez les offres de toute page",
+    "marquee": ["Chaque offre trouvée,", "enregistrée en un clic."]
+  },
+  "es": {
+    "brand": "Mui CV",
+    "c1": ["Guarda empleos de cualquier página", "Página de empleo, portal o perfil de X."],
+    "c2": ["Gratis en la bolsa pública", "¿Se detecta una oferta? No cuesta nada, y las nuevas dan tokens."],
+    "c3": ["O guárdalo en privado", "Lo privado se queda en tu cuenta, fuera de la búsqueda pública."],
+    "c4": ["Ciérralo y vuelve después", "Las páginas largas se procesan en segundo plano."],
+    "c5": ["Tu cuenta, tu clave", "Pega tu clave API una vez; solo se guarda en este navegador."],
+    "promo": "Guarda empleos de cualquier página",
+    "marquee": ["Cada oferta que encuentres,", "guardada en un clic."]
+  },
+  "pt_BR": {
+    "brand": "Mui Currículo",
+    "c1": ["Salve vagas de qualquer página", "Página de carreiras, site de vagas ou perfil no X."],
+    "c2": ["Grátis no quadro público", "Vaga detectada? Não custa nada — e vagas novas rendem tokens."],
+    "c3": ["Ou guarde no privado", "Vagas privadas ficam só na sua conta."],
+    "c4": ["Feche e volte depois", "Páginas longas são processadas em segundo plano."],
+    "c5": ["Sua conta, sua chave", "Cole sua chave de API uma vez; ela fica neste navegador."],
+    "promo": "Salve vagas de qualquer página",
+    "marquee": ["Cada vaga que você encontra,", "salva em um clique."]
+  },
+  "th": {
+    "brand": "Mui Resume",
+    "c1": ["บันทึกงานจากทุกหน้าเว็บ", "หน้ารับสมัคร เว็บหางาน หรือโปรไฟล์ X ก็ได้"],
+    "c2": ["บอร์ดสาธารณะ ฟรีเมื่อพบงาน", "งานซ้ำก็ไม่คิดเงิน งานใหม่ได้รางวัลโทเค็น"],
+    "c3": ["หรือเก็บไว้ส่วนตัว", "งานส่วนตัวอยู่ในบัญชีคุณเท่านั้น"],
+    "c4": ["ปิดไว้ แล้วค่อยกลับมาดู", "หน้าที่ยาวจะประมวลผลเบื้องหลัง"],
+    "c5": ["บัญชีของคุณ คีย์ของคุณ", "วาง API key ครั้งเดียว เก็บในเบราว์เซอร์นี้เท่านั้น"],
+    "promo": "บันทึกงานจากทุกหน้าเว็บ",
+    "marquee": ["ทุกตำแหน่งงานที่คุณเจอ", "บันทึกได้ในคลิกเดียว"]
+  },
+  "vi": {
+    "brand": "Mui CV",
+    "c1": ["Lưu việc làm từ mọi trang", "Trang tuyển dụng, trang việc làm hay hồ sơ X."],
+    "c2": ["Kho công khai: miễn phí", "Tìm thấy việc là miễn phí — việc mới còn được thưởng token."],
+    "c3": ["Hoặc lưu riêng tư", "Mục riêng tư chỉ nằm trong tài khoản của bạn."],
+    "c4": ["Đóng lại, xem sau", "Trang dài được xử lý nền; kết quả vẫn chờ bạn."],
+    "c5": ["Tài khoản của bạn, khóa của bạn", "Dán API key một lần; chỉ lưu trong trình duyệt này."],
+    "promo": "Lưu việc làm từ mọi trang",
+    "marquee": ["Mọi tin tuyển dụng bạn thấy,", "lưu chỉ với một cú nhấp."]
+  }
+}

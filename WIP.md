@@ -4,6 +4,14 @@
 
 ## 当前进行中
 
+### 提交异步化 + 清理 + 上架准备（2026-10-21）
+
+- [x] api：AI / 外链路径进 Cloudflare Queue（muicv-job-submit + DLQ），202 + `GET /jobs/submit/:id`；消费幂等可重试，死信全额退款
+- [x] extension：轮询退避、chrome.storage 持久化待处理 id，重开 popup 续看结果（不加 notifications 权限）
+- [x] 清理：桌面端 extension-bridge / IPC / 站点专用抽取代码 / 无用 shared 类型 / 过时文档；app typecheck 修复
+- [x] 上架：0.3.0、_locales 9 语言 + popup i18n、release zip（Chrome/Edge + Firefox）、隐私页 /privacy/extension、
+      `packages/extension/store/`（各语言文案 + README 清单 + 截图 / 宣传图）
+
 ### 扩展重做：任意页面提交岗位 + 服务端识别 / 计费（2026-10-20）
 
 目标：扩展脱离桌面端，凭 muicv API key 独立工作；用户可提交任意页面，服务端识别岗位并按规则计费 / 奖励。

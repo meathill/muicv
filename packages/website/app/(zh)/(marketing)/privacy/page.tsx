@@ -43,7 +43,8 @@ export default function PrivacyPage() {
 
           <H2>1. 适用范围</H2>
           <P>
-            本政策适用于 muicv.com 网站、Mui简历桌面应用、相关 API 服务，以及通过 AI agent 接入的 skill 套件。
+            本政策适用于 muicv.com 网站、Mui简历桌面应用、浏览器扩展、相关 API 服务，以及通过 AI agent 接入的 skill
+            套件。浏览器扩展的数据处理另见 <a href="/privacy/extension">浏览器扩展隐私说明</a>。
             第三方网站或服务（即便从我们的页面跳转）不在本政策范围内，请单独参阅其隐私政策。
           </P>
 
