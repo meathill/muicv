@@ -38,8 +38,9 @@ export async function fetchCmsOpportunities(
   try {
     const res = await fetchImpl(`${base}/api/opportunities?${buildOpportunityParams(query).toString()}`, {
       headers: { accept: 'application/json' },
+      // Workers 的 RequestInit.cache 只认 no-store / no-cache，Next.js 侧才会传 force-cache 等
       cache: options.cache ?? 'no-store',
-    });
+    } as unknown as RequestInit);
     if (!res.ok) return { docs: [], hasMore: false };
     const body = (await res.json()) as { docs?: unknown[]; hasNextPage?: boolean };
     const docs = Array.isArray(body.docs) ? body.docs : [];
