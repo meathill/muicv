@@ -300,3 +300,9 @@ test('LLM 兜底：仅对规则没解析出限制、但有限制句的 remote �
   assert.equal(out.utcOffsetMax, -5);
   assert.equal(needsLlm({ ...doc, allowedCountries: ['US'] }), false);
 });
+
+test('runCollect：缺 CMS_API_KEY 时跳过而不是抛错', async () => {
+  const { runCollect } = await import('../src/index.ts');
+  const result = await runCollect({ MUICV_CMS_URL: 'https://cms.test' } as never);
+  assert.equal(result, null);
+});

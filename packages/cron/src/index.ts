@@ -14,14 +14,19 @@ export type CronEnv = {
   JOBS_INDEX: JobVectorIndex;
   MUICV_CMS_URL: string;
   /** CMS 采集账号的 Payload API key（wrangler secret） */
-  CMS_API_KEY: string;
+  CMS_API_KEY?: string;
   MAX_AGE_DAYS?: string;
   MAX_NEW_PER_RUN?: string;
   /** 'off' 关闭地域限制 LLM 兜底 */
   LOCATION_LLM?: string;
 };
 
-export function runCollect(env: CronEnv, now = new Date()) {
+export async function runCollect(env: CronEnv, now = new Date()) {
+  // secret 未配置时安静跳过：上线早期 cron 先部署、secret 后补，不应每 6 小时报错一次
+  if (!env.CMS_API_KEY || !env.MUICV_CMS_URL) {
+    console.warn('[cron] 未配置 CMS_API_KEY / MUICV_CMS_URL，跳过本次采集');
+    return null;
+  }
   return collectOpportunities({
     fetchImpl: fetch,
     cms: createCmsWriter(env.MUICV_CMS_URL, env.CMS_API_KEY),
@@ -37,6 +42,6 @@ export function runCollect(env: CronEnv, now = new Date()) {
 
 export default {
   async scheduled(_controller: unknown, env: CronEnv, ctx: { waitUntil(p: Promise<unknown>): void }) {
-    ctx.waitUntil(runCollect(env));
+    ctx.waitUntil(runCollect(env).catch((error: unknown) => console.error('[cron] 采集失败', error)));
   },
 };
