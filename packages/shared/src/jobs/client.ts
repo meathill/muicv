@@ -14,10 +14,21 @@ export const DEFAULT_MUICV_API_BASE = 'https://api.muicv.com';
 
 export function buildJobSearchQuery(req: JobSearchRequest): URLSearchParams {
   const params = new URLSearchParams();
-  for (const key of ['q', 'kind', 'remote', 'region', 'category', 'page', 'pageSize'] as const) {
+  for (const key of [
+    'q',
+    'kind',
+    'workplace',
+    'region',
+    'category',
+    'country',
+    'utcOffset',
+    'page',
+    'pageSize',
+  ] as const) {
     const value = req[key];
     if (value !== undefined && value !== '') params.set(key, String(value));
   }
+  if (req.ignore?.length) params.set('ignore', req.ignore.join(','));
   return params;
 }
 

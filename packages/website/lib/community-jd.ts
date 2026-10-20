@@ -63,5 +63,9 @@ export async function hideJd(id: string): Promise<boolean> {
   )
     .bind(Date.now(), id)
     .run();
+  // 同步统一检索索引：搜索按 jobIndex.status 硬过滤，下架即从搜索消失
+  await env.MUICV_DB.prepare(`UPDATE jobIndex SET status = 'hidden', updatedAt = ? WHERE id = ?`)
+    .bind(Date.now(), `community:${id}`)
+    .run();
   return (result.meta.changes ?? 0) > 0;
 }

@@ -1,6 +1,8 @@
-import type { JobCategory, JobRegion, JobSearchFilters, RemoteType } from './types.ts';
+import { COUNTRIES, type LocationRegion } from './countries.ts';
+import { findRegions, findUtcRange } from './location.ts';
+import type { JobCategory, JobSearchFilters } from './types.ts';
 
-/** 采集与查询解析共用的规则分类。规则偏保守：拿不准就 other / null。 */
+/** 职能分类与自然语言 query 过滤识别。规则偏保守：拿不准就不识别。 */
 
 const CATEGORY_RULES: Array<[JobCategory, RegExp]> = [
   ['security', /\b(security|secops|appsec|infosec)\b|安全/i],
@@ -11,7 +13,7 @@ const CATEGORY_RULES: Array<[JobCategory, RegExp]> = [
   ['product', /\b(product manager|product owner|pm)\b|产品经理/i],
   [
     'engineering',
-    /\b(engineer|developer|programmer|frontend|front-end|backend|back-end|full[- ]?stack|ios|android|software)\b|工程师|开发|前端|后端|全栈/i,
+    /\b(engineer|developer|programmer|frontend|front-end|backend|back-end|full[- ]?stack|ios|android|software)\b|工程师|开发|前端|后端|全栈|程序员/i,
   ],
 ];
 
@@ -22,50 +24,72 @@ export function classifyCategory(title: string): JobCategory {
   return 'other';
 }
 
-export function isTechCategory(category: JobCategory): boolean {
-  return category !== 'other';
+/** 「我在中国 / I'm in Germany / based in India」→ 求职者所在国。 */
+const SELF_LOCATION =
+  /(?:我在|我人在|我住在|我位于|人在|身在|坐标|based in|i'?m in|i am in|living in|located in|from)\s*([A-Za-z .\u4e00-\u9fff]{2,24})/i;
+
+function findSelfCountry(q: string): { code: string; phrase: string } | null {
+  const m = SELF_LOCATION.exec(q);
+  if (!m?.[1]) return null;
+  const tail = m[1].toLowerCase();
+  for (const c of COUNTRIES) {
+    const name = c.names.find((n) => tail.startsWith(n) || (/[\u4e00-\u9fff]/.test(n) && tail.includes(n)));
+    if (name) {
+      // 只删「我在 + 国家名」本身，后面的「远程」等仍要参与识别
+      const prefixLen = m[0].length - m[1].length;
+      return { code: c.code, phrase: m[0].slice(0, prefixLen + tail.indexOf(name) + name.length) };
+    }
+  }
+  return null;
 }
 
-const REGION_RULES: Array<[JobRegion, RegExp]> = [
-  ['global', /\b(worldwide|anywhere|global)\b|全球|不限/i],
-  [
-    'americas',
-    /\b(usa?|united states|canada|mexico|brazil|latam|americas|north america|new york|san francisco|seattle|austin|toronto|chicago|los angeles|boston|denver)\b|美国|加拿大|美洲/i,
-  ],
-  [
-    'europe',
-    /\b(uk|united kingdom|london|europe|emea|germany|berlin|france|paris|netherlands|amsterdam|ireland|dublin|spain|poland|portugal|sweden|switzerland)\b|欧洲|英国|德国/i,
-  ],
-  [
-    'apac',
-    /\b(apac|asia|singapore|japan|tokyo|india|bangalore|australia|sydney|korea|seoul|china|hong kong|taiwan)\b|亚太|亚洲|新加坡|日本|中国|香港|台湾/i,
-  ],
+const WORKPLACE_PHRASES: Array<[NonNullable<JobSearchFilters['workplace']>, RegExp]> = [
+  ['hybrid', /\bhybrid\b|混合办公/i],
+  ['remote', /\bremote\b|远程|居家办公|在家办公/i],
+  ['onsite', /\bon-?site\b|坐班|驻场/i],
 ];
 
-export function classifyRegion(location: string): JobRegion {
-  for (const [region, re] of REGION_RULES) {
-    if (re.test(location)) return region;
-  }
-  return 'other';
-}
-
-export function classifyRemote(location: string, isRemoteHint?: boolean): RemoteType {
-  if (/\bhybrid\b|混合/i.test(location)) return 'hybrid';
-  if (isRemoteHint || /\bremote\b|远程|居家/i.test(location)) return 'remote';
-  return 'onsite';
-}
+export type DetectedQuery = { filters: JobSearchFilters; residual: string };
 
 /**
- * 从自然语言 query 中规则抽取结构化过滤条件（零成本、确定性）。
- * 只抽有把握的：remote、region、category。剩下的语义交给向量检索。
+ * 从 q 中规则抽取结构化过滤，并返回去掉这些短语后的残余文本（供关键词检索，减少噪音）。
+ * region 只在没识别出求职者国家时才识别（「我在中国」不是「要亚太岗位」）。
  */
-export function extractFiltersFromQuery(q: string): JobSearchFilters {
+export function detectQueryFilters(q: string): DetectedQuery {
   const filters: JobSearchFilters = {};
-  if (/\bhybrid\b|混合办公/i.test(q)) filters.remote = 'hybrid';
-  else if (/\bremote\b|远程|居家/i.test(q)) filters.remote = 'remote';
-  const region = classifyRegion(q);
-  if (region !== 'other' && region !== 'global') filters.region = region;
-  const category = classifyCategory(q);
+  let residual = q;
+
+  const self = findSelfCountry(q);
+  if (self) {
+    filters.country = self.code;
+    residual = residual.replace(self.phrase, ' ');
+  }
+
+  const utc = findUtcRange(q);
+  if (utc && utc[0] === utc[1]) {
+    filters.utcOffset = utc[0];
+    residual = residual.replace(/(?:UTC|GMT)\s*[+\-−]\s*\d{1,2}(?::?(?:30|45))?|东.区/gi, ' ');
+  }
+
+  for (const [workplace, re] of WORKPLACE_PHRASES) {
+    if (re.test(residual)) {
+      filters.workplace = workplace;
+      residual = residual.replace(new RegExp(re.source, 'gi'), ' ');
+      break;
+    }
+  }
+
+  if (!self) {
+    const region = findRegions(residual).find((r): r is LocationRegion => r !== 'worldwide');
+    if (region) filters.region = region;
+  }
+
+  const category = classifyCategory(residual);
   if (category !== 'other') filters.category = category;
-  return filters;
+
+  residual = residual
+    .replace(/[，,。.!！?？]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return { filters, residual };
 }

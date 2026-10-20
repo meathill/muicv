@@ -1,4 +1,5 @@
-import type { JobCategory, JobKind, JobRegion, JobSearchFilters, RemoteType } from './types.ts';
+import type { Workplace } from './location.ts';
+import type { JobCategory, JobKind, JobSearchFilters } from './types.ts';
 
 /**
  * Workers AI embedding + Vectorize 的最小结构类型。
@@ -17,9 +18,8 @@ export type EmbeddingRunner = {
 export type JobVectorMetadata = {
   kind: JobKind;
   refId: string;
-  remote: RemoteType | 'unknown';
-  region: JobRegion | 'unknown';
-  category: JobCategory | 'unknown';
+  workplace: Workplace;
+  category: JobCategory;
   /** 毫秒时间戳 */
   postedAt: number;
 };
@@ -77,12 +77,21 @@ export async function indexJobs(env: JobSearchEnv, jobs: IndexableJob[]): Promis
   return vectors.length;
 }
 
-/** 结构化过滤 → Vectorize metadata filter（需要先建 metadata index，见 DEPLOYMENT.md）。 */
+/**
+ * 结构化过滤里能下推到 Vectorize metadata 的部分（单值字段，需先建 metadata index，见 DEPLOYMENT.md）。
+ * 国家 / 大区 / 时区是数组或区间，Vectorize 过滤不了，由 api 回源 D1 时用 SQL 硬过滤。
+ */
+export const VECTOR_METADATA_INDEXES = [
+  { property: 'kind', type: 'string' },
+  { property: 'workplace', type: 'string' },
+  { property: 'category', type: 'string' },
+  { property: 'postedAt', type: 'number' },
+] as const;
+
 export function toVectorFilter(filters: JobSearchFilters): Record<string, string> | undefined {
   const filter: Record<string, string> = {};
   if (filters.kind) filter.kind = filters.kind;
-  if (filters.remote) filter.remote = filters.remote;
-  if (filters.region) filter.region = filters.region;
+  if (filters.workplace) filter.workplace = filters.workplace;
   if (filters.category) filter.category = filters.category;
   return Object.keys(filter).length ? filter : undefined;
 }

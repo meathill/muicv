@@ -1,15 +1,8 @@
-import {
-  isOneOf,
-  JOB_CATEGORIES,
-  JOB_REGIONS,
-  type JobListing,
-  type JobSearchFilters,
-  OPPORTUNITY_SOURCES,
-  type Opportunity,
-  REMOTE_TYPES,
-} from './types.ts';
+import { LOCATION_REGIONS, type LocationRegion } from './countries.ts';
+import { WORKPLACES } from './location.ts';
+import { isOneOf, JOB_CATEGORIES, OPPORTUNITY_SOURCES, type Opportunity } from './types.ts';
 
-/** 读 CMS `opportunities`（公开 REST，匿名只能读 published）。 */
+/** 读 CMS `opportunities`（公开 REST，匿名只能读 published）。搜索不走这里，走 D1 jobIndex。 */
 
 const DEFAULT_CMS_BASE_URL = 'https://cms.muicv.com';
 
@@ -19,12 +12,7 @@ export type OpportunityCmsOptions = {
   cache?: 'default' | 'force-cache' | 'no-store';
 };
 
-export type OpportunityListQuery = JobSearchFilters & {
-  keyword?: string;
-  ids?: string[];
-  page?: number;
-  pageSize?: number;
-};
+export type OpportunityListQuery = { ids?: string[]; page?: number; pageSize?: number; excludeSource?: string };
 
 export type OpportunityPage = { docs: Opportunity[]; hasMore: boolean };
 
@@ -36,16 +24,8 @@ export function buildOpportunityParams(query: OpportunityListQuery): URLSearchPa
     sort: '-postedAt',
     'where[status][equals]': 'published',
   });
-  if (query.remote) params.set('where[remote][equals]', query.remote);
-  if (query.region) params.set('where[region][equals]', query.region);
-  if (query.category) params.set('where[category][equals]', query.category);
   if (query.ids) params.set('where[id][in]', query.ids.join(','));
-  const keyword = query.keyword?.trim();
-  if (keyword) {
-    params.set('where[or][0][title][like]', keyword);
-    params.set('where[or][1][company][like]', keyword);
-    params.set('where[or][2][descriptionMarkdown][like]', keyword);
-  }
+  if (query.excludeSource) params.set('where[source][not_equals]', query.excludeSource);
   return params;
 }
 
@@ -53,13 +33,23 @@ export async function fetchCmsOpportunities(
   query: OpportunityListQuery,
   options: OpportunityCmsOptions = {},
 ): Promise<OpportunityPage> {
-  const body = await fetchJson(`/api/opportunities?${buildOpportunityParams(query).toString()}`, options);
-  if (!body) return { docs: [], hasMore: false };
-  const docs = Array.isArray(body.docs) ? body.docs : [];
-  return {
-    docs: docs.map(parseOpportunity).filter((d): d is Opportunity => d !== null),
-    hasMore: body.hasNextPage === true,
-  };
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const base = (options.baseUrl ?? DEFAULT_CMS_BASE_URL).replace(/\/+$/, '');
+  try {
+    const res = await fetchImpl(`${base}/api/opportunities?${buildOpportunityParams(query).toString()}`, {
+      headers: { accept: 'application/json' },
+      cache: options.cache ?? 'no-store',
+    });
+    if (!res.ok) return { docs: [], hasMore: false };
+    const body = (await res.json()) as { docs?: unknown[]; hasNextPage?: boolean };
+    const docs = Array.isArray(body.docs) ? body.docs : [];
+    return {
+      docs: docs.map(parseOpportunity).filter((d): d is Opportunity => d !== null),
+      hasMore: body.hasNextPage === true,
+    };
+  } catch {
+    return { docs: [], hasMore: false };
+  }
 }
 
 export async function fetchCmsOpportunityById(
@@ -70,24 +60,20 @@ export async function fetchCmsOpportunityById(
   return page.docs[0] ?? null;
 }
 
-async function fetchJson(path: string, options: OpportunityCmsOptions): Promise<Record<string, unknown> | null> {
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const base = (options.baseUrl ?? DEFAULT_CMS_BASE_URL).replace(/\/+$/, '');
-  try {
-    const res = await fetchImpl(`${base}${path}`, {
-      headers: { accept: 'application/json' },
-      cache: options.cache ?? 'no-store',
-    });
-    if (!res.ok) return null;
-    const body = (await res.json()) as unknown;
-    return typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
-
 function str(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function strArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((t) => {
+    const s = typeof t === 'object' && t !== null ? str((t as Record<string, unknown>).value) : str(t);
+    return s ? [s] : [];
+  });
+}
+
+function num(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 export function parseOpportunity(value: unknown): Opportunity | null {
@@ -106,8 +92,12 @@ export function parseOpportunity(value: unknown): Opportunity | null {
     title,
     company,
     location: str(v.location) ?? '',
-    remote: isOneOf(REMOTE_TYPES, v.remote) ? v.remote : 'onsite',
-    region: isOneOf(JOB_REGIONS, v.region) ? v.region : 'other',
+    workplace: isOneOf(WORKPLACES, v.workplace) ? v.workplace : 'onsite',
+    allowedCountries: strArray(v.allowedCountries).map((c) => c.toUpperCase()),
+    allowedRegions: strArray(v.allowedRegions).filter((r): r is LocationRegion => isOneOf(LOCATION_REGIONS, r)),
+    utcOffsetMin: num(v.utcOffsetMin),
+    utcOffsetMax: num(v.utcOffsetMax),
+    officeLocations: strArray(v.officeLocations),
     category: isOneOf(JOB_CATEGORIES, v.category) ? v.category : 'other',
     ...(str(v.employmentType) ? { employmentType: str(v.employmentType) as string } : {}),
     summary: str(v.summary) ?? '',
@@ -119,30 +109,7 @@ export function parseOpportunity(value: unknown): Opportunity | null {
     fingerprint: str(v.fingerprint) ?? '',
     postedAt,
     status,
-    tags: Array.isArray(v.tags)
-      ? v.tags.flatMap((t) => {
-          const s = typeof t === 'object' && t !== null ? str((t as Record<string, unknown>).value) : str(t);
-          return s ? [s] : [];
-        })
-      : [],
+    tags: strArray(v.tags),
     updatedAt: str(v.updatedAt) ?? postedAt,
-  };
-}
-
-export function opportunityToListing(o: Opportunity, score: number | null = null): JobListing {
-  return {
-    id: `collected:${o.id}`,
-    kind: 'collected',
-    title: o.title,
-    company: o.company,
-    location: o.location,
-    remote: o.remote,
-    region: o.region,
-    category: o.category,
-    source: o.source,
-    url: o.applyUrl,
-    summary: o.summary,
-    postedAt: o.postedAt,
-    score,
   };
 }

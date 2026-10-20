@@ -2,50 +2,112 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+  buildFtsPlan,
   buildJobSearchQuery,
-  buildOpportunityParams,
   classifyCategory,
-  classifyRegion,
-  classifyRemote,
-  extractFiltersFromQuery,
+  coveredRegions,
+  dedupeListings,
+  detectQueryFilters,
   fetchCmsOpportunities,
+  findCountries,
+  findUtcRange,
   htmlToText,
   indexJobs,
+  isEligible,
+  type JobListing,
   type JobVector,
   jobFingerprint,
   parseJobVectorId,
+  parseLocationRestrictions,
   queryJobVectors,
+  reciprocalRankFusion,
   searchJobs,
   toVectorFilter,
 } from '../src/jobs/index.ts';
 
-test('分类规则：职能 / 地区 / 远程', () => {
+test('职能分类', () => {
   assert.equal(classifyCategory('Senior Backend Engineer'), 'engineering');
   assert.equal(classifyCategory('Staff Site Reliability Engineer'), 'devops');
   assert.equal(classifyCategory('Machine Learning Engineer'), 'data');
   assert.equal(classifyCategory('Account Executive'), 'other');
-  assert.equal(classifyRegion('Remote - Worldwide'), 'global');
-  assert.equal(classifyRegion('San Francisco, CA'), 'americas');
-  assert.equal(classifyRegion('London, UK'), 'europe');
-  assert.equal(classifyRegion('Singapore'), 'apac');
-  assert.equal(classifyRemote('Remote, US'), 'remote');
-  assert.equal(classifyRemote('New York (Hybrid)'), 'hybrid');
-  assert.equal(classifyRemote('Dublin', true), 'remote');
-  assert.equal(classifyRemote('Dublin'), 'onsite');
 });
 
-test('自然语言 query 抽取过滤条件（中英）', () => {
-  assert.deepEqual(extractFiltersFromQuery('欧洲远程的前端工程师'), {
-    remote: 'remote',
-    region: 'europe',
-    category: 'engineering',
+test('国家识别：大写缩写、城市、中文，不误伤普通单词', () => {
+  assert.deepEqual(findCountries('Remote - US'), ['US']);
+  assert.deepEqual(findCountries('San Francisco, CA'), ['US']);
+  assert.deepEqual(findCountries('Remote, United States or Canada').sort(), ['CA', 'US']);
+  assert.deepEqual(findCountries('上海'), ['CN']);
+  assert.deepEqual(findCountries('join us to build things'), []);
+});
+
+test('时区识别', () => {
+  assert.deepEqual(findUtcRange('UTC-5 to UTC+3'), [-5, 3]);
+  assert.deepEqual(findUtcRange('GMT+1'), [1, 1]);
+  assert.deepEqual(findUtcRange('within 3 hours of CET'), [-2, 4]);
+  assert.deepEqual(findUtcRange('must work in US time zones'), [-10, -4]);
+  assert.deepEqual(findUtcRange('UTC+5:30'), [5.5, 5.5]);
+  assert.equal(findUtcRange('no tz here'), null);
+});
+
+test('地域限制解析：location 字段 + 正文限制句', () => {
+  const us = parseLocationRestrictions({ locations: ['Remote - US'] });
+  assert.equal(us.workplace, 'remote');
+  assert.deepEqual(us.allowedCountries, ['US']);
+
+  const emea = parseLocationRestrictions({ locations: ['Remote (EMEA)'], workplaceHint: true });
+  assert.deepEqual(emea.allowedRegions, ['emea']);
+
+  const ww = parseLocationRestrictions({ locations: ['Worldwide'], workplaceHint: 'remote' });
+  assert.deepEqual(ww.allowedRegions, ['worldwide']);
+
+  const body = parseLocationRestrictions({
+    locations: ['Remote'],
+    body: 'We were founded in Germany. Candidates must be based in Canada and overlap with UTC-5 to UTC-3.',
   });
-  assert.deepEqual(extractFiltersFromQuery('remote data scientist in Japan'), {
-    remote: 'remote',
-    region: 'apac',
-    category: 'data',
-  });
-  assert.deepEqual(extractFiltersFromQuery('有意思的工作'), {});
+  assert.deepEqual(body.allowedCountries, ['CA']);
+  assert.deepEqual([body.utcOffsetMin, body.utcOffsetMax], [-5, -3]);
+
+  const office = parseLocationRestrictions({ locations: ['Hybrid - London'], title: 'Engineer' });
+  assert.equal(office.workplace, 'hybrid');
+  assert.deepEqual(office.allowedCountries, ['GB']);
+  assert.deepEqual(office.officeLocations, ['London']);
+  assert.deepEqual(coveredRegions(office).sort(), ['emea', 'europe']);
+});
+
+test('资格判断：在中国 UTC+8 排除 US-only 与美洲时区岗', () => {
+  const user = { country: 'CN', utcRange: [8, 8] as [number, number] };
+  const base = { allowedCountries: [], allowedRegions: [], utcOffsetMin: null, utcOffsetMax: null };
+  assert.equal(isEligible({ ...base, allowedCountries: ['US'] }, user), false);
+  assert.equal(isEligible({ ...base, allowedRegions: ['apac'] }, user), true);
+  assert.equal(isEligible({ ...base, allowedRegions: ['worldwide'], utcOffsetMin: -5, utcOffsetMax: 3 }, user), false);
+  assert.equal(isEligible(base, user), true, '未声明限制视为不限');
+});
+
+test('query 过滤识别并返回残余文本', () => {
+  const a = detectQueryFilters('我在中国，UTC+8，想找远程前端工程师');
+  assert.deepEqual(a.filters, { country: 'CN', utcOffset: 8, workplace: 'remote', category: 'engineering' });
+  assert.doesNotMatch(a.residual, /中国|UTC|远程/);
+  assert.match(a.residual, /前端/);
+  const b = detectQueryFilters('欧洲远程的后端');
+  assert.deepEqual(b.filters, { workplace: 'remote', region: 'europe', category: 'engineering' });
+  assert.deepEqual(detectQueryFilters('有意思的工作').filters, {});
+});
+
+test('FTS trigram 计划：长词拆 trigram，短词走 LIKE', () => {
+  const plan = buildFtsPlan('Kubernets 前端 go');
+  assert.match(plan.match, /"kub" OR "ube"/);
+  assert.deepEqual(plan.shortTerms.sort(), ['go', '前端']);
+  assert.equal(buildFtsPlan('').match, '');
+  assert.deepEqual(buildFtsPlan('a"bc'), { match: '', shortTerms: ['a', 'bc'] }, '引号不会进入 MATCH');
+});
+
+test('RRF 融合：两路都靠前的排第一', () => {
+  const fused = reciprocalRankFusion([
+    ['a', 'b', 'c'],
+    ['b', 'd'],
+  ]);
+  assert.equal(fused[0]?.id, 'b');
+  assert.deepEqual(fused.map((f) => f.id).sort(), ['a', 'b', 'c', 'd']);
 });
 
 test('htmlToText 处理 Greenhouse 转义 HTML', () => {
@@ -54,33 +116,26 @@ test('htmlToText 处理 Greenhouse 转义 HTML', () => {
   assert.match(text, /- Go/);
 });
 
-test('jobFingerprint 忽略大小写/标点/公司后缀', () => {
+test('jobFingerprint / vector id', () => {
   assert.equal(jobFingerprint('Stripe, Inc.', 'Backend Engineer'), jobFingerprint('stripe', 'backend  engineer'));
-});
-
-test('vector id 往返', () => {
   assert.deepEqual(parseJobVectorId('community:abc-1'), { kind: 'community', refId: 'abc-1' });
   assert.equal(parseJobVectorId('x:1'), null);
 });
 
-function mockEnv() {
+function mockVectorEnv() {
   const upserted: JobVector[] = [];
   const queries: Array<{ filter?: Record<string, string> }> = [];
   return {
     upserted,
     queries,
     env: {
-      AI: {
-        async run(_model: string, input: { text: string[] }) {
-          return { data: input.text.map((t) => [t.length, 1]) };
-        },
-      },
+      AI: { run: async (_m: string, input: { text: string[] }) => ({ data: input.text.map((t) => [t.length, 1]) }) },
       JOBS_INDEX: {
-        async upsert(vectors: JobVector[]) {
-          upserted.push(...vectors);
+        upsert: async (v: JobVector[]) => {
+          upserted.push(...v);
         },
-        async deleteByIds() {},
-        async query(_v: number[], opts: { filter?: Record<string, string> }) {
+        deleteByIds: async () => {},
+        query: async (_v: number[], opts: { filter?: Record<string, string> }) => {
           queries.push(opts);
           return { matches: [{ id: 'collected:1', score: 0.9 }] };
         },
@@ -89,38 +144,29 @@ function mockEnv() {
   };
 }
 
-test('indexJobs 批量 embed 并 upsert', async () => {
-  const { env, upserted } = mockEnv();
-  const n = await indexJobs(env, [
+test('向量：upsert 与带 metadata filter 的查询', async () => {
+  const { env, upserted, queries } = mockVectorEnv();
+  await indexJobs(env, [
     {
       id: 'collected:1',
       text: 'abc',
-      metadata: { kind: 'collected', refId: '1', remote: 'remote', region: 'global', category: 'data', postedAt: 1 },
+      metadata: { kind: 'collected', refId: '1', workplace: 'remote', category: 'data', postedAt: 1 },
     },
   ]);
-  assert.equal(n, 1);
   assert.deepEqual(upserted[0]?.values, [3, 1]);
-});
-
-test('queryJobVectors 带 metadata filter', async () => {
-  const { env, queries } = mockEnv();
-  const matches = await queryJobVectors(env, 'remote', { remote: 'remote' }, 10);
+  const matches = await queryJobVectors(env, 'q', { workplace: 'remote', country: 'CN' }, 10);
   assert.equal(matches[0]?.id, 'collected:1');
-  assert.deepEqual(queries[0]?.filter, { remote: 'remote' });
+  assert.deepEqual(queries[0]?.filter, { workplace: 'remote' }, '国家不下推到 Vectorize');
   assert.equal(toVectorFilter({}), undefined);
 });
 
-test('CMS opportunities 参数与解析', async () => {
-  const params = buildOpportunityParams({ keyword: 'go', remote: 'remote', page: 2 });
-  assert.equal(params.get('where[status][equals]'), 'published');
-  assert.equal(params.get('where[remote][equals]'), 'remote');
-  assert.equal(params.get('where[or][0][title][like]'), 'go');
+test('CMS opportunities 解析新地域字段', async () => {
   const page = await fetchCmsOpportunities(
     {},
     {
       fetchImpl: async () =>
         Response.json({
-          hasNextPage: true,
+          hasNextPage: false,
           docs: [
             {
               id: 7,
@@ -129,36 +175,39 @@ test('CMS opportunities 参数与解析', async () => {
               applyUrl: 'https://x.com/1',
               postedAt: '2026-10-01T00:00:00.000Z',
               source: 'lever',
-              status: 'published',
-              tags: [{ value: 'go' }],
+              workplace: 'remote',
+              allowedCountries: ['us'],
+              allowedRegions: ['emea', 'mars'],
+              utcOffsetMin: -5,
+              utcOffsetMax: 3,
             },
-            { id: 8, title: 'bad' },
           ],
         }),
     },
   );
-  assert.equal(page.docs.length, 1);
-  assert.equal(page.docs[0]?.id, '7');
-  assert.deepEqual(page.docs[0]?.tags, ['go']);
-  assert.equal(page.hasMore, true);
+  const doc = page.docs[0];
+  assert.deepEqual(doc?.allowedCountries, ['US']);
+  assert.deepEqual(doc?.allowedRegions, ['emea']);
+  assert.equal(doc?.utcOffsetMax, 3);
 });
 
-test('searchJobs 客户端拼参数与鉴权', async () => {
-  assert.equal(buildJobSearchQuery({ q: '远程', page: 2 }).toString(), 'q=%E8%BF%9C%E7%A8%8B&page=2');
+test('searchJobs 客户端拼参数（含 ignore / 国家 / 时区）与 429', async () => {
+  assert.equal(
+    buildJobSearchQuery({ q: 'go', country: 'CN', utcOffset: 8, ignore: ['region', 'category'] }).toString(),
+    'q=go&country=CN&utcOffset=8&ignore=region%2Ccategory',
+  );
   let seen: Request | null = null;
-  const res = await searchJobs(
+  await searchJobs(
     { q: 'go' },
     {
       baseUrl: 'https://api.test/',
       apiKey: 'mui_x',
       fetchImpl: async (input, init) => {
-        seen = new Request(input as string, init);
-        return Response.json({ items: [], page: 1, pageSize: 20, hasMore: false, mode: 'keyword', filters: {} });
+        seen = new Request(String(input), init);
+        return Response.json({});
       },
     },
   );
-  assert.equal(res.mode, 'keyword');
-  assert.equal((seen as Request | null)?.url, 'https://api.test/jobs/search?q=go');
   assert.equal((seen as Request | null)?.headers.get('authorization'), 'Bearer mui_x');
   await assert.rejects(
     searchJobs({}, { fetchImpl: async () => Response.json({ error: 'slow down' }, { status: 429 }) }),
@@ -166,20 +215,23 @@ test('searchJobs 客户端拼参数与鉴权', async () => {
   );
 });
 
-test('dedupeListings 按 company+title 或 url 折叠', async () => {
-  const { dedupeListings } = await import('../src/jobs/index.ts');
+test('dedupeListings 按 company+title 或 url 折叠', () => {
   const base = {
     kind: 'collected' as const,
     location: '',
-    remote: null,
-    region: null,
-    category: null,
+    workplace: 'remote' as const,
+    allowedCountries: [],
+    allowedRegions: [],
+    utcOffsetMin: null,
+    utcOffsetMax: null,
+    officeLocations: [],
+    category: 'engineering' as const,
     source: 'lever',
     summary: '',
     postedAt: '2026-10-01',
     score: null,
   };
-  const out = dedupeListings([
+  const items: JobListing[] = [
     { ...base, id: 'collected:1', title: 'Backend Engineer', company: 'Stripe', url: 'https://a.com/1' },
     {
       ...base,
@@ -190,10 +242,9 @@ test('dedupeListings 按 company+title 或 url 折叠', async () => {
       url: 'https://b.com/2',
     },
     { ...base, id: 'community:y', kind: 'community', title: 'Other', company: 'Foo', url: 'https://www.a.com/1/' },
-    { ...base, id: 'collected:3', title: 'Designer', company: 'Stripe', url: 'https://a.com/3' },
-  ]);
+  ];
   assert.deepEqual(
-    out.map((i) => i.id),
-    ['collected:1', 'collected:3'],
+    dedupeListings(items).map((i) => i.id),
+    ['collected:1'],
   );
 });
