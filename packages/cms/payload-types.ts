@@ -73,6 +73,7 @@ export interface Config {
     articles: Article;
     skillExtensions: SkillExtension;
     changelog: Changelog;
+    opportunities: Opportunity;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     articles: ArticlesSelect<false> | ArticlesSelect<true>;
     skillExtensions: SkillExtensionsSelect<false> | SkillExtensionsSelect<true>;
     changelog: ChangelogSelect<false> | ChangelogSelect<true>;
+    opportunities: OpportunitiesSelect<false> | OpportunitiesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -311,6 +313,37 @@ export interface Changelog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "opportunities".
+ */
+export interface Opportunity {
+  id: number;
+  title: string;
+  company: string;
+  location?: string | null;
+  remote: 'remote' | 'hybrid' | 'onsite';
+  region: 'global' | 'americas' | 'europe' | 'apac' | 'other';
+  category: 'engineering' | 'data' | 'design' | 'product' | 'devops' | 'security' | 'qa' | 'other';
+  employmentType?: string | null;
+  summary?: string | null;
+  descriptionMarkdown?: string | null;
+  applyUrl: string;
+  source: 'greenhouse' | 'lever' | 'ashby' | 'remotive';
+  sourceId: string;
+  dedupeKey: string;
+  fingerprint: string;
+  postedAt: string;
+  status: 'draft' | 'published' | 'expired';
+  tags?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -356,6 +389,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'changelog';
         value: number | Changelog;
+      } | null)
+    | ({
+        relationTo: 'opportunities';
+        value: number | Opportunity;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -574,6 +611,36 @@ export interface ChangelogSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "opportunities_select".
+ */
+export interface OpportunitiesSelect<T extends boolean = true> {
+  title?: T;
+  company?: T;
+  location?: T;
+  remote?: T;
+  region?: T;
+  category?: T;
+  employmentType?: T;
+  summary?: T;
+  descriptionMarkdown?: T;
+  applyUrl?: T;
+  source?: T;
+  sourceId?: T;
+  dedupeKey?: T;
+  fingerprint?: T;
+  postedAt?: T;
+  status?: T;
+  tags?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -10,6 +10,7 @@ import { buildConfig } from 'payload';
 import { Articles } from './collections/articles';
 import { Changelog } from './collections/changelog';
 import { Media } from './collections/media';
+import { Opportunities } from './collections/opportunities';
 import { Posts } from './collections/posts';
 import { SkillExtensions } from './collections/skill-extensions';
 import { Users } from './collections/users';
@@ -44,7 +45,7 @@ export default buildConfig({
       importMapFile: path.resolve(dirname, 'app/(payload)/admin/importMap.js'),
     },
   },
-  collections: [Users, Media, Posts, Articles, SkillExtensions, Changelog],
+  collections: [Users, Media, Posts, Articles, SkillExtensions, Changelog, Opportunities],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
