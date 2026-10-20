@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "node src/dev.ts",
-    "test": "node --test"
+    "test": "node --test test/**/*.test.ts",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --outdir=dist",
+    "trigger:local": "wrangler dev --test-scheduled"
   },
   "dependencies": {
     "@muicv/shared": "workspace:*"

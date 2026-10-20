@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "muicv-cron",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "fdc63eeea83ae8f5234357308b9a638b",
+  "workers_dev": false,
+  // 每 6 小时采集一次（UTC）。Remotive 要求低频调用，别调太勤。
+  "triggers": {
+    "crons": ["17 */6 * * *"]
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  // 与 packages/api 共用同一个 Vectorize 索引（创建命令见 DEPLOYMENT.md）。
+  "vectorize": [
+    {
+      "binding": "JOBS_INDEX",
+      "index_name": "muicv-jobs"
+    }
+  ],
+  "vars": {
+    "MUICV_CMS_URL": "https://cms.muicv.com",
+    "MAX_AGE_DAYS": "30",
+    "MAX_NEW_PER_RUN": "150"
+  },
+  // secret：CMS_API_KEY（Payload 采集账号 API key）
+  "observability": {
+    "enabled": true
+  }
+}

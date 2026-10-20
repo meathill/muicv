@@ -165,3 +165,35 @@ test('searchJobs 客户端拼参数与鉴权', async () => {
     /slow down/,
   );
 });
+
+test('dedupeListings 按 company+title 或 url 折叠', async () => {
+  const { dedupeListings } = await import('../src/jobs/index.ts');
+  const base = {
+    kind: 'collected' as const,
+    location: '',
+    remote: null,
+    region: null,
+    category: null,
+    source: 'lever',
+    summary: '',
+    postedAt: '2026-10-01',
+    score: null,
+  };
+  const out = dedupeListings([
+    { ...base, id: 'collected:1', title: 'Backend Engineer', company: 'Stripe', url: 'https://a.com/1' },
+    {
+      ...base,
+      id: 'community:x',
+      kind: 'community',
+      title: 'backend engineer',
+      company: 'Stripe Inc.',
+      url: 'https://b.com/2',
+    },
+    { ...base, id: 'community:y', kind: 'community', title: 'Other', company: 'Foo', url: 'https://www.a.com/1/' },
+    { ...base, id: 'collected:3', title: 'Designer', company: 'Stripe', url: 'https://a.com/3' },
+  ]);
+  assert.deepEqual(
+    out.map((i) => i.id),
+    ['collected:1', 'collected:3'],
+  );
+});
