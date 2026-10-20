@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:job="https://larajobs.com" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>
+<item>
+  <title>Senior Laravel Developer</title>
+  <link>https://larajobs.com/job/3946</link>
+  <pubDate>Mon, 19 Oct 2026 08:47:02 +0000</pubDate>
+  <dc:creator><![CDATA[Trybe]]></dc:creator>
+  <job:location><![CDATA[London, UK (Hybrid)]]></job:location>
+  <job:job_type><![CDATA[FULL_TIME]]></job:job_type>
+  <job:company><![CDATA[Trybe]]></job:company>
+  <job:tags><![CDATA[Backend,Laravel,SaaS,Senior]]></job:tags>
+  <content:encoded><![CDATA[ ]]></content:encoded>
+</item>
+</channel></rss>
