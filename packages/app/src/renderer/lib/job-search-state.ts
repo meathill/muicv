@@ -1,8 +1,18 @@
-import type { JobListing, JobSearchFilters, JobSearchResponse } from '@muicv/shared';
+import {
+  JOB_FILTER_KEYS,
+  type JobFilterKey,
+  type JobListing,
+  type JobSearchFilters,
+  type JobSearchResponse,
+} from '@muicv/shared';
 
 /** 岗位搜索面板的纯状态逻辑（与 React 解耦，便于单测）。 */
 
-export type JobSearchQuery = JobSearchFilters & { q: string };
+export type JobSearchQuery = JobSearchFilters & {
+  q: string;
+  /** 用户删掉的「自动识别」标签：不再从 q 抽取这些过滤 */
+  ignore?: JobFilterKey[];
+};
 
 export type JobSearchState = {
   query: JobSearchQuery;
@@ -14,6 +24,8 @@ export type JobSearchState = {
   mode: JobSearchResponse['mode'] | null;
   /** 服务端实际生效的过滤（含从 q 自动抽取的） */
   appliedFilters: JobSearchFilters;
+  /** appliedFilters 中由 q 自动识别出来的 key */
+  detected: JobFilterKey[];
   selectedId: string | null;
 };
 
@@ -28,6 +40,7 @@ export const INITIAL_STATE: JobSearchState = {
   error: null,
   mode: null,
   appliedFilters: {},
+  detected: [],
   selectedId: null,
 };
 
@@ -60,6 +73,7 @@ export function jobSearchReducer(state: JobSearchState, action: JobSearchAction)
         error: null,
         mode: action.response.mode,
         appliedFilters: action.response.filters,
+        detected: action.response.detected ?? [],
         selectedId: state.selectedId ?? items[0]?.id ?? null,
       };
     }
@@ -75,12 +89,37 @@ export function toSearchRequest(query: JobSearchQuery, page: number) {
   return {
     ...(query.q.trim() ? { q: query.q.trim() } : {}),
     ...(query.kind ? { kind: query.kind } : {}),
-    ...(query.remote ? { remote: query.remote } : {}),
+    ...(query.workplace ? { workplace: query.workplace } : {}),
     ...(query.region ? { region: query.region } : {}),
     ...(query.category ? { category: query.category } : {}),
+    ...(query.country ? { country: query.country } : {}),
+    ...(query.utcOffset !== undefined ? { utcOffset: query.utcOffset } : {}),
+    ...(query.ignore?.length ? { ignore: query.ignore } : {}),
     page,
     pageSize: PAGE_SIZE,
   };
+}
+
+/**
+ * 删除一个生效中的过滤标签：自动识别的 → 加入 ignore（q 不变）；显式选的 → 从 query 去掉。
+ * 两种来源同时存在时一起处理，保证删完标签就真的消失。
+ */
+export function removeFilter(query: JobSearchQuery, detected: JobFilterKey[], key: JobFilterKey): JobSearchQuery {
+  const next: JobSearchQuery = { ...query };
+  delete next[key];
+  if (detected.includes(key)) next.ignore = [...new Set([...(query.ignore ?? []), key])];
+  return next;
+}
+
+/** 生效中的过滤 → 标签列表（顺序固定） */
+export function activeFilterTags(
+  applied: JobSearchFilters,
+  detected: JobFilterKey[],
+): Array<{ key: JobFilterKey; value: string | number; detected: boolean }> {
+  return JOB_FILTER_KEYS.flatMap((key) => {
+    const value = applied[key];
+    return value === undefined || value === null ? [] : [{ key, value, detected: detected.includes(key) }];
+  });
 }
 
 /** `collected:12` → { kind, refId }。 */

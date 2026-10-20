@@ -1,14 +1,8 @@
-import type { JobCategory, JobKind, JobRegion, RemoteType } from '@muicv/shared';
+import type { JobCategory, JobKind } from '@muicv/shared';
+
+export { COUNTRY_OPTIONS, LOCATION_REGION_LABEL, WORKPLACE_LABEL } from '@muicv/shared';
 
 export const KIND_LABEL: Record<JobKind, string> = { collected: '精选采集', community: '社区贡献' };
-export const REMOTE_LABEL: Record<RemoteType, string> = { remote: '远程', hybrid: '混合', onsite: '坐班' };
-export const REGION_LABEL: Record<JobRegion, string> = {
-  global: '全球',
-  americas: '美洲',
-  europe: '欧洲',
-  apac: '亚太',
-  other: '其他',
-};
 export const CATEGORY_LABEL: Record<JobCategory, string> = {
   engineering: '研发',
   data: '数据 / AI',

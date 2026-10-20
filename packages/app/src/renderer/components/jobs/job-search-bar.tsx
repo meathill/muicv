@@ -1,18 +1,18 @@
 import {
   JOB_CATEGORIES,
   JOB_KINDS,
-  JOB_REGIONS,
   type JobCategory,
   type JobKind,
-  type JobRegion,
-  REMOTE_TYPES,
-  type RemoteType,
+  LOCATION_REGIONS,
+  type LocationRegion,
+  WORKPLACES,
+  type Workplace,
 } from '@muicv/shared';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 import type { JobSearchQuery } from '../../lib/job-search-state';
-import { CATEGORY_LABEL, KIND_LABEL, REGION_LABEL, REMOTE_LABEL } from './labels';
+import { CATEGORY_LABEL, COUNTRY_OPTIONS, KIND_LABEL, LOCATION_REGION_LABEL, WORKPLACE_LABEL } from './labels';
 
 type QueryPatch = { [K in keyof JobSearchQuery]?: JobSearchQuery[K] | undefined };
 
@@ -48,13 +48,22 @@ function FilterSelect<T extends string>({
   );
 }
 
-/** 顶部：自然语言输入 + 四个结构化过滤。过滤一改就立即重搜。 */
+const COUNTRY_CODES = COUNTRY_OPTIONS.map((c) => c.code);
+const COUNTRY_LABELS = Object.fromEntries(COUNTRY_OPTIONS.map((c) => [c.code, c.label])) as Record<string, string>;
+const UTC_VALUES = Array.from({ length: 27 }, (_, i) => String(i - 12));
+const UTC_LABELS = Object.fromEntries(
+  UTC_VALUES.map((v) => [v, Number(v) === 0 ? 'UTC' : `UTC${Number(v) > 0 ? '+' : ''}${v}`]),
+) as Record<string, string>;
+
+/** 顶部：自然语言输入 + 结构化过滤（含「我在哪 / 我的时区」）。过滤一改就立即重搜。 */
 export function JobSearchBar({ initial, busy, onSearch }: Props) {
   const [query, setQuery] = useState<JobSearchQuery>(initial);
 
   function update(patch: QueryPatch, submit: boolean) {
     const next = { ...query, ...patch } as QueryPatch & { q: string };
-    for (const key of ['kind', 'remote', 'region', 'category'] as const) {
+    // 换了一句新的描述：之前删掉的自动识别标签不再沿用
+    if (patch.q !== undefined) delete next.ignore;
+    for (const key of ['kind', 'workplace', 'region', 'category', 'country', 'utcOffset'] as const) {
       if (next[key] === undefined) delete next[key];
     }
     setQuery(next as JobSearchQuery);
@@ -74,7 +83,7 @@ export function JobSearchBar({ initial, busy, onSearch }: Props) {
           <input
             value={query.q}
             onChange={(e) => update({ q: e.target.value }, false)}
-            placeholder="用一句话描述想要的工作，比如：欧洲远程的资深后端，Go 优先"
+            placeholder="用一句话描述想要的工作，比如：我在中国 UTC+8，想找远程的资深后端，Go 优先"
             className="min-w-0 flex-1 bg-transparent py-2 text-[14px] text-ink outline-none placeholder:text-mute"
           />
         </div>
@@ -94,18 +103,18 @@ export function JobSearchBar({ initial, busy, onSearch }: Props) {
           labels={KIND_LABEL}
           onChange={(kind) => update({ kind }, true)}
         />
-        <FilterSelect<RemoteType>
+        <FilterSelect<Workplace>
           label="办公"
-          value={query.remote}
-          values={REMOTE_TYPES}
-          labels={REMOTE_LABEL}
-          onChange={(remote) => update({ remote }, true)}
+          value={query.workplace}
+          values={WORKPLACES}
+          labels={WORKPLACE_LABEL}
+          onChange={(workplace) => update({ workplace }, true)}
         />
-        <FilterSelect<JobRegion>
+        <FilterSelect<LocationRegion>
           label="地区"
           value={query.region}
-          values={JOB_REGIONS}
-          labels={REGION_LABEL}
+          values={LOCATION_REGIONS}
+          labels={LOCATION_REGION_LABEL}
           onChange={(region) => update({ region }, true)}
         />
         <FilterSelect<JobCategory>
@@ -114,6 +123,20 @@ export function JobSearchBar({ initial, busy, onSearch }: Props) {
           values={JOB_CATEGORIES}
           labels={CATEGORY_LABEL}
           onChange={(category) => update({ category }, true)}
+        />
+        <FilterSelect<string>
+          label="我在"
+          value={query.country}
+          values={COUNTRY_CODES}
+          labels={COUNTRY_LABELS}
+          onChange={(country) => update({ country }, true)}
+        />
+        <FilterSelect<string>
+          label="我的时区"
+          value={query.utcOffset === undefined ? undefined : String(query.utcOffset)}
+          values={UTC_VALUES}
+          labels={UTC_LABELS}
+          onChange={(v) => update({ utcOffset: v === undefined ? undefined : Number(v) }, true)}
         />
       </div>
     </form>

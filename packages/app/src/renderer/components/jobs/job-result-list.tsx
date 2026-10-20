@@ -1,8 +1,8 @@
-import type { JobListing } from '@muicv/shared';
+import { describeRestrictions, type JobListing } from '@muicv/shared';
 import { useEffect, useRef } from 'react';
 
 import type { JobSearchState } from '../../lib/job-search-state';
-import { REMOTE_LABEL, SOURCE_LABEL } from './labels';
+import { SOURCE_LABEL, WORKPLACE_LABEL } from './labels';
 
 type Props = {
   state: JobSearchState;
@@ -22,7 +22,9 @@ function JobRow({ item, active, onSelect }: { item: JobListing; active: boolean;
       }`}
     >
       <p className="truncate font-mono text-[12px] text-yellow-deep">
-        {[source, item.location, item.remote ? REMOTE_LABEL[item.remote] : ''].filter(Boolean).join(' · ')}
+        {[source, item.location, WORKPLACE_LABEL[item.workplace], describeRestrictions(item)]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
       <p className="mt-0.5 truncate text-[14px] font-bold text-ink">{item.title}</p>
       <p className="truncate text-[12px] text-ink-soft">

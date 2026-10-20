@@ -1,11 +1,11 @@
-import type { JobListing } from '@muicv/shared';
+import { describeRestrictions, type JobListing } from '@muicv/shared';
 import { ArrowSquareOutIcon, DownloadSimpleIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 import { friendlyImportError, splitListingId } from '../../lib/job-search-state';
 import { toast } from '../../lib/toast';
 import { MarkdownView } from '../markdown-view';
-import { CATEGORY_LABEL, KIND_LABEL, REGION_LABEL, REMOTE_LABEL, SOURCE_LABEL } from './labels';
+import { CATEGORY_LABEL, KIND_LABEL, SOURCE_LABEL, WORKPLACE_LABEL } from './labels';
 
 type DetailState = { status: 'loading' } | { status: 'done'; markdown: string } | { status: 'error'; error: string };
 
@@ -50,8 +50,8 @@ export function JobDetailPanel({ item }: { item: JobListing | null }) {
 
   const tags = [
     KIND_LABEL[item.kind],
-    item.remote ? REMOTE_LABEL[item.remote] : null,
-    item.region ? REGION_LABEL[item.region] : null,
+    WORKPLACE_LABEL[item.workplace],
+    describeRestrictions(item) || null,
     item.category ? CATEGORY_LABEL[item.category] : null,
   ].filter((t): t is string => Boolean(t));
   const sourceLabel = SOURCE_LABEL[item.source] ?? item.source;

@@ -13,8 +13,12 @@ const RES: JobSearchResponse = {
       title: 'Backend Engineer',
       company: 'Stripe',
       location: 'Remote - Europe',
-      remote: 'remote',
-      region: 'europe',
+      workplace: 'remote',
+      allowedCountries: [],
+      allowedRegions: ['europe'],
+      utcOffsetMin: null,
+      utcOffsetMax: null,
+      officeLocations: [],
       category: 'engineering',
       source: 'greenhouse',
       url: 'https://boards.greenhouse.io/stripe/jobs/1',
@@ -26,13 +30,15 @@ const RES: JobSearchResponse = {
   page: 1,
   pageSize: 10,
   hasMore: true,
-  mode: 'vector',
-  filters: { remote: 'remote' },
+  mode: 'hybrid',
+  filters: { workplace: 'remote', country: 'CN' },
+  detected: ['country'],
 };
 
 test('formatJobResults 列出岗位、来源、翻页提示', () => {
   const text = formatJobResults(RES);
-  assert.match(text, /语义检索，过滤：remote=remote/);
+  assert.match(text, /混合检索，过滤：办公：远程，我在：中国（自动识别）/);
+  assert.match(text, /仅限 欧洲/);
   assert.match(text, /1\. \*\*Backend Engineer\*\* — Stripe/);
   assert.match(text, /via greenhouse/);
   assert.match(text, /page=2/);
