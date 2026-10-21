@@ -112,6 +112,13 @@ function resultView(r: JobSubmitResponse): string {
   return `${head}<div class="pills">${money}</div>${jobs ? `<ul class="jobs">${jobs}</ul>` : ''}`;
 }
 
+/** 提交记录页：中文 UI 走中文后台，其余语言走英文后台。 */
+export function submissionsUrl(locale = uiLocale()): string {
+  return locale.toLowerCase().startsWith('zh')
+    ? 'https://muicv.com/dashboard/submissions'
+    : 'https://muicv.com/en/dashboard/submissions';
+}
+
 const DASHBOARD = '<a href="https://muicv.com/dashboard" target="_blank" rel="noopener">muicv.com/dashboard</a>';
 
 export function render(state: PopupState): string {
@@ -140,7 +147,8 @@ export function render(state: PopupState): string {
         <button type="button" class="primary" disabled>${esc(t('processing'))}</button>`;
     case 'result':
       return `${pageCard(state.page)}${resultView(state.result)}
-        <div class="row"><a class="secondary" href="https://muicv.com/jobs" target="_blank" rel="noopener">${esc(t('browseJobs'))}</a></div>`;
+        <div class="row"><a class="secondary" href="https://muicv.com/jobs" target="_blank" rel="noopener">${esc(t('browseJobs'))}</a>
+          <a class="secondary" href="${submissionsUrl()}" target="_blank" rel="noopener">${esc(t('mySubmissions'))}</a></div>`;
     case 'error':
       return `${state.page ? pageCard(state.page) : ''}<p class="error">${esc(state.message)}</p>
         <div class="row">${state.needsTopup ? `<a class="secondary" href="https://muicv.com/dashboard" target="_blank" rel="noopener">${esc(t('topUp'))}</a>` : ''}

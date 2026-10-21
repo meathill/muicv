@@ -51,5 +51,6 @@
   "errTimeout": "まだ処理中です。後でポップアップを開いて結果を確認してください。",
   "wpRemote": "リモート",
   "wpHybrid": "ハイブリッド",
-  "wpOnsite": "出社"
+  "wpOnsite": "出社",
+  "mySubmissions": "提出履歴とクレジット"
 }

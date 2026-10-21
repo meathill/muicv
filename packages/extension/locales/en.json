@@ -51,5 +51,6 @@
   "errTimeout": "Still processing. Reopen the popup later to see the result.",
   "wpRemote": "Remote",
   "wpHybrid": "Hybrid",
-  "wpOnsite": "On-site"
+  "wpOnsite": "On-site",
+  "mySubmissions": "My submissions & credits"
 }

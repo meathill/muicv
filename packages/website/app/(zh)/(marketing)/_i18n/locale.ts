@@ -31,7 +31,7 @@ export function isLocale(value: string): value is Locale {
  * 而不是落到中文页——比给日本用户看中文页更合理。
  * 目前含模板库（模板数据只有 zh/en，本地化需另译 8 个模板的内容，属独立内容工程）。
  */
-export const EN_ROUTES = ['/templates'];
+export const EN_ROUTES = ['/templates', '/dashboard', '/sign-in', '/sign-up'];
 
 /**
  * 9 语言都有本地化版本的路由（白名单）。加一个本地化页面 = 往这里加它的路径。
