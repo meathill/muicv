@@ -1,7 +1,7 @@
 # Mui Resume browser extension — source code for review
 
-This archive contains everything needed to reproduce `muicv-extension-0.3.0-firefox.zip`
-(and the Chrome/Edge `muicv-extension-0.3.0.zip`) byte-for-byte in content.
+This archive contains everything needed to reproduce `muicv-extension-0.3.1-firefox.zip`
+(and the Chrome/Edge `muicv-extension-0.3.1.zip`) byte-for-byte in content.
 
 Contents: a trimmed pnpm monorepo with `packages/extension` (the add-on) and
 `packages/shared` (TypeScript library it imports), the root `package.json`,
@@ -17,7 +17,7 @@ Store marketing assets were left out; they are not part of the build.
 ## Build
 
 ```sh
-unzip muicv-extension-0.3.0-source.zip -d muicv-src
+unzip muicv-extension-0.3.1-source.zip -d muicv-src
 cd muicv-src
 pnpm install --frozen-lockfile
 pnpm --filter @muicv/extension release
@@ -25,8 +25,8 @@ pnpm --filter @muicv/extension release
 
 Output:
 
-- `packages/extension/release/muicv-extension-0.3.0-firefox.zip` — Firefox (AMO)
-- `packages/extension/release/muicv-extension-0.3.0.zip` — Chrome / Edge
+- `packages/extension/release/muicv-extension-0.3.1-firefox.zip` — Firefox (AMO)
+- `packages/extension/release/muicv-extension-0.3.1.zip` — Chrome / Edge
 - `packages/extension/dist/` — the unpacked build
 
 The build script is `packages/extension/scripts/build.ts` (run with Node's built-in TypeScript

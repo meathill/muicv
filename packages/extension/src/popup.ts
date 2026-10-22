@@ -1,5 +1,5 @@
 import type { JobSubmitVisibility } from '@muicv/shared';
-
+import type { LoginReply } from './background.ts';
 import type { ExtractedPage } from './extract/page.ts';
 import { setFallbackLocale, t, uiLocale } from './i18n.ts';
 import {
@@ -56,19 +56,55 @@ function bind(): void {
   root.querySelector('#submit')?.addEventListener('click', () => void submit());
   root.querySelector('#retry')?.addEventListener('click', () => void start());
   root.querySelector('#save-key')?.addEventListener('click', () => void saveKey());
+  root.querySelector('#sign-in')?.addEventListener('click', () => void signIn());
+  root.querySelector('#sign-out')?.addEventListener('click', () => void signOut());
+  root.querySelector('#back')?.addEventListener('click', () => void start());
+}
+
+/** 交给后台跑 launchWebAuthFlow（授权窗口弹出时 popup 可能被关掉，结果经 storage 回来）。 */
+async function signIn(): Promise<void> {
+  setState({ kind: 'signed-out', signingIn: true });
+  const reply = (await chrome.runtime
+    .sendMessage({ type: 'muicv-login', locale: uiLocale() })
+    .catch((err: unknown) => ({ ok: false, error: String(err) }))) as LoginReply | undefined;
+  if (reply?.ok) {
+    await start();
+    return;
+  }
+  setState({ kind: 'signed-out', error: t('loginFailed') });
+}
+
+async function signOut(): Promise<void> {
+  settings = { ...settings, apiKey: '' };
+  await saveSettings(settings);
+  setState({ kind: 'signed-out' });
+}
+
+async function showAccount(): Promise<void> {
+  if (!settings.apiKey) {
+    setState({ kind: 'signed-out' });
+    return;
+  }
+  setState({ kind: 'loading' });
+  try {
+    const me = await fetchMe(settings);
+    setState({ kind: 'account', name: me.name, balance: me.balance });
+  } catch (err) {
+    showError(err, null);
+  }
 }
 
 async function saveKey(): Promise<void> {
   const apiKey = root.querySelector<HTMLInputElement>('#api-key')?.value.trim() ?? '';
   if (!API_KEY_PATTERN.test(apiKey)) {
-    setState({ kind: 'needs-key', error: t('keyInvalidFormat') });
+    setState({ kind: 'signed-out', manual: true, error: t('keyInvalidFormat') });
     return;
   }
   const next = { ...settings, apiKey };
   try {
     await fetchMe(next);
   } catch (err) {
-    setState({ kind: 'needs-key', error: err instanceof Error ? err.message : t('keyVerifyFailed') });
+    setState({ kind: 'signed-out', manual: true, error: err instanceof Error ? err.message : t('keyVerifyFailed') });
     return;
   }
   settings = next;
@@ -93,7 +129,7 @@ async function extractActiveTab(): Promise<ExtractedPage | string> {
 
 function showError(err: unknown, current: PageInfo | null): void {
   if (err instanceof ApiError && err.status === 401) {
-    setState({ kind: 'needs-key', error: err.message });
+    setState({ kind: 'signed-out', error: err.message });
     return;
   }
   const message = err instanceof Error ? err.message : String(err);
@@ -150,7 +186,7 @@ async function start(): Promise<void> {
   const stored = (await chrome.storage.local.get(VIS_KEY))[VIS_KEY];
   visibility = stored === 'private' ? 'private' : 'public';
   if (!settings.apiKey) {
-    setState({ kind: 'needs-key' });
+    setState({ kind: 'signed-out' });
     return;
   }
   const pending = await latestPending(chrome.storage.local);
@@ -169,7 +205,7 @@ async function start(): Promise<void> {
   if (me && state.kind === 'ready') setState({ ...state, balance: me.balance });
 }
 
-settingsBtn?.addEventListener('click', () => setState({ kind: 'needs-key' }));
+settingsBtn?.addEventListener('click', () => void showAccount());
 
 if (typeof chrome === 'undefined' || !chrome.tabs) {
   // 预览模式：popup.html?state=ready|submitting|queued|result|empty|error|key&lang=en
@@ -179,5 +215,9 @@ if (typeof chrome === 'undefined' || !chrome.tabs) {
   setState(mockState(params.get('state'), uiLocale()));
 } else {
   localizeChrome();
+  // 后台登录成功时 popup 若仍开着，自动刷新
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.muicvSettings && state.kind === 'signed-out') void start();
+  });
   void start();
 }

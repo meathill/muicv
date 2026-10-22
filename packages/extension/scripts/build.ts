@@ -15,7 +15,7 @@ import { LOCALE_MESSAGES, toChromeMessages } from '../src/i18n.ts';
 const root = resolve(import.meta.dirname, '..');
 const dist = resolve(root, 'dist');
 const release = process.argv.includes('--release');
-const entries = ['popup', 'inject'] as const;
+const entries = ['popup', 'inject', 'background'] as const;
 
 await rm(dist, { recursive: true, force: true });
 
@@ -81,6 +81,8 @@ if (release) {
   await mkdir(resolve(root, 'release'), { recursive: true });
   await zipDist(resolve(root, 'release', `muicv-extension-${manifest.version}.zip`));
   await zipDist(resolve(root, 'release', `muicv-extension-${manifest.version}-firefox.zip`), (m) => {
+    // Firefox MV3 不支持 background.service_worker，改用事件页 scripts
+    m.background = { scripts: ['background.js'] };
     m.browser_specific_settings = {
       gecko: {
         id: 'extension@muicv.com',

@@ -17,7 +17,8 @@ export type PageInfo = Pick<ExtractedPage, 'url' | 'title'> & Partial<Pick<Extra
 
 export type PopupState =
   | { kind: 'loading' }
-  | { kind: 'needs-key'; error?: string }
+  | { kind: 'signed-out'; error?: string; signingIn?: boolean; manual?: boolean }
+  | { kind: 'account'; name: string; balance: number | null }
   | { kind: 'unsupported'; message: string }
   | { kind: 'ready'; page: ExtractedPage; visibility: JobSubmitVisibility; balance: number | null }
   | { kind: 'submitting'; page: PageInfo; visibility: JobSubmitVisibility; step: number; queued?: boolean }
@@ -125,16 +126,31 @@ export function render(state: PopupState): string {
   switch (state.kind) {
     case 'loading':
       return `<p class="muted center">${esc(t('loading'))}</p>`;
-    case 'needs-key': {
+    case 'signed-out': {
       const [before = '', after = ''] = t('setupBody', '\u0000').split('\u0000');
       return `<section class="setup">
         <p class="big">${esc(t('setupTitle'))}</p>
-        <p class="muted">${esc(before)}${DASHBOARD}${esc(after)}</p>
-        <input id="api-key" type="password" placeholder="mui_…" autocomplete="off" spellcheck="false" />
+        <p class="muted">${esc(t('setupLead'))}</p>
         ${state.error ? `<p class="error">${esc(state.error)}</p>` : ''}
-        <button type="button" id="save-key" class="primary">${esc(t('save'))}</button>
+        <button type="button" id="sign-in" class="primary"${state.signingIn ? ' disabled' : ''}>${esc(t(state.signingIn ? 'signingIn' : 'signIn'))}</button>
+        <details class="manual"${state.manual ? ' open' : ''}>
+          <summary>${esc(t('manualKey'))}</summary>
+          <p class="muted small">${esc(before)}${DASHBOARD}${esc(after)}</p>
+          <input id="api-key" type="password" placeholder="mui_…" autocomplete="off" spellcheck="false" />
+          <button type="button" id="save-key" class="secondary">${esc(t('save'))}</button>
+        </details>
       </section>`;
     }
+    case 'account':
+      return `<section class="setup">
+        <p class="big">${esc(t('accountTitle'))}</p>
+        <p class="muted">${esc(t('signedInAs', state.name))}</p>
+        ${state.balance !== null ? `<p class="muted small">${esc(t('balance', fmt(state.balance)))}</p>` : ''}
+        <div class="row"><a class="secondary" href="${submissionsUrl()}" target="_blank" rel="noopener">${esc(t('mySubmissions'))}</a></div>
+        <div class="row"><button type="button" id="back" class="secondary">${esc(t('back'))}</button>
+          <button type="button" id="sign-out" class="secondary">${esc(t('signOut'))}</button></div>
+        <p class="muted small">${esc(t('signOutNote'))}</p>
+      </section>`;
     case 'unsupported':
       return `<p class="muted center">${esc(state.message)}</p>`;
     case 'ready':

@@ -28,7 +28,8 @@ export function mockState(name: string | null, locale = 'zh_CN'): PopupState {
   if (name === 'private') return { kind: 'ready', page: JSONLD_PAGE, visibility: 'private', balance: 128_400 };
   if (name === 'submitting') return { kind: 'submitting', page: PAGE, visibility: 'public', step: 1 };
   if (name === 'queued') return { kind: 'submitting', page: PAGE, visibility: 'public', step: 1, queued: true };
-  if (name === 'key') return { kind: 'needs-key' };
+  if (name === 'key') return { kind: 'signed-out' };
+  if (name === 'account') return { kind: 'account', name: zh ? '小明' : 'Alex', balance: 128_400 };
   if (name === 'error') {
     return {
       kind: 'error',

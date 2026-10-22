@@ -1,6 +1,6 @@
 {
   "name": "@muicv/extension",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "description": "Mui简历浏览器扩展：把任意网页上的招聘信息提交到 Mui简历岗位库（公共岗位池 / 私藏）。",

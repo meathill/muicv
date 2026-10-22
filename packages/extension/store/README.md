@@ -1,8 +1,8 @@
 # 商店上架资料（Chrome Web Store / Edge Add-ons / Firefox AMO）
 
 - 打包：`pnpm --filter @muicv/extension release` 会生成
-  - `release/muicv-extension-0.3.0.zip`（Chrome / Edge）
-  - `release/muicv-extension-0.3.0-firefox.zip`（AMO）
+  - `release/muicv-extension-0.3.1.zip`（Chrome / Edge）
+  - `release/muicv-extension-0.3.1-firefox.zip`（AMO）
 - 素材：先跑 `pnpm build`，再跑 `pnpm store:assets`，输出到 `store/assets/<locale>/`
 - 商店文案：`store/<locale>/listing.md`，共 9 个语言：en、zh_CN、ja、de、fr、es、pt_BR、th、vi，和网站支持的语言一致
 - 隐私政策：https://muicv.com/privacy/extension
@@ -28,7 +28,7 @@ Mui Resume lets a signed-in muicv user save job postings from the page they are 
 
 ### Chrome Web Store
 - [ ] Developer account: https://chrome.google.com/webstore/devconsole. New accounts pay a one-time **US$5** fee and must verify their email. Trader / non-trader declaration: choose trader if this is offered commercially (needs an address and phone number).
-- [ ] Upload `release/muicv-extension-0.3.0.zip`.
+- [ ] Upload `release/muicv-extension-0.3.1.zip`.
 - [ ] Listing per language: paste the name, short description and detailed description from `store/<locale>/listing.md`.
   - Category: Productivity / Tools.
   - Language: default English.
@@ -49,11 +49,11 @@ Mui Resume lets a signed-in muicv user save job postings from the page they are 
 
 ### Firefox AMO
 - [ ] https://addons.mozilla.org/developers/. Free; needs a Firefox account.
-- [ ] Upload `release/muicv-extension-0.3.0-firefox.zip`. It includes:
+- [ ] Upload `release/muicv-extension-0.3.1-firefox.zip`. It includes:
   - `browser_specific_settings.gecko.id`: `extension@muicv.com`
   - `data_collection_permissions`
 - [ ] Because the bundle is minified, you **must upload the source code**:
-  - Upload `release/muicv-extension-0.3.0-source.zip`（建法见下方「AMO 源码包」）. Build steps are in its `SOURCE_README.md`.
+  - Upload `release/muicv-extension-0.3.1-source.zip`（建法见下方「AMO 源码包」）. Build steps are in its `SOURCE_README.md`.
 - [ ] Listed on AMO, with the privacy policy URL. AMO screenshots have no fixed size, so the 1280×800 ones work.
 
 ### Before you submit
@@ -71,12 +71,14 @@ tar --exclude=node_modules --exclude=dist --exclude=release --exclude=store --ex
 cp pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json biome.json /tmp/muicv-src/
 node -e "const p=require('./package.json');delete p.scripts.prepare;require('fs').writeFileSync('/tmp/muicv-src/package.json',JSON.stringify(p,null,2))"
 cp packages/extension/SOURCE_README.md /tmp/muicv-src/
-python3 -c "import shutil;shutil.make_archive('packages/extension/release/muicv-extension-0.3.0-source','zip','/tmp/muicv-src')"
+python3 -c "import shutil;shutil.make_archive('packages/extension/release/muicv-extension-0.3.1-source','zip','/tmp/muicv-src')"
 ```
 
 The root `prepare` script (`git config core.hooksPath`) is removed because the archive is not a git repo.
 
 ## Notes for reviewers (paste into each store)
+
+> 0.3.1 起扩展默认用「通过 muicv.com 登录」（identity.launchWebAuthFlow → /connect 授权页）。审核员仍可在「高级：使用 API key」里粘贴测试 key。
 
 Use the same text for Chrome Web Store ("Notes for reviewer"/test instructions), Edge Partner Center ("Notes for certification") and Firefox AMO ("Notes to reviewer"). Replace `<TEST_API_KEY>` with a key created at https://muicv.com/en/dashboard/api-keys on a dedicated test account (with some token balance), and revoke it after review.
 
