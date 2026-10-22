@@ -1,6 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm';
 
 import { generateApiKey, hashApiKey, previewApiKey } from '@/lib/api-key';
+import { buildConnectRedirect, connectTarget } from '@/lib/connect-redirect';
 import { getDb, schema } from '@/lib/db';
 import { getCurrentSession } from '@/lib/session';
 
@@ -19,7 +20,8 @@ export const dynamic = 'force-dynamic';
  * 安全：
  *   - 必须有 better-auth session（getCurrentSession()）
  *   - state 长度限制 8-128
- *   - redirect 必须 muicv:// scheme
+ *   - redirect 只能是 muicv://（桌面端）或浏览器扩展 identity 回跳域名（见 lib/connect-redirect）
+ *   - 扩展重新登录时，同名的旧扩展 key 会被吊销，避免越积越多
  *   - 单用户最多 10 个 active key（和 /api/keys 共享配额）
  */
 export async function POST(request: Request) {
@@ -41,14 +43,25 @@ export async function POST(request: Request) {
   if (!state || state.length < 8 || state.length > 128) {
     return Response.json({ error: 'invalid-state' }, { status: 400 });
   }
-  if (!redirectRaw.startsWith('muicv://')) {
+  const target = connectTarget(redirectRaw);
+  if (!target) {
     return Response.json({ error: 'invalid-redirect' }, { status: 400 });
   }
 
   const rawName = typeof body.name === 'string' ? body.name.trim() : '';
-  const name = rawName.length > 0 && rawName.length <= 64 ? rawName : '桌面端 Mui简历';
+  const fallbackName = target === 'extension' ? '浏览器扩展 Mui简历' : '桌面端 Mui简历';
+  const name = rawName.length > 0 && rawName.length <= 64 ? rawName : fallbackName;
 
   const db = await getDb();
+
+  if (target === 'extension') {
+    await db
+      .update(schema.apiKey)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(eq(schema.apiKey.userId, session.user.id), eq(schema.apiKey.name, name), isNull(schema.apiKey.revokedAt)),
+      );
+  }
 
   // 单用户最多 10 个 active key
   const activeRows = await db
@@ -77,8 +90,7 @@ export async function POST(request: Request) {
     createdAt: now,
   });
 
-  const sep = redirectRaw.includes('?') ? '&' : '?';
-  const redirectUrl = `${redirectRaw}${sep}state=${encodeURIComponent(state)}&key=${encodeURIComponent(key)}`;
+  const redirectUrl = buildConnectRedirect(redirectRaw, state, key);
 
   return Response.json({ redirectUrl, key, keyPreview });
 }
