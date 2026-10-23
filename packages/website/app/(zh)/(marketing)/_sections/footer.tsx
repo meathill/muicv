@@ -18,6 +18,7 @@ export function Footer({
   availableLocales?: readonly Locale[] | undefined;
 } = {}) {
   const t = dict.footer;
+  const [copyrightBeforeCompany, copyrightAfterCompany] = t.copyright.split('Meathill LLC');
   return (
     <footer className="bg-paper">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:px-8 lg:grid-cols-12">
@@ -46,7 +47,18 @@ export function Footer({
       <div className="border-t border-rule">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 text-[12px] text-mute md:flex-row md:items-center md:justify-between md:px-8">
           <div className="flex flex-wrap items-center gap-4">
-            <span>{t.copyright}</span>
+            <span>
+              {copyrightBeforeCompany}
+              <a
+                href="https://meathill.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-rule underline-offset-4 transition hover:text-ink hover:decoration-yellow"
+              >
+                Meathill LLC
+              </a>
+              {copyrightAfterCompany}
+            </span>
             <LangSwitch locale={locale} availableLocales={availableLocales} />
           </div>
           <div className="flex flex-wrap items-center justify-end gap-4">
