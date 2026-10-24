@@ -4,6 +4,16 @@
 
 ## 当前进行中
 
+### 发版前依赖升级（2026-10-24）
+
+- [x] 第一批 `pnpm up -r`（semver 内）：next 16.4.3、payload 3.92、openai 7.43、vite 8.3.5、
+      wrangler 4.152、react 19.3.1、biome 2.6.3 等；全部包 typecheck / 测试 / 构建通过（55a521e）
+- [x] 第二批跨版本：@openai/agents 0.21（SDK 不再透传工具报错原文，测试断言已同步）、
+      electron-store 12、electron-vite 6（顺带解决 vite 8 peer 警告）、@types/chrome 0.3
+- [x] biome.json migrate 到 2.6.3 schema；biome 2.6 格式化漂移一次性收口（14 个文件纯格式）
+- [ ] 暂缓项记入 TODO.md「依赖升级跟进」：stripe 23（CN 支付迁移需实测）、electron 45（需打包冒烟）、
+      biome lint 存量约 20 处（2.5 时代就有）
+
 ### 修复 ask_question 多问题排版（2026-10-24）
 
 - [x] prompt 三处硬性约束：系统 prelude「提问与互动」、工具 description / 参数 describe、muicv-core「一次问清」——

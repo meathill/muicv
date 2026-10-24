@@ -43,3 +43,15 @@
   [runtime.ts loggingFetch](packages/app/src/main/agent/runtime.ts) 里的
   reasoning 拦截层。本来 `/schedule` 配了，但远端账号问题先用 TODO 兜底，
   方便时手动重跑 `/schedule` 起 cron。
+
+## 依赖升级跟进（2026-10-24 升级时暂缓的项）
+
+- **stripe 22 → 23**：v23 强制 apiVersion `2026-09-30.endive`，该版本移除了 Checkout
+  `payment_method_types`（[topup 路由](packages/website/app/api/topup/route.ts) 的 CN
+  三方支付 `wechat_pay / alipay / card` + `client: 'web'` 靠它）。迁移 = 改 automatic
+  payment methods + Dashboard 配置 + 实测微信/支付宝收单，单独立项做。
+- **electron 44 → 45**：45.0.0 刚发（Chromium 大版本），需要 `pnpm package` 实际打包 +
+  手工冒烟（升级器、附件、whisper、托盘）后再跟。
+- **biome lint 存量欠账**：`pnpm run lint` 约 20 处报错（noAssignInExpressions /
+  noNonNullAssertion / noImplicitAnyLet 等），biome 2.5 时代就有，非 2.6 引入；单独
+  清理一轮，别混进功能 PR。

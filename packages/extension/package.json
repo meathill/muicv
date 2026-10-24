@@ -18,7 +18,7 @@
     "turndown": "^7.2.4"
   },
   "devDependencies": {
-    "@types/chrome": "^0.1.43",
+    "@types/chrome": "^0.3.6",
     "@types/node": "^26.6.5",
     "@types/turndown": "^5.0.6",
     "fflate": "^0.8.3",

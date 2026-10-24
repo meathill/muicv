@@ -79,8 +79,8 @@ win:
       arch: [x64]
 
 nsis:
-  oneClick: false                          # 让用户能选安装路径，不要静默安装
-  perMachine: false                        # 装到当前用户目录，不需要管理员
+  oneClick: false # 让用户能选安装路径，不要静默安装
+  perMachine: false # 装到当前用户目录，不需要管理员
   allowToChangeInstallationDirectory: true
 
 # ============ Linux ============

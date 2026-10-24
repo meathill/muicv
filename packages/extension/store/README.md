@@ -19,14 +19,15 @@ Mui Resume lets a signed-in muicv user save job postings from the page they are 
 - Host permissions: none. Remote code: none. All code ships in the package.
 
 **Data usage disclosures** (check these)
-- *Authentication information*: the muicv API key the user pastes in.
-- *Website content*: the URL, title and text of the page the user explicitly submits.
+- _Authentication information_: the muicv API key the user pastes in.
+- _Website content_: the URL, title and text of the page the user explicitly submits.
 - Do not check: personally identifiable info, health, financial, personal communications, location, web history, user activity.
 - Certify all three statements: data is not sold to third parties; it is not used or transferred for purposes unrelated to the single purpose; it is not used for creditworthiness or lending.
 
 ## Submission checklist
 
 ### Chrome Web Store
+
 - [ ] Developer account: https://chrome.google.com/webstore/devconsole. New accounts pay a one-time **US$5** fee and must verify their email. Trader / non-trader declaration: choose trader if this is offered commercially (needs an address and phone number).
 - [ ] Upload `release/muicv-extension-0.3.1.zip`.
 - [ ] Listing per language: paste the name, short description and detailed description from `store/<locale>/listing.md`.
@@ -43,11 +44,13 @@ Mui Resume lets a signed-in muicv user save job postings from the page they are 
 - [ ] Test account notes for reviewers: they need a muicv account with an API key. Provide a test key in "Notes for reviewer" (create it in the dashboard; it can be revoked afterwards).
 
 ### Microsoft Edge Add-ons
+
 - [ ] Partner Center: https://partner.microsoft.com/dashboard/microsoftedge. Free to register; needs a Microsoft account.
 - [ ] Upload the same Chrome zip. Edge accepts the same assets: 1280×800 screenshots, 440×280 small tile and 1400×560 large tile.
 - [ ] Privacy policy URL, the same listing copy, and test notes.
 
 ### Firefox AMO
+
 - [ ] https://addons.mozilla.org/developers/. Free; needs a Firefox account.
 - [ ] Upload `release/muicv-extension-0.3.1-firefox.zip`. It includes:
   - `browser_specific_settings.gecko.id`: `extension@muicv.com`
@@ -57,6 +60,7 @@ Mui Resume lets a signed-in muicv user save job postings from the page they are 
 - [ ] Listed on AMO, with the privacy policy URL. AMO screenshots have no fixed size, so the 1280×800 ones work.
 
 ### Before you submit
+
 - [ ] Confirm https://muicv.com/privacy/extension is live (the website deploys automatically when pushed).
 - [ ] Use the api health check to confirm `POST /jobs/submit` and `GET /jobs/submit/:id` are live.
 - [ ] Install the zip unpacked, then go through the flow once on a real page: save to the public pool, save privately, close the popup while the job is queued, and reopen it to see the result.

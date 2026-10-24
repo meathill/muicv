@@ -487,6 +487,9 @@
 - **唤醒 / 取消**：`answerQuestion(toolCallId, payload)` 由 `agent:answerQuestion` IPC 调用，
   把答案格式化成人话（「用户选择了：A、B。用户补充说明：…」）后 resolve，作为 tool output
   回到 agent。run 结束（`finally`）和用户中止（`abortRun`）都调 `cancelPendingQuestions(reason)`。
+  注意 @openai/agents 0.21 起工具 execute 抛错不再把原文透传成 tool output，SDK 统一落定为
+  「An error occurred while running the tool」通用文案——取消提问的原始报错只存在于我们自己的
+  pending.reject，测试断言已按新行为约定（test/question-tools.test.ts）。
 - **watchdog 抑制**：等待期间 `isWaitingForQuestion = true`，runtime 的空转看门狗不判超时
   （用户思考多久都不算"上游卡住"）。
 - **UI**：`chat-question-card.tsx` 从消息的 `toolCalls` 里按 `name === 'ask_question'` 取出

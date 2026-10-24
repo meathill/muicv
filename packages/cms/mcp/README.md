@@ -6,17 +6,17 @@
 
 ## 🛠️ 提供的 MCP Tools
 
-| Tool 名称 | 说明 | 适用集合 (Collection) |
-| :--- | :--- | :--- |
-| `create_post` | 创建求职/产品/教程类文章（默认 `draft`） | `posts` |
-| `upsert_post` | 按 `slug` 幂等创建或更新文章（支持 `onConflict=update`） | `posts` |
-| `get_post` | 按 `slug` 检索文章文档及发布状态 | `posts` |
-| `create_skill` | 创建第三方/官方求职 Skill 详情页 | `skillExtensions` |
-| `upsert_skill` | 按 `slug` 创建或更新 Skill | `skillExtensions` |
-| `get_skill` | 按 `slug` 检索 Skill 详情 | `skillExtensions` |
-| `create_changelog` | 创建版本更新日志 | `changelog` |
-| `upsert_changelog` | 按 `slug` 创建或更新更新日志 | `changelog` |
-| `get_changelog` | 按 `slug` 检索更新日志 | `changelog` |
+| Tool 名称          | 说明                                                     | 适用集合 (Collection) |
+| :----------------- | :------------------------------------------------------- | :-------------------- |
+| `create_post`      | 创建求职/产品/教程类文章（默认 `draft`）                 | `posts`               |
+| `upsert_post`      | 按 `slug` 幂等创建或更新文章（支持 `onConflict=update`） | `posts`               |
+| `get_post`         | 按 `slug` 检索文章文档及发布状态                         | `posts`               |
+| `create_skill`     | 创建第三方/官方求职 Skill 详情页                         | `skillExtensions`     |
+| `upsert_skill`     | 按 `slug` 创建或更新 Skill                               | `skillExtensions`     |
+| `get_skill`        | 按 `slug` 检索 Skill 详情                                | `skillExtensions`     |
+| `create_changelog` | 创建版本更新日志                                         | `changelog`           |
+| `upsert_changelog` | 按 `slug` 创建或更新更新日志                             | `changelog`           |
+| `get_changelog`    | 按 `slug` 检索更新日志                                   | `changelog`           |
 
 > `articles` 集合（多站点博客）目前只通过 seed 脚本写入，MCP server 未注册其工具。
 
@@ -25,12 +25,14 @@
 ## 🚀 启动与运行
 
 ### 1. 本地启动 MCP Server（Stdio 模式）
+
 ```bash
 # 从项目根目录或 packages/cms 目录执行
 node packages/cms/mcp/server.ts
 ```
 
 ### 2. 环境变量配置
+
 ```env
 MUICV_CMS_URL=https://cms.muicv.com
 MUICV_CMS_API_KEY=你的CMS_API_Key
@@ -49,9 +51,7 @@ MUICV_CMS_API_KEY=你的CMS_API_Key
   "mcpServers": {
     "muicv-cms": {
       "command": "node",
-      "args": [
-        "/Users/meathill/Documents/GitHub/muicv/packages/cms/mcp/server.ts"
-      ],
+      "args": ["/Users/meathill/Documents/GitHub/muicv/packages/cms/mcp/server.ts"],
       "env": {
         "MUICV_CMS_URL": "https://cms.muicv.com",
         "MUICV_CMS_API_KEY": "xxx",

@@ -82,7 +82,12 @@ test('cancelPendingQuestions 取消等待中的提问', async () => {
   assert.equal(waitingState, false);
 
   const res = await toolPromise;
-  assert.match(res, /提问已取消/);
+  // @openai/agents 0.21 起不再把工具内部报错原文透传为 tool output，
+  // 而是统一落定为通用错误文案。这里约定：取消后 promise 落定为错误类
+  // 字符串（不携带用户回答），waiting 状态已复位。
+  assert.equal(typeof res, 'string');
+  assert.match(String(res), /error/i);
+  assert.doesNotMatch(String(res), /用户/);
 });
 
 test('answerQuestion 没有对应 pending 时返回 false（历史提问 / run 已结束）', () => {

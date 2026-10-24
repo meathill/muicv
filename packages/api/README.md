@@ -1,5 +1,4 @@
-@muicv/api
-===
+# @muicv/api
 
 Mui简历 skill 背后的 Cloudflare Worker。对外承担本地 / agent 做不了的事：PDF 渲染、JD 抓取、模板库、未来的账号 / 订阅。
 
@@ -107,8 +106,8 @@ pnpm --filter @muicv/api test
 
 ## 环境变量 / 配置
 
-| 名称 | 类型 | 来源 | 说明 |
-|---|---|---|---|
-| `RENDER_BASE_URL` | var | wrangler.jsonc | packages/website 的公网 base（`https://muicv.com`），`puppeteer.goto` 用它拼 URL |
-| `BETTER_AUTH_SECRET` | secret | `wrangler secret put` | 与 packages/website 同值，用来 HKDF 解密 muirouterLink |
-| `OPENAI_API_KEY` | secret | `wrangler secret put` | 用户没绑 BYOK 时走平台默认 key（M2 起做月度配额） |
+| 名称                 | 类型   | 来源                  | 说明                                                                             |
+| -------------------- | ------ | --------------------- | -------------------------------------------------------------------------------- |
+| `RENDER_BASE_URL`    | var    | wrangler.jsonc        | packages/website 的公网 base（`https://muicv.com`），`puppeteer.goto` 用它拼 URL |
+| `BETTER_AUTH_SECRET` | secret | `wrangler secret put` | 与 packages/website 同值，用来 HKDF 解密 muirouterLink                           |
+| `OPENAI_API_KEY`     | secret | `wrangler secret put` | 用户没绑 BYOK 时走平台默认 key（M2 起做月度配额）                                |
