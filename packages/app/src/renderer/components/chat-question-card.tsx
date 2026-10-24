@@ -35,10 +35,14 @@ function parseQuestionInput(call: ToolCallRecord): ParsedQuestion {
   };
 }
 
+/** 折叠行摘要：超长文本截断到 80 字 */
+function summarizeText(text: string): string {
+  return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+}
+
 /** 从 tool output 提取回答摘要文本 */
 function summarizeAnswer(output: unknown): string {
-  const text = String(output ?? '');
-  return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  return summarizeText(String(output ?? ''));
 }
 
 /* ---------- 已完成 / 已失效 的折叠行 ---------- */
@@ -49,7 +53,9 @@ function DoneQuestionRow({ call }: { call: ToolCallRecord }) {
     <div className="flex items-start gap-1.5 text-[12px] text-mute leading-relaxed">
       <CheckCircleIcon size={13} weight="fill" className="mt-0.5 shrink-0 text-yellow-deep" />
       <span className="min-w-0">
-        <span className="font-bold text-ink-soft">{question}</span>
+        <span className="font-bold text-ink-soft" title={question}>
+          {summarizeText(question)}
+        </span>
         <span className="ml-1.5 text-mute">{summarizeAnswer(call.output)}</span>
       </span>
     </div>

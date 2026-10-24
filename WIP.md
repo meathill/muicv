@@ -1,8 +1,15 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-09-23
+最后更新：2026-10-24
 
 ## 当前进行中
+
+### 修复 ask_question 多问题排版（2026-10-24）
+
+- [x] prompt 三处硬性约束：系统 prelude「提问与互动」、工具 description / 参数 describe、muicv-core「一次问清」——
+      一次调用只问一个问题，多问题在同一条回复里并行多次调用（UI 本就支持一卡多题，每题独立选项和补充说明）
+- [x] DoneQuestionRow 题干截断到 80 字 + title 悬浮看全文
+- [x] 回归断言进 `test/skill-prompt.test.ts`；typecheck / 全量测试 / 构建通过；决策记入 DEV_NOTE.md
 
 ### 提交异步化 + 清理 + 上架准备（2026-10-21）
 

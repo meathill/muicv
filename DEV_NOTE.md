@@ -497,6 +497,13 @@
   - `answerQuestion` 返回 `false` 表示没匹配到 pending，卡片据此报错并恢复可提交，不把状态机
     押在 `tool-output` 事件必达上（提交成功另有本地 `submitted` 态）。
   - 回答提交后，run 继续流式产出，`tool-output` 事件最终让 `call.output` 落地，卡片切"已回答"。
+- **一次调用一个问题**：schema 只有一个 `question` 字符串，多问题靠模型在同一条回复里**并行调用多次**
+  `ask_question` 实现——@openai/agents 对同一消息的多个 function tool 默认并发执行（`toolExecution.mjs`
+  的 `executeToolRunsWithConcurrency`，无并发上限时直接全量并行），全部挂起、一起等回答；UI
+  `ChatQuestionGroup` 会把同一轮的多个调用合并成一张卡片，每题独立选项和补充说明输入框，一次提交。
+  系统 prompt prelude（skills.ts「提问与互动」节）、工具 description 和 muicv-core SKILL.md
+  「一次问清」里都有硬性约束。2026-10 修复：此前模型会把【1】【2】多个子问题拼进一个 `question`，
+  导致选项混淆、只有一个补充说明框、记录也挤成一行。回归断言见 `test/skill-prompt.test.ts`。
 - **已知边界**：`pendingQuestions` 是模块级全局、未按 channel 隔离；`answerQuestion` 的
   callId 兜底取最早入队项。当前架构用户不会同时跑两个 agent run，够用。将来要支持并发
   多窗口，必须把队列改成 per-channel（reasoning-capture 的模块级单 slot 有同样假设）。

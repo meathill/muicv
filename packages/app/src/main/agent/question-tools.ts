@@ -69,10 +69,10 @@ export function buildQuestionTools(onWaitChange?: (waiting: boolean) => void) {
   const askQuestionTool = tool({
     name: 'ask_question',
     description:
-      '向用户提问以获取偏好选择、关键信息确认或方案决策。当需要用户明确意图、在多个方向中做抉择、或缺少关键素材需要用户补充时优先调用本工具。用户提交回答后将返回结构化结果供你继续执行。',
+      '向用户提问以获取偏好选择、关键信息确认或方案决策。当需要用户明确意图、在多个方向中做抉择、或缺少关键素材需要用户补充时优先调用本工具。一次调用只问一个问题；有多个问题时请在同一条回复里并行调用多次本工具。用户提交回答后将返回结构化结果供你继续执行。',
     parameters: z.object({
-      question: z.string().describe('向用户提出的具体问题内容'),
-      options: z.array(z.string()).optional().describe('供用户选择的选项列表（如有多项选择）'),
+      question: z.string().describe('单个问题的具体内容（不要在一条问题里拼接多个子问题）'),
+      options: z.array(z.string()).optional().describe('当前这个问题的选项列表（如有多项选择）'),
       multiSelect: z.boolean().optional().describe('是否允许多选，默认为 false（单选）'),
     }),
     execute: async (_args, _runContext, details) => {
