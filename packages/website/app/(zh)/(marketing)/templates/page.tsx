@@ -175,8 +175,8 @@ export default async function TemplatesIndexPage({ searchParams }: { searchParam
 
                   {/* 亮点列表 */}
                   <div className="mt-4 space-y-1.5 rounded-xl border border-rule-strong bg-paper/60 p-3.5 text-[12.5px] text-ink-soft">
-                    {template.highlights.zh.map((highlight, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
+                    {template.highlights.zh.map((highlight) => (
+                      <div key={highlight} className="flex items-start gap-2">
                         <span className="text-yellow-deep font-bold">✓</span>
                         <span>{highlight}</span>
                       </div>

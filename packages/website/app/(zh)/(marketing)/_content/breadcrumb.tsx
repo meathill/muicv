@@ -13,7 +13,7 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <li key={`${item.name}-${index}`} className="flex min-w-0 items-center gap-x-2">
+            <li key={item.href ?? item.name} className="flex min-w-0 items-center gap-x-2">
               {index > 0 && (
                 <span aria-hidden className="text-rule-strong">
                   /

@@ -22,6 +22,7 @@ export function AppSkeleton() {
             </div>
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: 骨架屏是静态占位行，永不重排，位置就是身份
                 <ConversationRowSk key={i} />
               ))}
             </div>

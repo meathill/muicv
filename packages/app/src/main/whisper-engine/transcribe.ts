@@ -121,7 +121,7 @@ function mapResult(j: WhisperCliJson): LocalTranscribeResult {
     .join('')
     .trim();
 
-  const lastEnd = segments.length > 0 ? segments[segments.length - 1]!.end : 0;
+  const lastEnd = segments.at(-1)?.end ?? 0;
 
   const result: LocalTranscribeResult = {
     transcript,

@@ -168,7 +168,11 @@ export function PhotoSlotButton({ token, hasPhoto }: Props) {
     <>
       {trigger}
       {open ? (
+        // biome-ignore lint/a11y/noStaticElementInteractions: 遮罩点击关闭，Escape 已由上方 keydown 处理
+        // biome-ignore lint/a11y/useKeyWithClickEvents: Escape 关闭已由上方 window keydown 实现
         <div className={styles.modalBackdrop} onClick={() => setOpen(false)}>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: 仅阻止冒泡避免误关，模态语义由内层结构承担 */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: 仅阻止冒泡避免误关，非交互元素 */}
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <strong>选择或上传头像</strong>

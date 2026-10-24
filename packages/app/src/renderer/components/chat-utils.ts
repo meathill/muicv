@@ -35,8 +35,9 @@ export function cryptoRandomId(): string {
  * 不动磁盘 —— 用户改名想保留任何前导符号都不会被误剥。
  */
 export function stripLeadingEmoji(s: string): string {
-  // \p{Extended_Pictographic} 主体 + ️ (VS-16) + ‍ (ZWJ)
-  return s.replace(/^(?:[\p{Extended_Pictographic}️‍]+\s*)+/u, '');
+  // \p{Extended_Pictographic} 主体 + \u{FE0F} (VS-16) + \u{200D} (ZWJ)
+  // biome-ignore lint/suspicious/noMisleadingCharacterClass: 有意把 emoji 基字符与修饰符拆成单字符类逐个剥离
+  return s.replace(/^(?:[\p{Extended_Pictographic}\u{FE0F}\u{200D}]+\s*)+/u, '');
 }
 
 /**
@@ -98,7 +99,7 @@ export const MAX_IMAGES_PER_SEND = 4;
 
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif']);
 export function isImageFile(file: { name: string; type?: string }): boolean {
-  if (file.type && file.type.startsWith('image/')) return true;
+  if (file.type?.startsWith('image/')) return true;
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   return IMAGE_EXTS.has(ext);
 }

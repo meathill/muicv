@@ -9,7 +9,6 @@ import {
   insufficientBalanceError,
   isSupportedLlmModel,
   LLM_DISPLAY_META,
-  LLM_MODEL_ALIASES,
   LLM_PRICING,
   LLM_RATIO,
   microToDisplay,
@@ -261,7 +260,8 @@ describe('Pricing', () => {
       const withCache = computeLlmCharge('gpt-6-luna', 1000, 500, 800);
       const withoutCache = computeLlmCharge('gpt-6-luna', 1000, 500, 0);
       assert.equal(withCache, Math.ceil((2 + 0.8 + 25) * LLM_RATIO * TOKEN_PRECISION));
-      assert.ok(withCache! < withoutCache!, 'cached 命中应该严格便宜');
+      assert.ok(withCache !== undefined && withoutCache !== undefined, 'cached 命中应该严格便宜');
+      assert.ok(withCache < withoutCache, 'cached 命中应该严格便宜');
     });
 
     it('cachedTokens > promptTokens 时 clamp 到 promptTokens', () => {

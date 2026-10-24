@@ -157,9 +157,14 @@ export async function loggingFetch(
 
   // Response 侧：thinking-mode 响应处理
   const reqModel = extractModelFromRequestBody(mutatedInit?.body);
-  const isStream = res.ok && !!res.body && (res.headers.get('content-type') ?? '').includes('text/event-stream');
-  if (isStream && isThinkingModeModel(reqModel)) {
-    const [streamForSDK, streamForUs] = res.body!.tee();
+  const { body } = res;
+  if (
+    res.ok &&
+    body &&
+    (res.headers.get('content-type') ?? '').includes('text/event-stream') &&
+    isThinkingModeModel(reqModel)
+  ) {
+    const [streamForSDK, streamForUs] = body.tee();
     activeTapPromise = tapReasoningStream(streamForUs, reqModel)
       .catch((err) => {
         console.warn('[reasoning tap] failed:', err);
@@ -218,8 +223,7 @@ async function tapReasoningStream(stream: ReadableStream<Uint8Array>, model: str
       buf += decoder.decode(value, { stream: true });
       // 标准化换行符，避免 \r\n\r\n 导致 indexOf('\n\n') 找不到事件边界
       buf = buf.replace(/\r\n/g, '\n');
-      let idx: number;
-      while ((idx = buf.indexOf('\n\n')) !== -1) {
+      for (let idx = buf.indexOf('\n\n'); idx !== -1; idx = buf.indexOf('\n\n')) {
         const event = buf.slice(0, idx);
         buf = buf.slice(idx + 2);
         for (const line of event.split('\n')) {

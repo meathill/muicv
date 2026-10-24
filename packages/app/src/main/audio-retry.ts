@@ -108,8 +108,7 @@ export function parseRetryAfter(header: string | null): number | null {
   if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
   const date = Date.parse(trimmed);
   if (Number.isFinite(date)) {
-    const delta = date - Date.now();
-    return delta > 0 ? delta : 0;
+    return Math.max(date - Date.now(), 0);
   }
   return null;
 }

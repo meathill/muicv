@@ -7,6 +7,7 @@ import {
   muirouterHsmPath,
   refreshAccessToken,
   type StoredMuirouterTokens,
+  type TokenResponse,
 } from '@muicv/shared';
 import { eq } from 'drizzle-orm';
 
@@ -55,7 +56,7 @@ export async function getFreshMuirouterAccessToken(userId: string): Promise<Fres
 
   // 过期或将过期 → 用 refresh_token 换新
   const oauthConfig = await getMuirouterOauthConfig();
-  let token;
+  let token: TokenResponse;
   try {
     token = await refreshAccessToken({
       endpoints: oauthConfig.endpoints,

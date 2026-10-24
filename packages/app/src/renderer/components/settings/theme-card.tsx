@@ -25,6 +25,7 @@ export function ThemeCard() {
         {OPTIONS.map((opt) => {
           const active = theme === opt.value;
           return (
+            // biome-ignore lint/a11y/useSemanticElements: 三态主题的分段选择器，样式定制不走原生 radio
             <button
               key={opt.value}
               type="button"

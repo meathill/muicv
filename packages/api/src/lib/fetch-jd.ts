@@ -98,7 +98,7 @@ export async function fetchJd(input: FetchJdInput, env: FetchJdEnv): Promise<Fet
       timeout: NAVIGATION_TIMEOUT_MS,
     });
 
-    if (!response || !response.ok()) {
+    if (!response?.ok()) {
       throw new FetchJdError({
         error: '目标页面返回非 200',
         url: input.url,

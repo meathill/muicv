@@ -107,6 +107,7 @@ function PreviewContent({ path, onClose }: { path: string; onClose: () => void }
     return overrideTemplate ?? readTemplateFromJson(content) ?? 't2-minimal';
   }, [isResumeJson, overrideTemplate, content]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: path 变化是"换文件"信号，重置本地编辑态
   useEffect(() => {
     setOverrideTemplate(null);
     setPhotoError(null);
@@ -151,6 +152,7 @@ function PreviewContent({ path, onClose }: { path: string; onClose: () => void }
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: editorLastSavedAt / editorOpenPath 是"外部已保存"信号，触发重新 read
   useEffect(() => {
     // PDF / 图片走 muicv-pdf:// 让 Chromium 内置 viewer 直接渲染，不能走 fs.read
     // （fs.read 是 utf-8 解码，二进制内容会变乱码）。

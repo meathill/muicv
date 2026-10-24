@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { getDb, schema } from '@/lib/db';
 import { fetchMuirouterBalance } from '@/lib/muirouter';
-import { getFreshMuirouterAccessToken } from '@/lib/muirouter-token';
+import { type FreshAccessToken, getFreshMuirouterAccessToken } from '@/lib/muirouter-token';
 import { getCurrentSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function POST(): Promise<Response> {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  let token;
+  let token: FreshAccessToken | null;
   try {
     token = await getFreshMuirouterAccessToken(session.user.id);
   } catch {

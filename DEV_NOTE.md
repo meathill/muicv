@@ -847,12 +847,31 @@ dashboard 或 app 点关联
 - hook 行为：只对**本次暂存的源码文件**（ts/tsx/js/jsx/mjs/cjs/json/css）跑
   `biome check --write`，改完自动重新 `git add`。只处理暂存文件是因为全仓 500+
   文件每次提交都扫太慢；未改动的文件在各自引入时已被规整过。
-- **hook 刻意不阻断提交**：仓库有 127 个历史遗留、不可自动修复的 lint
-  （`noArrayIndexKey` 49 个 / `useExhaustiveDependencies` 13 个 / a11y 等，
-  分布在 52 个文件），拿 biome 的退出码卡提交会让这些文件永远提不了。
-  所以 hook 只做「自动修复 + 打印提示」，修不了的留给人工。要收紧成阻断，
-  得先把这些存量清了（`pnpm run lint:fix` 只能修掉其中可安全修复的一部分，
-  其余需要重构）。
+- **hook 刻意不阻断提交**（历史原因，已于 2026-10-24 改为阻断）：仓库曾有 127+ 个历史遗留、
+  不可自动修复的 lint（`noArrayIndexKey` / `useExhaustiveDependencies` / a11y 等，
+  分布在 52 个文件），拿 biome 的退出码卡提交会让这些文件永远提不了。2026-10-24 全部
+  清零后，hook 已收紧为**违规即阻断**（新违规当场修掉，不流进仓库）；确需绕过用
+  `git commit --no-verify`。
+- **存量清理的分层决策**（2026-10-24，`pnpm run lint` 现在是 0 诊断）：
+  - **真修**：机械问题全部真修（unused imports / useOptionalChain / noNonNullAssertion →
+    `at(-1)?.` 或 assert.ok 收窄 / noImplicitAnyLet 补类型 / `h[1]!` → `?? fallback` /
+    控制字符正则 → `\p{Cc}` / `useCallback` 包 load 函数 / 补齐 useCallback 漏掉的
+    `appendReasoningText`、`defaultModel` 依赖——后者修掉一个 stale closure 隐患）。
+  - **结构性修复**：`Button`（ui 包）的 `if (render) return useRender(...)` 条件调用 hook
+    改成单次调用传 `render: undefined`（行为等价，符合 hook 规则）；reasoning-capture 的
+    `res.body!` 改为解构后条件收窄。
+  - **带理由的抑制**（模式正确但规则不认的）：`biome-ignore` 逐处注明理由——遮罩点击关闭
+    （键盘侧已有 Escape）、index 作 key 且内容可重复（path 拼 index 保唯一）、流式 markdown
+    按位置渲染（文件级 `biome-ignore-all`）、拖拽分隔条 / 自定义拖放区（ARIA APG 模式）、
+    行内重命名框 autoFocus（刻意交互）、`dangerouslySetInnerHTML`（服务端生成的自有数据 / 常量脚本）。
+  - **配置层**（biome.json `overrides`，理由：模式是产品决策不是疏忽）：生成文件不入 lint
+    （`packages/cms/migrations/**`、`payload-types.ts`，Payload 生成物）；`**/*.module.css`
+    关 `noUnknownPseudoClass`（biome 不认识 CSS Modules 的 `:global()`，纯误报）；简历模板
+    目录 `**/r/render/**` 关 `noArrayIndexKey` + `noImgElement`（纯静态渲染输出，服务端出
+    HTML 供打印 / PDF，列表永不重排，img 不走 next/image 以免破坏打印布局）。设计系统 CSS 的
+    `noDescendingSpecificity` 用文件级 `biome-ignore-all`（按语义分节组织，不按特异性排序）。
+  - **教训**：biome 默认 `--max-diagnostics=20` 会截断输出——此前"约 20 处存量"的判断是截断
+    造成的误报，实际 195 处。审计存量时始终带 `--max-diagnostics=300` 或看 summary。
 - 手动全仓规整一次：`pnpm run lint:fix`（2026-09 已跑过一次，提交 `5dee4c2`）。
 - 绕开 hook（不推荐）：`git commit --no-verify`。
 

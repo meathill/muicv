@@ -64,17 +64,11 @@ export function Button({ className, variant, size, render, ...props }: ButtonPro
     type: typeValue,
   };
 
-  if (render) {
-    return useRender({
-      defaultTagName: 'button',
-      props: mergeProps<'button'>(defaultProps, props),
-      render,
-    });
-  }
-
+  // useRender 只调用一次（hook 规则）；render 未传时等价于 undefined，按 defaultTagName 渲染
   return useRender({
     defaultTagName: 'button',
     props: mergeProps<'button'>(defaultProps, props),
+    render,
   });
 }
 

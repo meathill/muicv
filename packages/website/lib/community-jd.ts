@@ -33,7 +33,7 @@ export async function getPublishedJd(id: string): Promise<CommunityJdPublic | nu
   const db = await getDb();
   const rows = await db.select().from(schema.communityJd).where(eq(schema.communityJd.id, id)).limit(1);
   const row = rows[0];
-  if (!row || row.status !== 'published') return null;
+  if (row?.status !== 'published') return null;
   return toPublic(row);
 }
 

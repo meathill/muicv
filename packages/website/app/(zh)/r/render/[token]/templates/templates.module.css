@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/style/noDescendingSpecificity: 模板 CSS 按模板分节组织，元素选择器依赖 .t* 祖先提升特异性，顺序即设计 */
 /* 6 套模板共用的视觉样式。
  * CSS 直接迁自 Claude Design 包 muicv/project/shared/templates.css。
  * Next.js CSS Module：.t1__head 等会被 hash，JSX 里通过 styles['t1__head'] 引用。

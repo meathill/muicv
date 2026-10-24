@@ -1,3 +1,6 @@
+/*
+ * biome-ignore-all lint/suspicious/noArrayIndexKey: 流式 Markdown 按位置渲染，列表项/表格行/单元格以位置为身份
+ */
 /**
  * 极简 Markdown 渲染。
  *
@@ -69,8 +72,8 @@ export function MarkdownView({
         if (b.type === 'frontmatter') {
           return (
             <div key={key} className="rounded-lg border border-rule bg-paper px-3 py-2 font-mono text-[12px] text-mute">
-              {b.entries.map(([k, v], i) => (
-                <div key={i}>
+              {b.entries.map(([k, v]) => (
+                <div key={k}>
                   <span className="text-yellow-deep">{k}</span>
                   <span className="text-ink-soft">: {v}</span>
                 </div>

@@ -16,7 +16,8 @@ export function HeroShowcase({ showcase }: { showcase: Showcase }) {
       <div className="absolute -inset-x-1 -inset-y-1 rounded-xl bg-yellow/15 blur-md" aria-hidden />
 
       <div className="relative">
-        <div aria-label={showcase.tabsAria} className="mb-3 flex flex-wrap gap-1.5">
+        {/* biome-ignore lint/a11y/useSemanticElements: 展示指示器容器非表单控件，fieldset 不适用；role=group 承载 aria-label */}
+        <div role="group" aria-label={showcase.tabsAria} className="mb-3 flex flex-wrap gap-1.5">
           {SLIDE_KEYS.map((key) => {
             const isActive = key === 'import';
             return (

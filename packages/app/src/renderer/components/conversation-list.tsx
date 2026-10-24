@@ -126,6 +126,7 @@ function ConversationRow({
         <input
           type="text"
           value={name}
+          // biome-ignore lint/a11y/noAutofocus: 行内重命名框出现即聚焦是刻意交互
           autoFocus
           onChange={(e) => setName(e.target.value)}
           onBlur={commit}

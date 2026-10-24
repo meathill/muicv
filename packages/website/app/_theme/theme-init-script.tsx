@@ -4,5 +4,6 @@
  */
 export function ThemeInitScript() {
   const code = `(function(){try{var t=localStorage.getItem('muicv-theme');if(t==='dark'||t==='auto'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
+  // biome-ignore lint/security/noDangerouslySetInnerHtml: 常量内联脚本，hydrate 前同步设 data-theme 防暗色 FOUC
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
 }

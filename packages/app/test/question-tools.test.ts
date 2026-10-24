@@ -3,6 +3,12 @@ import test from 'node:test';
 
 import { answerQuestion, buildQuestionTools, cancelPendingQuestions } from '../src/main/agent/question-tools.ts';
 
+/** 绕过 SDK 泛型直接驱动工具执行器（等价于 agent run 里发起一次工具调用） */
+function invokeAskTool(tool: unknown, args: Record<string, unknown>, callId: string): Promise<unknown> {
+  const invokable = tool as { invoke(ctx: null, input: string, details: unknown): Promise<unknown> };
+  return invokable.invoke(null, JSON.stringify(args), { toolCall: { callId } });
+}
+
 test('buildQuestionTools 返回 ask_question 工具', () => {
   const tools = buildQuestionTools();
   assert.equal(tools.length, 1);
@@ -15,10 +21,10 @@ test('ask_question 挂起并通过 answerQuestion 单选唤醒', async () => {
     waitingState = waiting;
   });
 
-  const toolPromise = (askTool as any).invoke(
-    null,
-    JSON.stringify({ question: '你倾向于哪种岗位？', options: ['前端', '后端', '全栈'] }),
-    { toolCall: { callId: 'call_test_1' } },
+  const toolPromise = invokeAskTool(
+    askTool,
+    { question: '你倾向于哪种岗位？', options: ['前端', '后端', '全栈'] },
+    'call_test_1',
   );
 
   assert.equal(waitingState, true);
@@ -36,10 +42,10 @@ test('ask_question 挂起并通过 answerQuestion 单选唤醒', async () => {
 
 test('ask_question 多选与自定义回答组合', async () => {
   const [askTool] = buildQuestionTools();
-  const toolPromise = (askTool as any).invoke(
-    null,
-    JSON.stringify({ question: '擅长的技术栈', options: ['TypeScript', 'Node.js', 'Rust'], multiSelect: true }),
-    { toolCall: { callId: 'call_test_2' } },
+  const toolPromise = invokeAskTool(
+    askTool,
+    { question: '擅长的技术栈', options: ['TypeScript', 'Node.js', 'Rust'], multiSelect: true },
+    'call_test_2',
   );
 
   const answered = answerQuestion('call_test_2', {
@@ -53,9 +59,7 @@ test('ask_question 多选与自定义回答组合', async () => {
 
 test('ask_question 仅有自定义文字无选项', async () => {
   const [askTool] = buildQuestionTools();
-  const toolPromise = (askTool as any).invoke(null, JSON.stringify({ question: '你的期望薪资范围？' }), {
-    toolCall: { callId: 'call_test_3' },
-  });
+  const toolPromise = invokeAskTool(askTool, { question: '你的期望薪资范围？' }, 'call_test_3');
 
   const answered = answerQuestion('call_test_3', {
     answer: '',
@@ -73,9 +77,7 @@ test('cancelPendingQuestions 取消等待中的提问', async () => {
     waitingState = w;
   });
 
-  const toolPromise = (askTool as any).invoke(null, JSON.stringify({ question: '等待中断' }), {
-    toolCall: { callId: 'call_test_cancel' },
-  });
+  const toolPromise = invokeAskTool(askTool, { question: '等待中断' }, 'call_test_cancel');
 
   assert.equal(waitingState, true);
   cancelPendingQuestions('user aborted');
@@ -102,12 +104,8 @@ test('answerQuestion 在没有 pending 时调用 cancelPendingQuestions 是安�
 
 test('多个 pending 时按 callId 精确唤醒，不答错对象', async () => {
   const [askTool] = buildQuestionTools();
-  const firstPromise = (askTool as any).invoke(null, JSON.stringify({ question: '第一个问题', options: ['A', 'B'] }), {
-    toolCall: { callId: 'call_multi_1' },
-  });
-  const secondPromise = (askTool as any).invoke(null, JSON.stringify({ question: '第二个问题', options: ['C', 'D'] }), {
-    toolCall: { callId: 'call_multi_2' },
-  });
+  const firstPromise = invokeAskTool(askTool, { question: '第一个问题', options: ['A', 'B'] }, 'call_multi_1');
+  const secondPromise = invokeAskTool(askTool, { question: '第二个问题', options: ['C', 'D'] }, 'call_multi_2');
 
   // 故意先回答第二个，验证不会因为顺序而串台
   assert.equal(answerQuestion('call_multi_2', { answer: 'D' }), true);
@@ -119,9 +117,7 @@ test('多个 pending 时按 callId 精确唤醒，不答错对象', async () => 
 
 test('callId 对不上时走兜底唤醒最早的 pending，且返回 true', async () => {
   const [askTool] = buildQuestionTools();
-  const toolPromise = (askTool as any).invoke(null, JSON.stringify({ question: '兜底问题', options: ['X'] }), {
-    toolCall: { callId: 'call_real_id' },
-  });
+  const toolPromise = invokeAskTool(askTool, { question: '兜底问题', options: ['X'] }, 'call_real_id');
 
   const accepted = answerQuestion('call_id_mismatch', { answer: 'X' });
   assert.equal(accepted, true);

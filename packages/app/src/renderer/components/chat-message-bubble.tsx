@@ -122,6 +122,7 @@ export function MessageBubble({
           {writeRefs.length > 0 && (
             <div className="space-y-1.5 pt-1">
               {writeRefs.map((a, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: 同一文件可能被写多次，path 拼 index 才能保证唯一
                 <ArtifactCard key={`${a.path}-${i}`} artifact={a} onOpen={() => onOpenArtifact(a)} />
               ))}
             </div>
@@ -199,6 +200,7 @@ function ReasoningBlock({ text, streaming }: { text: string; streaming: boolean 
   const bodyRef = useRef<HTMLDivElement>(null);
 
   // streaming 期间 text 增长时滚到底部，保持最新思考可见
+  // biome-ignore lint/correctness/useExhaustiveDependencies: text/open 变化是滚动信号，动作只操作 DOM
   useEffect(() => {
     if (streaming && open && bodyRef.current) {
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
@@ -269,6 +271,7 @@ function OpsGroup({ toolCalls, reads }: { toolCalls: ToolCallRecord[]; reads: Ar
             <p className="mb-1 px-1 text-[12px] text-mute">参考的素材：</p>
             <ul className="space-y-0.5">
               {reads.map((r, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: 同一素材可能被读多次，path 拼 index 才能保证唯一
                 <li key={`${r.path}-${i}`} className="flex items-center gap-1 px-1 font-mono text-[12px] text-ink-soft">
                   <FileTextIcon size={11} className="shrink-0 text-mute" />
                   <span className="truncate">{r.title}</span>

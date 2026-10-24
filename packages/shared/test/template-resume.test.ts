@@ -74,7 +74,6 @@ test('assertTemplateResumeData: experience.bullets 必须为 string[]', () => {
 
 test('assertTemplateResumeData: 缺 name 报错', () => {
   const bad = { ...sample() } as Record<string, unknown>;
-  // biome-ignore lint/performance/noDelete: 测试缺字段
   delete bad.name;
   assert.throws(() => assertTemplateResumeData(bad));
 });

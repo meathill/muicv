@@ -42,6 +42,7 @@ export function ForkConversationDialog({
   if (!open) return null;
 
   return createPortal(
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Escape 关闭已由上方 document keydown 实现，点击遮罩关闭是鼠标侧补充
     <div
       role="dialog"
       aria-modal="true"

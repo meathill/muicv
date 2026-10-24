@@ -91,7 +91,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const { token } = await params;
   if (!TOKEN_RE.test(token)) return { robots: { index: false, follow: false } };
   const state = await loadPreview(token);
-  if (!state || state.kind !== 'active' || state.record.shareMode !== 'public') {
+  if (state?.kind !== 'active' || state.record.shareMode !== 'public') {
     return { robots: { index: false, follow: false } };
   }
   const lang: TemplateLang = isTemplateLang(state.record.lang) ? state.record.lang : 'zh';

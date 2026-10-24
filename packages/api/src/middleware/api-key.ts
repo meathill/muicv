@@ -25,7 +25,7 @@ async function sha256Hex(input: string): Promise<string> {
  * 数据源：MUICV_API_DB 是和 packages/website 共用的 muicv D1。apiKey 表
  * schema 由 website migrations/0003_api_keys.sql 创建。
  */
-async function verifyKey(c: Context<AppEnv>, authHeader: string): Promise<Response | void> {
+async function verifyKey(c: Context<AppEnv>, authHeader: string): Promise<Response | undefined> {
   const match = /^Bearer\s+(\S+)$/i.exec(authHeader);
   if (!match) {
     return c.json({ error: 'authorization 必须是 "Bearer <key>" 格式' }, 401);

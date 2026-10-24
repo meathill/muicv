@@ -5,7 +5,7 @@ import {
   PuzzlePieceIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { AppSkillCatalogItem, SkillsCatalogResult } from '../../../shared/types.ts';
 
@@ -31,18 +31,18 @@ export function SkillMarketCard() {
   const [result, setResult] = useState<SkillsCatalogResult | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadCatalog() {
+  const loadCatalog = useCallback(async () => {
     setLoading(true);
     try {
       setResult(await window.muicv.skills.catalog());
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadCatalog();
-  }, []);
+  }, [loadCatalog]);
 
   const skills = result?.ok ? result.skills : [];
 

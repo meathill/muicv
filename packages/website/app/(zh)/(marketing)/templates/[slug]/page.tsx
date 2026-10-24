@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { JsonLd } from '@/components/json-ld';
 
 import { MarketingShell } from '../../_content/marketing-shell';
-import { ArrowUpRight, Highlight } from '../../_icons';
+import { ArrowUpRight } from '../../_icons';
 import { soloPageMetadata } from '../../_page-meta';
 import { TemplatePreviewViewer } from '../template-preview-viewer';
 
@@ -149,7 +149,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<P
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               {template.highlights.zh.map((highlight, idx) => (
                 <div
-                  key={idx}
+                  key={highlight}
                   className="rounded-xl border border-rule bg-paper/60 p-4 text-[13.5px] leading-[1.65] text-ink-soft"
                 >
                   <p className="font-mono text-[11px] font-extrabold text-yellow-deep">POINT 0{idx + 1}</p>

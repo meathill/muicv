@@ -1,8 +1,9 @@
+/* biome-ignore-all lint/style/noDescendingSpecificity: 设计系统 CSS 按语义分节组织（token → 基础 → 组件 → 暗色 guard），不按特异性排序 */
 @import "tailwindcss";
+@import "@muicv/ui/styles.css";
 @source "../app/**/*.{ts,tsx}";
 @source "../src/**/*.{ts,tsx}";
 @source "../../ui/src/**/*.{ts,tsx}";
-@import "@muicv/ui/styles.css";
 
 /* -------------------------------------------------------------
  * Meathill Studio Design System —— 暖黄 + 奶油白 + 暖深棕。

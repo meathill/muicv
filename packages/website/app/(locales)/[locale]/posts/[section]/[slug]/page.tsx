@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { MarketingShell } from '@/app/(zh)/(marketing)/_content/marketing-shell';
 import { PostDetailView } from '@/app/(zh)/(marketing)/_content/post-detail-view';
-import { BLOG_STRINGS, blogUrlPrefix } from '@/app/(zh)/(marketing)/_i18n/blog';
+import { blogUrlPrefix } from '@/app/(zh)/(marketing)/_i18n/blog';
 import { fromContentLocale } from '@/app/(zh)/(marketing)/_i18n/locale';
 import { getPostAlternateLanguages, getWebsitePostBySlug, getWebsitePublishedPosts } from '@/lib/cms-content';
 

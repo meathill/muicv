@@ -55,8 +55,10 @@ export function registerConfigProfileIpc(deps: { getMainWindow: () => BrowserWin
         title: `选一个目录给"${opts.name}"`,
         properties: ['openDirectory', 'createDirectory'],
       });
-      if (r.canceled || r.filePaths.length === 0) return { ok: false };
-      dir = r.filePaths[0]!;
+      if (r.canceled) return { ok: false };
+      const picked = r.filePaths[0];
+      if (!picked) return { ok: false };
+      dir = picked;
     }
     const existing = findByDir(dir);
     if (existing) {
@@ -85,8 +87,9 @@ export function registerConfigProfileIpc(deps: { getMainWindow: () => BrowserWin
       title: `选一个目录给"${name || '新档案'}"`,
       properties: ['openDirectory', 'createDirectory'],
     });
-    if (r.canceled || r.filePaths.length === 0) return { ok: false };
-    const dir = r.filePaths[0]!;
+    if (r.canceled) return { ok: false };
+    const dir = r.filePaths[0];
+    if (!dir) return { ok: false };
     const existing = findByDir(dir);
     if (existing) {
       setActiveProfile(existing.id);

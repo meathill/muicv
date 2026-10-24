@@ -161,11 +161,13 @@ export function useAgentDispatch(callbacks: DispatchCallbacks): AgentDispatchApi
       pushMessage,
       setActiveChannel,
       appendAssistantText,
+      appendReasoningText,
       attachToolCall,
       updateToolOutput,
       attachArtifact,
       openRightPanel,
       handleErrorChunk,
+      defaultModel,
     ],
   );
 

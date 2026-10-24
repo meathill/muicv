@@ -9,10 +9,19 @@
 - [x] 第一批 `pnpm up -r`（semver 内）：next 16.4.3、payload 3.92、openai 7.43、vite 8.3.5、
       wrangler 4.152、react 19.3.1、biome 2.6.3 等；全部包 typecheck / 测试 / 构建通过（55a521e）
 - [x] 第二批跨版本：@openai/agents 0.21（SDK 不再透传工具报错原文，测试断言已同步）、
-      electron-store 12、electron-vite 6（顺带解决 vite 8 peer 警告）、@types/chrome 0.3
+      electron-store 12、electron-vite 6（顺带解决 vite 8 peer 警告）、@types/chrome 0.3（6ccd658）
+- [x] electron 44→45（0f9f9b3），等用户手工冒烟
 - [x] biome.json migrate 到 2.6.3 schema；biome 2.6 格式化漂移一次性收口（14 个文件纯格式）
-- [ ] 暂缓项记入 TODO.md「依赖升级跟进」：stripe 23（CN 支付迁移需实测）、electron 45（需打包冒烟）、
-      biome lint 存量约 20 处（2.5 时代就有）
+- [ ] 暂缓项记入 TODO.md「依赖升级跟进」：stripe 23（CN 支付迁移需实测）
+
+### biome lint 存量清零（2026-10-24）
+
+- [x] 实际规模 195 处（114 errors + 81 warnings，此前"约 20 处"是 biome 默认
+      `--max-diagnostics=20` 截断误报）；现在 `pnpm run lint` 0 诊断
+- [x] 机械问题真修；Button 条件调用 hook、stale closure 依赖漏配等结构性问题修复；
+      模式性场景加带理由的抑制；生成文件 / CSS Modules / 简历模板目录走 biome.json overrides
+- [x] pre-commit hook 从「只修不拦」收紧为「违规阻断」（仓库文档里预设的存量清零后动作）
+- [x] 全仓回归：6 包 595 测试 + typecheck + 构建（含两个 next build）全绿
 
 ### 修复 ask_question 多问题排版（2026-10-24）
 

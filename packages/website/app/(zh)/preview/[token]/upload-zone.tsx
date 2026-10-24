@@ -57,6 +57,7 @@ export function UploadZone({
   }
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: 自定义拖放区已带完整键盘支持（role=button + tabIndex + Enter/Space），样式定制不走原生 button
     <div
       className={`${styles.uploadZone} ${active ? styles.uploadZoneActive : ''} ${busy ? styles.uploadZoneBusy : ''}`}
       onClick={() => {

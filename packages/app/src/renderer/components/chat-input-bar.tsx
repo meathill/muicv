@@ -12,12 +12,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import type { AttachmentRef } from '../../shared/types.ts';
 import { useAppStore } from '../lib/store';
-import {
-  ATTACHMENT_ACCEPT,
-  type ChatAttachmentsApi,
-  MAX_ATTACHMENTS_PER_SEND,
-  MAX_IMAGES_PER_SEND,
-} from '../lib/use-chat-attachments';
+import { ATTACHMENT_ACCEPT, type ChatAttachmentsApi, MAX_ATTACHMENTS_PER_SEND } from '../lib/use-chat-attachments';
 import { useChatInputPaste } from '../lib/use-chat-input-paste';
 import { useChatInputRecorder } from '../lib/use-chat-input-recorder';
 import { useRecorder } from '../lib/use-recorder';
@@ -102,7 +97,6 @@ export function ChatInputBar({
   const recorderApiRef = useRef(recorder);
   recorderApiRef.current = recorder;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 只在挂载时订阅；recorder 走 ref 引用
   useEffect(() => {
     const unsub = window.muicv.audio.onRecordingRequest((req) => {
       void recorderApiRef.current.start(req);
@@ -142,6 +136,7 @@ export function ChatInputBar({
   // textarea 自适应高度：2 行起步，最多 10 行；超过 10 行内部滚动。
   // 用 useLayoutEffect 在 paint 之前同步改高度，避免抖一帧。reset 到 auto
   // 让 scrollHeight 反映真实内容（不被上一次设的 height 卡住）。
+  // biome-ignore lint/correctness/useExhaustiveDependencies: input 变化是重新测量高度的信号，effect 体只操作 DOM
   useLayoutEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;

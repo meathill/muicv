@@ -86,8 +86,7 @@ export async function extractUsageFromSseStream(stream: ReadableStream<Uint8Arra
       const { value, done } = await reader.read();
       if (done) break;
       buf += value;
-      let idx: number;
-      while ((idx = buf.indexOf('\n\n')) !== -1) {
+      for (let idx = buf.indexOf('\n\n'); idx !== -1; idx = buf.indexOf('\n\n')) {
         const block = buf.slice(0, idx);
         buf = buf.slice(idx + 2);
         const u = tryReadUsageFromBlock(block);
@@ -149,8 +148,7 @@ export async function extractUsageFromResponsesSseStream(stream: ReadableStream<
       const { value, done } = await reader.read();
       if (done) break;
       buf += value;
-      let idx: number;
-      while ((idx = buf.indexOf('\n\n')) !== -1) {
+      for (let idx = buf.indexOf('\n\n'); idx !== -1; idx = buf.indexOf('\n\n')) {
         const block = buf.slice(0, idx);
         buf = buf.slice(idx + 2);
         const u = tryReadResponsesUsageFromBlock(block);
@@ -207,8 +205,7 @@ export function stripUsageChunkFromSse(stream: ReadableStream<Uint8Array>): Read
           buf += decoder.decode(value, { stream: true });
 
           let lastSplit = 0;
-          let idx: number;
-          while ((idx = buf.indexOf('\n\n', lastSplit)) !== -1) {
+          for (let idx = buf.indexOf('\n\n', lastSplit); idx !== -1; idx = buf.indexOf('\n\n', lastSplit)) {
             const block = buf.slice(lastSplit, idx);
             if (!isUsageOnlyBlock(block)) {
               controller.enqueue(encoder.encode(`${block}\n\n`));

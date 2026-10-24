@@ -64,11 +64,13 @@ export function CodeMirrorEditor(props: { value: string; onChange: (text: string
   const onSaveRef = useRef(props.onSave);
   onChangeRef.current = props.onChange;
   onSaveRef.current = props.onSave;
+  // 初始 doc 只在挂载时取一次；后续外部 value 变更由下方同步 effect 处理
+  const initialDocRef = useRef(props.value);
 
   useEffect(() => {
     if (!hostRef.current) return;
     const state = EditorState.create({
-      doc: props.value,
+      doc: initialDocRef.current,
       extensions: [
         basicSetup,
         markdown(),

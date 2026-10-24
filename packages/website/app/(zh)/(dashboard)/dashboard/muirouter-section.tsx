@@ -1,7 +1,7 @@
 'use client';
 
 import { formatCents } from '@muicv/shared';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ConfirmDialog, type ConfirmDialogHandle } from '@/components/confirm-dialog';
 
@@ -69,7 +69,7 @@ export function MuirouterSection() {
   const [busy, setBusy] = useState(false);
   const confirmRef = useRef<ConfirmDialogHandle>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const [linkRes, modelRes] = await Promise.all([fetch('/api/muirouter'), fetch('/api/muirouter/model')]);
       if (!linkRes.ok) throw new Error(`HTTP ${linkRes.status}`);
@@ -82,7 +82,7 @@ export function MuirouterSection() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
     }
-  }
+  }, []);
 
   useEffect(() => {
     const flag = readUrlFlag();
@@ -94,7 +94,7 @@ export function MuirouterSection() {
       clearUrlFlag();
     }
     load();
-  }, []);
+  }, [load]);
 
   async function onRefresh() {
     setError(null);

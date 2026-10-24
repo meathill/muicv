@@ -5,11 +5,9 @@
 # 为什么只跑暂存文件：全仓要扫 500+ 文件，每次提交都做太慢；只处理本次改动即可，
 # 未改动的文件在各自引入时已被规整过。
 #
-# 为什么「不阻断提交」：仓库有 127 个历史遗留、不可自动修复的 lint
-# （noArrayIndexKey / useExhaustiveDependencies / a11y 等，需人工重构），
-# 若直接拿 biome 的退出码卡提交，这 52 个文件会永远提交不了。
-# 故这里只做「自动修复 + 提示」：能修的当场修好并重新 stage，修不了的打印出来供参考。
-# 查看全量基线：pnpm run lint；全仓自动修：pnpm run lint:fix。
+# 为什么「阻断提交」：2026-10-24 已把全部 lint 存量清零（原 127+ 处历史遗留，
+# 见 DEV_NOTE.md biome 小节），新引入的违规应该当场修掉，而不是流进仓库。
+# 修复不了时用 git commit --no-verify 绕过，并在提交说明里说明原因。
 #
 # 安装：pnpm install 时由 package.json 的 prepare 脚本设置 core.hooksPath=.githooks。
 # 手工安装：git config core.hooksPath .githooks
@@ -37,9 +35,9 @@ git diff --cached --name-only --diff-filter=ACM -z -- \
   | xargs -0 git add --
 
 if [ "$biome_status" -ne 0 ]; then
-  printf '\n%s\n' '[pre-commit] 上面的问题 biome 无法自动修复（多为历史遗留），本次提交照常进行。'
-  printf '%s\n' '             查看全量基线：pnpm run lint'
+  printf '\n%s\n' '[pre-commit] 暂存文件存在 biome 修不掉的违规（lint / 格式冲突），提交已阻断。'
+  printf '%s\n' '             逐条修掉后重试；确需绕过：git commit --no-verify'
+  exit 1
 fi
 
-# 永远放行：原因见文件头。格式 / import 已在上面自动修好并 stage，不会漏。
 exit 0

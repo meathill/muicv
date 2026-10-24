@@ -13,6 +13,7 @@ export default function DefaultTemplate({ resume }: { resume: ParsedResume }) {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap"
       />
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: contentHtml 由服务端从用户自己的简历数据渲染生成，非外部输入直插 */}
       <article className={styles.page} dangerouslySetInnerHTML={{ __html: resume.contentHtml }} />
     </>
   );

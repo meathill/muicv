@@ -174,7 +174,6 @@ function ImagePreview({ absPath, name }: { absPath: string; name: string }) {
   if (!src) return <Loading />;
   return (
     <div className="flex min-h-full items-center justify-center p-6">
-      {/* biome-ignore lint/performance/noImgElement: Electron 渲染本地 data URL，没必要 next/image */}
       <img src={src} alt={name} className="max-h-[70vh] max-w-full rounded-lg border border-rule object-contain" />
     </div>
   );

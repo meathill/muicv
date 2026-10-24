@@ -37,7 +37,10 @@ export function ConfirmDialog({
   }, [onCancel, onConfirm]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: 遮罩点击关闭，模态语义由 alertdialog 承担
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Escape 关闭已由上方 window keydown 实现
     <div className={styles.modalBackdrop} onClick={onCancel}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: 仅阻止冒泡避免误关，非交互元素 */}
       <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()} role="alertdialog" aria-modal="true">
         <div className={styles.confirmTitle}>{title}</div>
         <div className={styles.confirmBody}>{body}</div>

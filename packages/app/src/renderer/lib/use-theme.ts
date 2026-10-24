@@ -34,8 +34,7 @@ export function useTheme() {
 
   // 首挂 sync DOM（main.tsx 已经做了，但保险）
   useEffect(() => {
-    applyTheme(theme);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    applyTheme(readStoredTheme());
   }, []);
 
   function setTheme(t: Theme) {

@@ -169,8 +169,8 @@ export default async function EnTemplatesIndexPage({ searchParams }: { searchPar
                   <p className="mt-3 text-[14px] leading-[1.65] text-ink-soft">{template.summary.en}</p>
 
                   <div className="mt-4 space-y-1.5 rounded-xl border border-rule-strong bg-paper/60 p-3.5 text-[12.5px] text-ink-soft">
-                    {template.highlights.en.map((highlight, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
+                    {template.highlights.en.map((highlight) => (
+                      <div key={highlight} className="flex items-start gap-2">
                         <span className="text-yellow-deep font-bold">✓</span>
                         <span>{highlight}</span>
                       </div>

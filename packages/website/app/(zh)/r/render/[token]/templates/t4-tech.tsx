@@ -33,7 +33,12 @@ export default function T4Tech({ resume, lang, accent, slots }: T4Props) {
         <div>
           <h1 className={styles.t4__name}>
             {text(d.name)}
-            {altName ? <span className={styles.t4__nameTag}>// {altName}</span> : null}
+            {altName ? (
+              <span className={styles.t4__nameTag}>
+                {'// '}
+                {altName}
+              </span>
+            ) : null}
           </h1>
           <div className={styles.t4__title}>whoami → {text(d.title)}</div>
         </div>

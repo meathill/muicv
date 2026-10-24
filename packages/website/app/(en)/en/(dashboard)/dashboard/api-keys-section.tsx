@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ConfirmDialog, type ConfirmDialogHandle } from '@/components/confirm-dialog';
 import { Spinner } from '@/components/spinner';
@@ -32,7 +32,7 @@ export function ApiKeysSection() {
   const [deletingIds, setDeletingIds] = useState<ReadonlySet<string>>(() => new Set());
   const confirmRef = useRef<ConfirmDialogHandle>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const res = await fetch('/api/keys');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -41,11 +41,11 @@ export function ApiKeysSection() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     }
-  }
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   async function onCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

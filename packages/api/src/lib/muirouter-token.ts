@@ -7,6 +7,7 @@ import {
   muirouterHsmPath,
   refreshAccessToken,
   type StoredMuirouterTokens,
+  type TokenResponse,
 } from '@muicv/shared';
 
 /**
@@ -75,7 +76,7 @@ export async function getMuirouterUpstreamCreds(
   }
 
   // 过期 → refresh + 整对替换写回 HSM + 写回 D1 元数据
-  let token;
+  let token: TokenResponse;
   try {
     token = await refreshAccessToken({
       endpoints: { tokenUrl: env.MUIROUTER_OAUTH_TOKEN_URL ?? DEFAULT_TOKEN_URL },

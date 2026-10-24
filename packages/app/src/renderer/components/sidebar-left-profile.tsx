@@ -51,24 +51,22 @@ export function ProfileSection() {
           <CaretDownIcon size={11} weight="bold" className="shrink-0 text-mute" />
         </button>
         {activeProfile && (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                if (treeOpen) closeRightPanel();
-                else openFileTree();
-              }}
-              title={treeOpen ? '关闭文件浏览' : '查看文件'}
-              aria-label={treeOpen ? '关闭文件浏览' : '查看文件'}
-              aria-pressed={treeOpen}
-              className={`flex shrink-0 items-center justify-center rounded-md px-1.5 py-1 hover:bg-fluff ${
-                treeOpen ? 'bg-fluff text-yellow-deep' : 'text-mute hover:text-ink'
-              }`}
-            >
-              {treeOpen ? <FolderOpenIcon size={16} weight="fill" /> : <FolderSimpleIcon size={16} />}
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              if (treeOpen) closeRightPanel();
+              else openFileTree();
+            }}
+            title={treeOpen ? '关闭文件浏览' : '查看文件'}
+            aria-label={treeOpen ? '关闭文件浏览' : '查看文件'}
+            aria-pressed={treeOpen}
+            className={`flex shrink-0 items-center justify-center rounded-md px-1.5 py-1 hover:bg-fluff ${
+              treeOpen ? 'bg-fluff text-yellow-deep' : 'text-mute hover:text-ink'
+            }`}
+          >
+            {treeOpen ? <FolderOpenIcon size={16} weight="fill" /> : <FolderSimpleIcon size={16} />}
+          </button>
         )}
       </div>
 
@@ -138,6 +136,7 @@ function ProfileItem({
         <input
           type="text"
           value={name}
+          // biome-ignore lint/a11y/noAutofocus: 行内重命名框出现即聚焦是刻意交互
           autoFocus
           onChange={(e) => setName(e.target.value)}
           onBlur={commit}
@@ -254,6 +253,7 @@ function CreateInline({ onCreate }: { onCreate: (name: string) => Promise<void> 
       <input
         type="text"
         value={name}
+        // biome-ignore lint/a11y/noAutofocus: 新建档案输入框出现即聚焦是刻意交互
         autoFocus
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {

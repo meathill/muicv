@@ -86,7 +86,7 @@ export async function analyzePage(
   });
   const usage = readUsage(result, SYSTEM + prompt);
   const parsed = parseJson((result as { response?: unknown }).response);
-  if (!parsed || parsed.hasJobs !== true || !Array.isArray(parsed.jobs)) return { hasJobs: false, jobs: [], usage };
+  if (parsed?.hasJobs !== true || !Array.isArray(parsed.jobs)) return { hasJobs: false, jobs: [], usage };
   const jobs = parsed.jobs
     .map((j) => {
       const o = typeof j === 'object' && j !== null ? (j as Record<string, unknown>) : {};

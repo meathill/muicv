@@ -101,6 +101,7 @@ function RightResizeHandle() {
 
   return (
     <>
+      {/* biome-ignore lint/a11y/useSemanticElements: 拖拽分隔条是 ARIA APG 的 splitter 模式，规范就是 div[role=separator] */}
       <div
         onMouseDown={(e) => {
           e.preventDefault();

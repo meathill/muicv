@@ -77,7 +77,8 @@ export function parse(md: string): Block[] {
 
     const h = /^(#{1,4})\s+(.*)$/.exec(line);
     if (h) {
-      blocks.push({ type: 'h', level: h[1]!.length as 1 | 2 | 3 | 4, text: h[2] ?? '' });
+      const hashes = h[1] ?? '#';
+      blocks.push({ type: 'h', level: hashes.length as 1 | 2 | 3 | 4, text: h[2] ?? '' });
       i++;
       continue;
     }

@@ -106,7 +106,7 @@ function mockEnv(opts: MockOpts = {}): unknown {
 
 function makePreviewRow(overrides: Partial<PreviewRow> = {}): PreviewRow {
   return {
-    token: 'a'.repeat(8) + '-aaaa-aaaa-aaaa-' + 'a'.repeat(12),
+    token: `${'a'.repeat(8)}-aaaa-aaaa-aaaa-${'a'.repeat(12)}`,
     userId: FAKE_USER_ID,
     resumeJson: JSON.stringify(sampleResume()),
     template: 't3-sidebar',

@@ -119,7 +119,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
   });
 
   const lastUser = messages[messages.length - 1];
-  if (!lastUser || lastUser.role !== 'user') {
+  if (lastUser?.role !== 'user') {
     send({ type: 'error', message: '内部错误：最后一条消息不是 user' });
     send({ type: 'finish', reason: 'error' });
     return;

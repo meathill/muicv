@@ -61,10 +61,12 @@ export function ChatView() {
   const conversationId = activeConversation?.id ?? null;
   const messagesRef = activeConversation?.messages;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: conversationId 是信号——仅凭它的变化重置贴底状态
   useEffect(() => {
     stickToBottomRef.current = true;
   }, [conversationId]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: messagesRef 引用变化是"消息更新"的信号，滚动动作只操作 DOM
   useEffect(() => {
     if (!stickToBottomRef.current) return;
     const el = scrollRef.current;
@@ -127,6 +129,7 @@ export function ChatView() {
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: 拖拽投放附件区，拖放事件没有对应 ARIA 角色
     <div
       className="relative flex h-full flex-col"
       onDragEnter={attachments.onDragEnter}
@@ -140,6 +143,7 @@ export function ChatView() {
         typeLabel={meta.label}
       />
 
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: 右键弹原生只读菜单（复制/全选），滚动容器无需交互角色 */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}

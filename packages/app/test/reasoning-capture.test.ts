@@ -91,7 +91,9 @@ test('loggingFetch: 捕获 thinking-mode SSE 流的 reasoning_content 并注入�
     });
 
     assert.equal(requests.length, 2);
-    const turn2Body = JSON.parse(requests[1]!.body) as {
+    const req2 = requests[1];
+    assert.ok(req2);
+    const turn2Body = JSON.parse(req2.body) as {
       messages: Array<{ role: string; reasoning_content?: string }>;
     };
 
@@ -134,7 +136,8 @@ test('loggingFetch: 当 assistant 未捕获思考过程时，兜底注入空字�
       }),
     });
 
-    const parsed = JSON.parse(capturedBody!) as {
+    assert.ok(capturedBody);
+    const parsed = JSON.parse(capturedBody) as {
       messages: Array<{ role: string; reasoning_content?: string }>;
     };
     const assistantMsg = parsed.messages.find((m) => m.role === 'assistant');

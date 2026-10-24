@@ -16,7 +16,7 @@ import {
   extractUsageFromSseStream,
   stripUsageChunkFromSse,
 } from '../lib/llm-usage.ts';
-import { getMuirouterUpstreamCreds } from '../lib/muirouter-token.ts';
+import { getMuirouterUpstreamCreds, type MuirouterUpstreamCreds } from '../lib/muirouter-token.ts';
 import { charge, ensureBalance } from '../lib/wallet.ts';
 import type { AppEnv } from '../middleware/api-key.ts';
 
@@ -191,7 +191,7 @@ export async function handleLlmProxy(c: Context<AppEnv>): Promise<Response> {
     }
     isPlatform = true;
   } else {
-    let creds;
+    let creds: MuirouterUpstreamCreds | null;
     try {
       creds = await getMuirouterUpstreamCreds(c.env, userId);
     } catch (err) {

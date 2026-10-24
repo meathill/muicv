@@ -33,7 +33,7 @@ export function AuthForm({
   const router = useRouter();
   const copy = COPY[mode];
   // 登录后跳哪里：next（站内相对路径）优先，否则 dashboard
-  const successTarget = next && next.startsWith('/') ? next : '/dashboard';
+  const successTarget = next?.startsWith('/') ? next : '/dashboard';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
