@@ -25,6 +25,7 @@ const PROMPT_TEMPLATES: Record<ConversationType, string> = {
   generate: '针对岗位生成简历：',
   critique: '请帮我评审：',
   jobs: '分析这条 JD：',
+  'job-match': '这轮匹配想调整：',
   interview: '模拟一轮面试：',
   coaching: '我想咨询：',
 };

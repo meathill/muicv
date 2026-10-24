@@ -2,6 +2,7 @@ import {
   CompassIcon,
   FileTextIcon,
   type Icon,
+  MagnetIcon,
   MagnifyingGlassIcon,
   MicrophoneIcon,
   NotePencilIcon,
@@ -20,6 +21,7 @@ export const CONVERSATION_TYPE_ICON: Record<ConversationType, Icon> = {
   generate: FileTextIcon,
   critique: MagnifyingGlassIcon,
   jobs: TargetIcon,
+  'job-match': MagnetIcon,
   interview: MicrophoneIcon,
   coaching: CompassIcon,
 };

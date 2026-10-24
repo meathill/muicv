@@ -10,6 +10,7 @@ import interviewLevelCategoryHeuristics from '@skills/muicv-interview/references
 import interviewQuestionDesignFramework from '@skills/muicv-interview/references/question-design-framework.md?raw';
 import interviewRoundRecipes from '@skills/muicv-interview/references/round-recipes.md?raw';
 import muicvInterviewSkill from '@skills/muicv-interview/SKILL.md?raw';
+import muicvJobMatchSkill from '@skills/muicv-job-match/SKILL.md?raw';
 import muicvJobsSkill from '@skills/muicv-jobs/SKILL.md?raw';
 import muicvRenderSkill from '@skills/muicv-render/SKILL.md?raw';
 
@@ -35,6 +36,7 @@ const SKILLS_RAW: Array<{
   },
   { name: 'muicv-critique', type: 'critique', body: muicvCritiqueSkill },
   { name: 'muicv-jobs', type: 'jobs', body: muicvJobsSkill },
+  { name: 'muicv-job-match', type: 'job-match', body: muicvJobMatchSkill },
   { name: 'muicv-render', type: 'core', body: muicvRenderSkill }, // render 是工具型 skill，没单独对话类型
   {
     name: 'muicv-interview',

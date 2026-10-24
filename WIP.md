@@ -4,6 +4,17 @@
 
 ## 当前进行中
 
+### 新增对话类型「岗位库匹配」（2026-10-24）
+
+- [x] type `job-match` + meta（🧲 岗位库匹配）+ MagnetIcon + ALL_TYPES + 斜杠命令模板
+- [x] 创建即自动执行：store `autoSend` 挂目标对话 id，chat-view 空态消费发出合成 user 消息
+      （含系统真实时区 UTC±N；`matchAutoPromptFor` 纯函数可测）
+- [x] 新 skill `muicv-job-match`：读素材库 → search_jobs 组 2~4 组查询（remote 优先 /
+      country 按素材推断 / utcOffset 传入）→ 逐岗位评匹配 → 对话内出榜单（不落盘）→
+      下一步引导（挑中 → fetch_jd → generate）；对齐 muicv-jobs 的 match 子任务边界
+- [x] 测试：match-auto.test.ts（prompt 关键句 + 时区格式 + skill 注入与章节断言）；
+      slash-command 断言 6→7；206 测试全绿、typecheck、构建通过
+
 ### 发版前依赖升级（2026-10-24）
 
 - [x] 第一批 `pnpm up -r`（semver 内）：next 16.4.3、payload 3.92、openai 7.43、vite 8.3.5、

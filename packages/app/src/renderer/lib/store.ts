@@ -68,8 +68,8 @@ type AppStore = {
   loadConversations: () => Promise<void>;
   /** 切到某个 conversation：拉它的完整内容。 */
   switchConversation: (convId: string) => Promise<void>;
-  /** 新建对话；自动切到这个新对话。 */
-  createConversation: (type: ConversationType, title?: string) => Promise<Conversation>;
+  /** 新建对话；自动切到这个新对话。autoText 传入时在该对话空态下自动发出（岗位库匹配用）。 */
+  createConversation: (type: ConversationType, title?: string, autoText?: string) => Promise<Conversation>;
   /** 从某条 AI 发言处分叉新会话，自动切到新会话。 */
   forkConversation: (messageId: string, title?: string) => Promise<Conversation>;
   /** 回滚到某条用户发言，截断后续记录，返回被回滚的内容与附件。 */
@@ -105,6 +105,10 @@ type AppStore = {
   completeOnboarding: (start: OnboardingStart) => Promise<void>;
   skipOnboarding: () => Promise<void>;
   clearOnboardingDraft: () => void;
+
+  /** 「岗位库匹配」创建即自动执行：待发出的首轮合成 user 消息（挂目标对话 id）。 */
+  autoSend: { convId: string; text: string } | null;
+  clearAutoSend: () => void;
 
   /** 当前 streaming 的 channelId，none 表示空闲。 */
   activeChannel: string | null;
@@ -247,6 +251,23 @@ function onboardingDraftFor(start: OnboardingStart): string {
   return '我想从零整理职业素材，请一步一步问我需要补充哪些经历、项目和技能。';
 }
 
+/**
+ * 「岗位库匹配」对话创建时自动发出的首轮指令（合成 user 消息，用户可见、可复述）。
+ * utcOffset 由调用方从系统时钟算（-getTimezoneOffset()/60），给 search_jobs 做时区过滤；
+ * 国家/地域由 agent 读素材库自行推断，不在文案里写死。
+ */
+export function matchAutoPromptFor(utcOffset: number): string {
+  const tz = utcOffset >= 0 ? `UTC+${utcOffset}` : `UTC${utcOffset}`;
+  return [
+    '帮我自动匹配一轮岗位库：',
+    '1. 先读我的素材库（职业档案、经历、技能、已有 targets），提炼岗位方向和核心关键词；',
+    `2. 用 search_jobs 检索 Mui简历岗位库：按方向组 2~4 组查询，workplace 优先 remote，country 按素材库所在地推断（没有就不加国家过滤），我的时区是 ${tz}；`,
+    '3. 对结果逐个评匹配度（素材事实 vs 岗位要求），按匹配度输出榜单：岗位、公司、地点与工作方式、匹配理由（引用素材事实）、差距（岗位要求但素材没有）、链接；',
+    '4. 结尾给下一步建议：挑中的岗位说「抓第 N 个」我就 fetch_jd 落盘做深度分析，合适的话可以针对它生成简历。',
+    '只用素材库已有事实，不要编造；除非素材库为空没法下手，否则直接跑完出榜单，不要中途停下来问我。',
+  ].join('\n');
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
   view: 'login',
   setView: (v) => set({ view: v }),
@@ -336,7 +357,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // 切对话 = 用户想聊天了，自动从 settings/其他 view 拉回 chat
     set({ activeConversation: conv, view: 'chat' });
   },
-  createConversation: async (type, title) => {
+  createConversation: async (type, title, autoText) => {
     const profileId = get().activeProfile?.id;
     if (!profileId) throw new Error('no-active-profile');
     const conv = await window.muicv.conversation.create({ profileId, type, ...(title ? { title } : {}) });
@@ -345,6 +366,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       conversations: [toSummary(conv), ...st.conversations],
       activeConversation: conv,
       view: 'chat',
+      ...(autoText ? { autoSend: { convId: conv.id, text: autoText } } : {}),
     }));
     return conv;
   },
@@ -504,6 +526,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ config: next, activeProfile: deriveActiveProfile(next), onboardingDraft: null, view: 'chat' });
   },
   clearOnboardingDraft: () => set({ onboardingDraft: null }),
+
+  autoSend: null,
+  clearAutoSend: () => set({ autoSend: null }),
 
   activeChannel: null,
   setActiveChannel: (c) => set({ activeChannel: c }),

@@ -57,10 +57,10 @@ test('matchesQuery 不匹配返回 false', () => {
   assert.equal(matchesQuery(critique, 'xyz'), false);
 });
 
-test('SKILL_COMMANDS 6 项，slash 唯一', () => {
-  assert.equal(SKILL_COMMANDS.length, 6);
+test('SKILL_COMMANDS 7 项，slash 唯一', () => {
+  assert.equal(SKILL_COMMANDS.length, 7);
   const slashes = new Set(SKILL_COMMANDS.map((c) => c.slash));
-  assert.equal(slashes.size, 6);
+  assert.equal(slashes.size, 7);
 });
 
 test('SKILL_COMMANDS 每项 promptTemplate 非空，作为光标终点必须有意义', () => {

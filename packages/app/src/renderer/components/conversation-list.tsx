@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import { CONVERSATION_TYPE_META, type ConversationType } from '../../shared/types.ts';
 import { CONVERSATION_TYPE_ICON } from '../lib/conversation-type-icon';
-import { useAppStore } from '../lib/store';
+import { matchAutoPromptFor, useAppStore } from '../lib/store';
 import { useClickOutside } from '../lib/use-click-outside';
 import { stripLeadingEmoji } from './chat-utils';
 import { ConfirmDialog } from './confirm-dialog';
 
-const ALL_TYPES: ConversationType[] = ['core', 'generate', 'critique', 'jobs', 'interview', 'coaching'];
+const ALL_TYPES: ConversationType[] = ['core', 'generate', 'critique', 'jobs', 'job-match', 'interview', 'coaching'];
 
 /**
  * 左栏中部：对话列表 + 顶部「+ 新建」（弹类型选择菜单）+ 行内重命名 / 删除。
@@ -27,6 +27,12 @@ export function ConversationList() {
 
   async function pick(type: ConversationType) {
     setPicking(false);
+    // 岗位库匹配：创建即自动跑一轮（合成 user 消息由 chat-view 消费发出）
+    if (type === 'job-match') {
+      const utcOffset = -new Date().getTimezoneOffset() / 60;
+      await createConversation(type, undefined, matchAutoPromptFor(utcOffset));
+      return;
+    }
     await createConversation(type);
   }
 

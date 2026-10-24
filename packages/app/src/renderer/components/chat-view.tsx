@@ -33,6 +33,8 @@ export function ChatView() {
   const activeConversation = useAppStore((s) => s.activeConversation);
   const onboardingDraft = useAppStore((s) => s.onboardingDraft);
   const clearOnboardingDraft = useAppStore((s) => s.clearOnboardingDraft);
+  const autoSend = useAppStore((s) => s.autoSend);
+  const clearAutoSend = useAppStore((s) => s.clearAutoSend);
   const forkConversation = useAppStore((s) => s.forkConversation);
   const rollbackConversation = useAppStore((s) => s.rollbackConversation);
   const setView = useAppStore((s) => s.setView);
@@ -53,6 +55,17 @@ export function ChatView() {
   // tool 链路（用户拖证件照 → AI 上传到 R2 → 写回 .resume.json）。不再在入口拦图。
   const attachments = useChatAttachments(activeProfile, activeConversation?.id ?? null, true);
   const dispatch = useAgentDispatch({ onError: setError, onNeedsAiSetup: setNeedsAiSetup });
+  const send = dispatch.send;
+
+  // 「岗位库匹配」创建即自动执行：目标对话为空态时把合成的首轮指令发出去。
+  // 先清 autoSend 再发，保证只触发一次；busy / profile 守卫由 send 自己兜底。
+  useEffect(() => {
+    if (!autoSend || !activeConversation || autoSend.convId !== activeConversation.id) return;
+    clearAutoSend();
+    if (activeConversation.messages.length === 0) {
+      void send(autoSend.text, []);
+    }
+  }, [autoSend, activeConversation, clearAutoSend, send]);
 
   // 黏底滚动：切会话强制滚到最底；消息更新（含流式 chunk）若用户当前贴底则跟随，
   // 用户向上滚阅读历史则中断跟随，避免被强制拉回。

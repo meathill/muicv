@@ -309,6 +309,7 @@ export type ConversationType =
   | 'generate' // 针对岗位生成简历 —— muicv-generate
   | 'critique' // 简历评审 —— muicv-critique
   | 'jobs' // JD 抓取与匹配 —— muicv-jobs
+  | 'job-match' // 岗位库匹配（自动扫库出榜单）—— muicv-job-match
   | 'interview' // 模拟面试 —— muicv-interview
   | 'coaching'; // 就业辅导 —— muicv-coaching
 
@@ -339,6 +340,12 @@ export const CONVERSATION_TYPE_META: Record<
     emoji: '🎯',
     tagline: '从招聘链接抓 JD，分析与你素材的匹配度',
     placeholder: '比如：粘一个招聘链接，或者「分析一下 openai-swe 这个岗位」',
+  },
+  'job-match': {
+    label: '岗位库匹配',
+    emoji: '🧲',
+    tagline: '拿素材库自动扫岗位库，筛出匹配岗位与差距',
+    placeholder: '比如：「只看远程」「换个方向再扫一轮」「把第 2 个抓下来分析」',
   },
   interview: {
     label: '模拟面试',
