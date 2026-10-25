@@ -32,7 +32,7 @@ export type MuiApiExportArticle = {
 };
 
 /** 解析结果保持宽松（locale 仍是 string），由主流程 upsertArticleInputSchema 校验收窄。 */
-export type MuiApiSeedArticle = Omit<UpsertArticleInput, 'locale'> & { locale: string };
+export type MuiApiSeedArticle = Omit<UpsertArticleInput, 'locale' | 'dryRun'> & { locale: string; dryRun?: boolean };
 
 export type CmsArticlePayload = {
   site: SeedSite;
@@ -192,6 +192,7 @@ export function parseMuiApiExport(value: unknown): MuiApiSeedArticle[] {
       bodyMarkdown,
       status: 'published',
       onConflict: 'update',
+      dryRun: false,
       tags: readStringList(article.tags),
       keywords: readStringList(article.keywords),
       sources: readSourceList(article.sources),
