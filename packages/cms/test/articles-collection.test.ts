@@ -22,7 +22,7 @@ test('articles 复合唯一索引覆盖 site + locale + slug', () => {
 });
 
 test('articles 站点与语言枚举覆盖现有项目', () => {
-  for (const site of ['muicv', 'dyqr', 'taomenu', 'muirouter']) {
+  for (const site of ['muicv', 'dyqr', 'taomenu', 'muirouter', 'gamebook', 'muistory']) {
     assert.ok((ARTICLE_SITES as readonly string[]).includes(site));
   }
   for (const locale of ['en', 'zh-CN', 'de', 'fr', 'es', 'pt', 'th', 'vi', 'ja']) {

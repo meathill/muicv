@@ -1,6 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
+  createArticleInputSchema,
+  getArticleInputSchema,
+  normalizeCreateArticleInput,
+  normalizeGetArticleInput,
+  normalizeUpsertArticleInput,
+  upsertArticleInputSchema,
+} from './article-input.ts';
+import {
   createChangelogInputSchema,
   getChangelogInputSchema,
   normalizeCreateChangelogInput,
@@ -9,6 +17,7 @@ import {
   upsertChangelogInputSchema,
 } from './changelog-input.ts';
 import {
+  type CmsArticleDocument,
   CmsAuthError,
   type CmsChangelogDocument,
   CmsClient,
@@ -297,6 +306,90 @@ server.registerTool(
   },
 );
 
+server.registerTool(
+  'create_article',
+  {
+    title: '创建多站点 CMS 文章',
+    description:
+      '在 Payload CMS 的 articles collection 里创建多站点文章（支持 muicv、dyqr、taomenu、muirouter、gamebook、muistory 等）。默认 status=draft；只有明确传 status=published 才发布。',
+    inputSchema: createArticleInputSchema,
+  },
+  async (args) => {
+    return withToolErrors(async () => {
+      const input = normalizeCreateArticleInput(args);
+      if (input.dryRun) {
+        return jsonResult({ ok: true, dryRun: true, payload: input.payload });
+      }
+
+      const client = new CmsClient();
+      const existing = await client.findArticleBySlug(input.payload.site, input.payload.locale, input.payload.slug);
+      if (existing) {
+        return errorResult(
+          `site "${input.payload.site}" 下 slug "${input.payload.slug}"（locale=${input.payload.locale}）已存在。请换 slug，或改用 upsert_article 更新已有文章。`,
+        );
+      }
+
+      const article = await client.createArticle(input.payload);
+      return jsonResult({ ok: true, action: 'created', article: toArticleResult(article) });
+    });
+  },
+);
+
+server.registerTool(
+  'upsert_article',
+  {
+    title: '创建或更新多站点 CMS 文章',
+    description:
+      '在 Payload CMS 的 articles collection 里写入多站点文章（支持 muicv、dyqr、taomenu、muirouter、gamebook、muistory 等）。根据 (site, locale, slug) 判断：已存在则更新，不存在则创建。默认 status=draft；只有明确传 status=published 才发布。',
+    inputSchema: upsertArticleInputSchema,
+  },
+  async (args) => {
+    return withToolErrors(async () => {
+      const input = normalizeUpsertArticleInput(args);
+      if (input.dryRun) {
+        return jsonResult({ ok: true, dryRun: true, payload: input.payload });
+      }
+
+      const client = new CmsClient();
+      const existing = await client.findArticleBySlug(input.payload.site, input.payload.locale, input.payload.slug);
+      if (!existing) {
+        const article = await client.createArticle(input.payload);
+        return jsonResult({ ok: true, action: 'created', article: toArticleResult(article) });
+      }
+
+      if (input.onConflict === 'error') {
+        return errorResult(
+          `site "${input.payload.site}" 下 slug "${input.payload.slug}"（locale=${input.payload.locale}）已存在，且指定了 onConflict=error。`,
+        );
+      }
+
+      const updated = await client.updateArticle(existing.id, input.payload);
+      return jsonResult({ ok: true, action: 'updated', article: toArticleResult(updated) });
+    });
+  },
+);
+
+server.registerTool(
+  'get_article',
+  {
+    title: '查询多站点 CMS 文章',
+    description: '按 (site, slug, locale) 从 Payload CMS articles collection 读取一篇文章详情。',
+    inputSchema: getArticleInputSchema,
+  },
+  async (args) => {
+    return withToolErrors(async () => {
+      const input = normalizeGetArticleInput(args);
+      const client = new CmsClient();
+      const article = await client.findArticleBySlug(input.site, input.locale, input.slug);
+      if (!article) {
+        return errorResult(`未找到 site "${input.site}" 下 slug "${input.slug}"（locale=${input.locale}）的文章。`);
+      }
+
+      return jsonResult({ ok: true, article: toArticleResult(article) });
+    });
+  },
+);
+
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -393,5 +486,29 @@ function toChangelogResult(item: CmsChangelogDocument) {
     url: 'https://muicv.com/changelog',
     cmsUrl: `${process.env.MUICV_CMS_URL ?? 'https://cms.muicv.com'}/admin/collections/changelog/${item.id}`,
     updatedAt: item.updatedAt,
+  };
+}
+
+function toArticleResult(article: CmsArticleDocument) {
+  const siteUrls: Record<string, string> = {
+    muicv: 'https://muicv.com',
+    dyqr: 'https://dyqr.net',
+    taomenu: 'https://taomenu.com',
+    muirouter: 'https://muirouter.com',
+    gamebook: 'https://muistory.com',
+    muistory: 'https://muistory.com',
+  };
+  const base = siteUrls[article.site] ?? 'https://muistory.com';
+  const url = `${base}/blog/${article.slug}`;
+  return {
+    id: article.id,
+    site: article.site,
+    slug: article.slug,
+    locale: article.locale,
+    status: article.status,
+    title: article.title,
+    url,
+    cmsUrl: `${process.env.MUICV_CMS_URL ?? 'https://cms.muicv.com'}/admin/collections/articles/${article.id}`,
+    updatedAt: article.updatedAt,
   };
 }

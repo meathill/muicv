@@ -6,7 +6,7 @@ import { validateSlugFormat } from './validate-slug.ts';
 
 /** 多站点共用博客：site + locale + slug 唯一。
  *  与 muicv 自己的 posts（求职博文）互不影响。 */
-export const ARTICLE_SITES = ['muicv', 'dyqr', 'taomenu', 'muirouter'] as const;
+export const ARTICLE_SITES = ['muicv', 'dyqr', 'taomenu', 'muirouter', 'gamebook', 'muistory'] as const;
 /** 语言维度与 posts 共用同一份枚举（content-locales.ts），避免两处漂移。 */
 export const ARTICLE_LOCALES = CONTENT_LOCALES;
 
