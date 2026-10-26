@@ -29,6 +29,10 @@
   "placement": {
     "mode": "smart"
   },
+  // Workers Cache: 边缘分层缓存，支持 Service Binding 与公网请求
+  "cache": {
+    "enabled": true
+  },
   "r2_buckets": [
     {
       "binding": "MUICV_CMS_MEDIA",
