@@ -47,6 +47,11 @@
   显式 `list-style: disc / decimal outside` + `li::marker` 上品牌色加粗，否则文章详情页的
   bullet / 编号会全部消失。改 `.prose-mui` 时把 ul / ol / li / marker 同时校一遍。
 - **SEO 路径约定**：求职博文从 `/posts/jobs` 起步；更细分类先用 tags / keywords，不提前拆更多 route。
+- **CMS 部署规范（严禁本地手动 deploy）**：必须通过 `git commit` + `git push` 触发远端 CI/CD 自动构建部署，不要在本地手动运行 `opennextjs-cloudflare deploy`。
+- **CMS 运行时 `PAYLOAD_SECRET` 提取**：在 Cloudflare Workers 环境下，Secret 仅注入到 `cloudflare.env`；顶层直接读取 `process.env.PAYLOAD_SECRET` 会退化为空字符串 `""`。在登录成功后调用 `jose` 库签名 JWT 时，0 长度密钥会抛出 WebCrypto `DOMException: Zero-length key is not supported` 进而触发 500。必须通过 `resolvePayloadSecret` 优先从 `cloudflare?.env.PAYLOAD_SECRET` 读取。
+- **CMS wrangler.jsonc 必须配置 `secrets.required`**：由于 Cloudflare Workers Builds CI 会执行 `pnpm run cf-typegen`（即 `wrangler types`）而远端构建环境无本地 `.dev.vars`，若未声明 `"secrets": { "required": ["PAYLOAD_SECRET"] }`，生成的 `CloudflareEnv` 接口将不含 `PAYLOAD_SECRET` 属性，导致 TypeScript 严格模式下编译报错（TS2345/TS2559）。
+- **CMS Observability 必须显式开启**：`packages/cms/wrangler.jsonc` 必须保持 `"observability": { "enabled": true }`，否则 Cloudflare 控制台将不会记录和展示任何请求与报错日志。
+- **Payload 升级后需检查 D1 增量迁移**：当 Payload 或 `@payloadcms/*` 升级（如 3.88 -> 3.92）引入内置表结构变更时（例如 `users.reset_password_requested_at`、`media._objectkey`），D1 不会自动执行 DDL。必须用 `pnpm --filter @muicv/cms run migrate:create <name>` 生成迁移，并执行 `pnpm --filter @muicv/cms run migrate` 应用到生产 D1，否则登录或读写时 Drizzle 查询不存在的字段会引发 500。
 
 ### 博客多语言（locale 维度，2026-09）
 

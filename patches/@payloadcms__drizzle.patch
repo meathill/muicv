@@ -1,0 +1,18 @@
+diff --git a/dist/transform/read/traverseFields.js b/dist/transform/read/traverseFields.js
+index fc6816f6deb593a98268444a1439a339ff6f56ff..a1fb7f34ff324406d334c90639e3cb33a64156fe 100644
+--- a/dist/transform/read/traverseFields.js
++++ b/dist/transform/read/traverseFields.js
+@@ -452,7 +452,12 @@ export const traverseFields = ({ adapter, blocks, config, currentTableName, data
+                 case 'date':
+                     {
+                         if (typeof fieldData === 'string') {
+-                            val = new Date(fieldData).toISOString();
++                            try {
++                                const d = new Date(fieldData);
++                                val = Number.isNaN(d.getTime()) ? fieldData : d.toISOString();
++                            } catch {
++                                val = fieldData;
++                            }
+                         }
+                         break;
+                     }

@@ -24,7 +24,7 @@
     }
   ],
   "observability": {
-    "enabled": false
+    "enabled": true
   },
   "placement": {
     "mode": "smart"
@@ -45,6 +45,9 @@
       "service": "muicv-cms"
     }
   ],
+  "secrets": {
+    "required": ["PAYLOAD_SECRET"]
+  },
   "vars": {
     "PAYLOAD_PUBLIC_SITE_URL": "https://cms.muicv.com",
     "PAYLOAD_PUBLIC_WEB_URL": "https://muicv.com"

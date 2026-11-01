@@ -8,3 +8,5 @@ onlyBuiltDependencies:
   - electron
   - electron-builder
   - "@parcel/watcher"
+patchedDependencies:
+  '@payloadcms/drizzle': patches/@payloadcms__drizzle.patch

@@ -15,6 +15,7 @@ import { Posts } from './collections/posts';
 import { SkillExtensions } from './collections/skill-extensions';
 import { Users } from './collections/users';
 import { migrations } from './migrations';
+import { resolvePayloadSecret } from './utilities/resolve-secret';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -37,6 +38,8 @@ function runtimeOnlyBinding<T>(name: string): T {
   ) as T;
 }
 
+const payloadSecret = resolvePayloadSecret(cloudflare?.env, process.env);
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -47,7 +50,7 @@ export default buildConfig({
   },
   collections: [Users, Media, Posts, Articles, SkillExtensions, Changelog, Opportunities],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: payloadSecret,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },

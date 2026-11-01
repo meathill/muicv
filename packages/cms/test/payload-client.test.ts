@@ -5,6 +5,14 @@ import { CmsClient } from '../mcp/payload-client.ts';
 import type { CmsPostPayload } from '../mcp/post-input.ts';
 import type { CmsSkillPayload } from '../mcp/skill-input.ts';
 
+// 隔离外部环境变量对单测鉴权分支的干扰
+Reflect.deleteProperty(process.env, 'MUICV_CMS_API_KEY');
+Reflect.deleteProperty(process.env, 'PAYLOAD_API_KEY');
+Reflect.deleteProperty(process.env, 'MUICV_CMS_TOKEN');
+Reflect.deleteProperty(process.env, 'PAYLOAD_TOKEN');
+Reflect.deleteProperty(process.env, 'MUICV_CMS_EMAIL');
+Reflect.deleteProperty(process.env, 'MUICV_CMS_PASSWORD');
+
 const payload: CmsPostPayload = {
   title: '测试文章',
   slug: 'test-post',

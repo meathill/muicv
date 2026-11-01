@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 type WranglerConfig = {
+  account_id?: string;
   d1_databases?: Array<{
     binding?: string;
     database_name?: string;
@@ -26,8 +27,17 @@ const cmsDir = resolve(scriptDir, '..');
 const migrationsDir = join(cmsDir, 'migrations');
 const isStatusOnly = process.argv.includes('--status');
 
+function parseJsonc<T>(content: string): T {
+  const stripped = content.replace(/("(?:\\.|[^"\\])*")|(\/\*[\s\S]*?\*\/|\/\/[^\r\n]*)/g, (_, str) => str || '');
+  return JSON.parse(stripped) as T;
+}
+
+function getWranglerConfig(): WranglerConfig {
+  return parseJsonc<WranglerConfig>(readFileSync(join(cmsDir, 'wrangler.jsonc'), 'utf8'));
+}
+
 function getDatabaseName(): string {
-  const wranglerConfig = JSON.parse(readFileSync(join(cmsDir, 'wrangler.jsonc'), 'utf8')) as WranglerConfig;
+  const wranglerConfig = getWranglerConfig();
   const cmsDatabase = wranglerConfig.d1_databases?.find((database) => database.binding === 'MUICV_CMS_DB');
 
   if (!cmsDatabase?.database_name) {
@@ -38,9 +48,16 @@ function getDatabaseName(): string {
 }
 
 function runWrangler(args: string[], options: { allowFailure?: boolean } = {}): string {
+  const wranglerConfig = getWranglerConfig();
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || wranglerConfig.account_id;
+  const env = {
+    ...process.env,
+    ...(accountId ? { CLOUDFLARE_ACCOUNT_ID: accountId } : {}),
+  };
   const result = spawnSync('pnpm', ['exec', 'wrangler', ...args], {
     cwd: cmsDir,
     encoding: 'utf8',
+    env,
   });
 
   if (result.status !== 0 && !options.allowFailure) {

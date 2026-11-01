@@ -4,6 +4,7 @@ import * as migration_20260823_183718_add_articles_collection from './20260823_1
 import * as migration_20260906_032426 from './20260906_032426';
 import * as migration_20260911_062806_add_posts_locale from './20260911_062806_add_posts_locale';
 import * as migration_20261020_121628_add_opportunities_collection from './20261020_121628_add_opportunities_collection';
+import * as migration_20261101_032755_add_reset_password_requested_at_and_media_objectkey from './20261101_032755_add_reset_password_requested_at_and_media_objectkey';
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20261020_121628_add_opportunities_collection.up,
     down: migration_20261020_121628_add_opportunities_collection.down,
     name: '20261020_121628_add_opportunities_collection',
+  },
+  {
+    up: migration_20261101_032755_add_reset_password_requested_at_and_media_objectkey.up,
+    down: migration_20261101_032755_add_reset_password_requested_at_and_media_objectkey.down,
+    name: '20261101_032755_add_reset_password_requested_at_and_media_objectkey'
   },
 ];

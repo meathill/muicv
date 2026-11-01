@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@payloadcms/drizzle':
+    hash: 404d77a2542f4df3a4765ef0ae2967ef2a1f4965fcae93d0c85c13f5f983674c
+    path: patches/@payloadcms__drizzle.patch
+
 importers:
 
   .:
@@ -191,6 +196,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.2
         version: 1.32.2(zod@4.6.7)
+      '@payloadcms/drizzle':
+        specifier: ^3.92.0
+        version: 3.92.0(patch_hash=404d77a2542f4df3a4765ef0ae2967ef2a1f4965fcae93d0c85c13f5f983674c)(@opentelemetry/api@1.9.0)(kysely@0.29.7)(payload@3.92.0(graphql@16.14.0)(typescript@7.0.2))
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
@@ -8560,7 +8568,7 @@ snapshots:
 
   '@payloadcms/db-d1-sqlite@3.92.0(@opentelemetry/api@1.9.0)(kysely@0.29.7)(payload@3.92.0(graphql@16.14.0)(typescript@7.0.2))':
     dependencies:
-      '@payloadcms/drizzle': 3.92.0(@opentelemetry/api@1.9.0)(kysely@0.29.7)(payload@3.92.0(graphql@16.14.0)(typescript@7.0.2))
+      '@payloadcms/drizzle': 3.92.0(patch_hash=404d77a2542f4df3a4765ef0ae2967ef2a1f4965fcae93d0c85c13f5f983674c)(@opentelemetry/api@1.9.0)(kysely@0.29.7)(payload@3.92.0(graphql@16.14.0)(typescript@7.0.2))
       console-table-printer: 2.12.1
       drizzle-kit: 0.31.7
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.0)(kysely@0.29.7)
@@ -8600,7 +8608,7 @@ snapshots:
       - sqlite3
       - supports-color
 
-  '@payloadcms/drizzle@3.92.0(@opentelemetry/api@1.9.0)(kysely@0.29.7)(payload@3.92.0(graphql@16.14.0)(typescript@7.0.2))':
+  '@payloadcms/drizzle@3.92.0(patch_hash=404d77a2542f4df3a4765ef0ae2967ef2a1f4965fcae93d0c85c13f5f983674c)(@opentelemetry/api@1.9.0)(kysely@0.29.7)(payload@3.92.0(graphql@16.14.0)(typescript@7.0.2))':
     dependencies:
       console-table-printer: 2.12.1
       dequal: 2.0.3
