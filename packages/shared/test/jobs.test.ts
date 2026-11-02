@@ -4,11 +4,14 @@ import { test } from 'node:test';
 import {
   buildFtsPlan,
   buildJobSearchQuery,
+  buildOpportunityParams,
   classifyCategory,
   coveredRegions,
   dedupeListings,
   detectQueryFilters,
+  fetchAllCmsOpportunities,
   fetchCmsOpportunities,
+  fetchCmsOpportunityById,
   findCountries,
   findUtcRange,
   htmlToText,
@@ -189,6 +192,88 @@ test('CMS opportunities 解析新地域字段', async () => {
   assert.deepEqual(doc?.allowedCountries, ['US']);
   assert.deepEqual(doc?.allowedRegions, ['emea']);
   assert.equal(doc?.utcOffsetMax, 3);
+});
+
+test('CMS 岗位查询：默认排除 expired，includeExpired 才带存档', () => {
+  const published = buildOpportunityParams({});
+  assert.equal(published.get('where[status][equals]'), 'published');
+  assert.equal(published.get('where[status][in]'), null);
+
+  const archived = buildOpportunityParams({ includeExpired: true });
+  assert.equal(archived.get('where[status][in]'), 'published,expired');
+  assert.equal(archived.get('where[status][equals]'), null);
+});
+
+test('CMS 岗位详情：连 expired 一起取，供存档页使用', async () => {
+  let seen: URL | null = null;
+  const doc = await fetchCmsOpportunityById('663', {
+    fetchImpl: async (input) => {
+      seen = new URL(String(input));
+      return Response.json({
+        hasNextPage: false,
+        docs: [
+          {
+            id: 663,
+            title: 'Archived Engineer',
+            company: 'Acme',
+            applyUrl: 'https://x.com/663',
+            postedAt: '2026-10-01T00:00:00.000Z',
+            source: 'lever',
+            status: 'expired',
+          },
+        ],
+      });
+    },
+  });
+
+  assert.equal(doc?.status, 'expired');
+  assert.equal(seen?.searchParams.get('where[status][in]'), 'published,expired');
+  assert.equal(seen?.searchParams.get('where[id][in]'), '663');
+});
+
+test('sitemap 岗位翻页：hasNextPage 继续请求并按 id 去重', async () => {
+  const pages: number[] = [];
+  const makeDoc = (id: number) => ({
+    id,
+    title: `Job ${id}`,
+    company: 'Acme',
+    applyUrl: `https://x.com/${id}`,
+    postedAt: '2026-10-01T00:00:00.000Z',
+    source: 'lever',
+  });
+
+  const docs = await fetchAllCmsOpportunities(
+    { pageSize: 500, onlySources: ['lever'] },
+    {
+      fetchImpl: async (input) => {
+        const page = Number(new URL(String(input)).searchParams.get('page'));
+        pages.push(page);
+        return Response.json({
+          hasNextPage: page === 1,
+          docs: page === 1 ? [makeDoc(1), makeDoc(2)] : [makeDoc(2), makeDoc(3)],
+        });
+      },
+    },
+  );
+
+  assert.deepEqual(pages, [1, 2]);
+  assert.deepEqual(
+    docs.map((doc) => doc.id),
+    ['1', '2', '3'],
+  );
+});
+
+test('CMS fetch：force-cache + revalidate 透传 next，no-store 不带 next', async () => {
+  const nexts: unknown[] = [];
+  const fetchImpl: typeof fetch = async (_input, init) => {
+    nexts.push((init as (RequestInit & { next?: unknown }) | undefined)?.next);
+    return Response.json({ hasNextPage: false, docs: [] });
+  };
+
+  await fetchCmsOpportunities({}, { cache: 'force-cache', revalidate: 3600, fetchImpl });
+  await fetchCmsOpportunities({}, { cache: 'no-store', revalidate: 3600, fetchImpl });
+
+  assert.deepEqual(nexts, [{ revalidate: 3600 }, undefined]);
 });
 
 test('searchJobs 客户端拼参数（含 ignore / 国家 / 时区）与 429', async () => {

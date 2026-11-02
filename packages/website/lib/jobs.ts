@@ -1,5 +1,5 @@
 import {
-  fetchCmsOpportunities,
+  fetchAllCmsOpportunities,
   fetchCmsOpportunityById,
   INDEXABLE_SOURCES,
   type JobSearchRequest,
@@ -42,17 +42,24 @@ export async function searchWebsiteJobs(req: JobSearchRequest): Promise<JobSearc
   }
 }
 
-function cmsOptions() {
+/** sitemap 数据与路由 ISR 对齐；不显式设置时 force-cache 会被 Next 当成约一年。 */
+const CMS_REVALIDATE_SECONDS = 3600;
+
+function cmsBaseOptions() {
   const baseUrl = process.env.MUICV_CMS_URL;
-  return baseUrl ? { baseUrl, cache: 'force-cache' as const } : { cache: 'force-cache' as const };
+  return baseUrl ? { baseUrl } : {};
+}
+
+function sitemapCmsOptions() {
+  return { ...cmsBaseOptions(), cache: 'force-cache' as const, revalidate: CMS_REVALIDATE_SECONDS };
 }
 
 export function getWebsiteOpportunity(id: string) {
-  return fetchCmsOpportunityById(id, { ...cmsOptions(), cache: 'no-store' });
+  // 详情页必须实时反映下架状态；expired 也会返回，用于保留 200 存档页。
+  return fetchCmsOpportunityById(id, { ...cmsBaseOptions(), cache: 'no-store' });
 }
 
-/** sitemap 用：最新的采集岗位（Remotive 条款不允许转投搜索引擎，排除）。 */
-export async function getSitemapOpportunities() {
-  const page = await fetchCmsOpportunities({ pageSize: 500, onlySources: INDEXABLE_SOURCES }, cmsOptions());
-  return page.docs;
+/** sitemap 用：全部在架的可收录岗位（Remotive 条款不允许转投搜索引擎，排除）。 */
+export function getSitemapOpportunities() {
+  return fetchAllCmsOpportunities({ pageSize: 500, onlySources: INDEXABLE_SOURCES }, sitemapCmsOptions());
 }

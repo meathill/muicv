@@ -1062,4 +1062,10 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
   - 语义：坐班 / 混合岗的 `allowedCountries` = 办公地所在国；remote 岗 = 候选人须在的国家。**未声明 = 开放**（宁可多给，详情页提醒以原文为准）。
   - 资格判定：求职者 country 命中 allowedCountries，或其所属大区命中 allowedRegions，或岗位开放；
     时区按区间重叠（只给 country 时用该国时区范围）。「我在中国，UTC+8」会排掉仅限美国的远程岗。
+- **过期岗位存档（2026-11-02）**：CMS `expired` 不再对匿名隐藏，详情页返回 200 并显示「岗位已下架」存档提示，同时输出
+  `noindex, follow`；sitemap / jobIndex / Vectorize 仍按 `published` 剔除，只有真正删除的岗位才 404。
+  这样自然下架的岗位不会在 Ahrefs 里报成 sitemap 404，搜索引擎会因 noindex + 退出 sitemap 慢慢掉索引。
+  注意：真正下架 / 权利人投诉请把 CMS 状态改成 `draft` 或删除记录，不要用 `expired`。
+- **sitemap 数据缓存**：`force-cache` 必须显式配 `next.revalidate`（岗位 / 内容都是 3600），否则 Next 会把它存成约一年，
+  过期 URL 会长期滞留在 sitemap。岗位 sitemap 按 `hasNextPage` 翻页收全量（`fetchAllCmsOpportunities`），不再截断 500 条。
 - **限流**：Workers Rate Limiting，带 key 按 userId 60/min，匿名按 IP 20/min。website 走 service binding 时没有 `cf-connecting-ip`，此时才信任 `x-muicv-client-ip`（公网请求 CF 必注入 cf-connecting-ip，伪造不了）。

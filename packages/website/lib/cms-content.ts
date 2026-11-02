@@ -13,10 +13,16 @@ import {
 import { postAlternateLanguages } from './post-alternates';
 
 const WEBSITE_CMS_CACHE = 'force-cache' as const;
+/** sitemap / 页面数据与 ISR 对齐；不显式设置时 force-cache 会被 Next 当成约一年。 */
+const WEBSITE_CMS_REVALIDATE = 3600;
 
 function getCmsOptions() {
   const baseUrl = process.env.MUICV_CMS_URL;
-  return baseUrl ? { baseUrl, cache: WEBSITE_CMS_CACHE } : { cache: WEBSITE_CMS_CACHE };
+  return {
+    ...(baseUrl ? { baseUrl } : {}),
+    cache: WEBSITE_CMS_CACHE,
+    revalidate: WEBSITE_CMS_REVALIDATE,
+  };
 }
 
 export function getWebsitePublishedPosts(locale: ContentLocale = DEFAULT_CONTENT_LOCALE, section?: PostSection) {

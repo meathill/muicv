@@ -50,17 +50,37 @@ test('cms content fetch maps Payload posts into content shape', async () => {
 
 test('cms content fetch allows caller to choose cache mode', async () => {
   let cacheMode: unknown;
+  let next: unknown;
 
   await fetchCmsPublishedPosts('zh-CN', undefined, {
     baseUrl: 'https://cms.example.com',
     cache: 'force-cache',
+    revalidate: 3600,
     fetchImpl: async (_url, init) => {
       cacheMode = init?.cache;
+      next = (init as (RequestInit & { next?: unknown }) | undefined)?.next;
       return Response.json({ docs: [] });
     },
   });
 
   assert.equal(cacheMode, 'force-cache');
+  assert.deepEqual(next, { revalidate: 3600 });
+});
+
+test('cms content no-store 不传 next.revalidate', async () => {
+  let next: unknown = 'unset';
+
+  await fetchCmsPublishedPosts('zh-CN', undefined, {
+    baseUrl: 'https://cms.example.com',
+    cache: 'no-store',
+    revalidate: 3600,
+    fetchImpl: async (_url, init) => {
+      next = (init as (RequestInit & { next?: unknown }) | undefined)?.next;
+      return Response.json({ docs: [] });
+    },
+  });
+
+  assert.equal(next, undefined);
 });
 
 test('cms content fetch maps Payload skills into content shape', async () => {

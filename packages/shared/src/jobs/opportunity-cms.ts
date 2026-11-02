@@ -10,6 +10,8 @@ export type OpportunityCmsOptions = {
   baseUrl?: string;
   fetchImpl?: typeof fetch;
   cache?: 'default' | 'force-cache' | 'no-store';
+  /** Next Data Cache 的 revalidate 秒数；no-store 时忽略。不设置时 force-cache 会被当成约一年。 */
+  revalidate?: number;
 };
 
 export type OpportunityListQuery = {
@@ -19,9 +21,14 @@ export type OpportunityListQuery = {
   excludeSource?: string;
   /** 只取这些来源（如 sitemap 只要可收录来源） */
   onlySources?: readonly string[];
+  /** 详情页用：连 expired 一起取，过期岗位保留 200 存档页。 */
+  includeExpired?: boolean;
 };
 
 export type OpportunityPage = { docs: Opportunity[]; hasMore: boolean };
+
+/** sitemap 翻页上限：20k 条，远低于 sitemap 50k URL 的硬上限。 */
+const MAX_OPPORTUNITY_PAGES = 40;
 
 export function buildOpportunityParams(query: OpportunityListQuery): URLSearchParams {
   const params = new URLSearchParams({
@@ -29,8 +36,12 @@ export function buildOpportunityParams(query: OpportunityListQuery): URLSearchPa
     limit: String(query.pageSize ?? 20),
     page: String(query.page ?? 1),
     sort: '-postedAt',
-    'where[status][equals]': 'published',
   });
+  if (query.includeExpired) {
+    params.set('where[status][in]', 'published,expired');
+  } else {
+    params.set('where[status][equals]', 'published');
+  }
   if (query.ids) params.set('where[id][in]', query.ids.join(','));
   if (query.excludeSource) params.set('where[source][not_equals]', query.excludeSource);
   if (query.onlySources?.length) params.set('where[source][in]', query.onlySources.join(','));
@@ -44,11 +55,17 @@ export async function fetchCmsOpportunities(
   const fetchImpl = options.fetchImpl ?? fetch;
   const base = (options.baseUrl ?? DEFAULT_CMS_BASE_URL).replace(/\/+$/, '');
   try {
-    const res = await fetchImpl(`${base}/api/opportunities?${buildOpportunityParams(query).toString()}`, {
+    const init: RequestInit & { next?: { revalidate: number } } = {
       headers: { accept: 'application/json' },
       // Workers 的 RequestInit.cache 只认 no-store / no-cache，Next.js 侧才会传 force-cache 等
       cache: options.cache ?? 'no-store',
-    } as unknown as RequestInit);
+    };
+    // 显式 revalidate：force-cache 不配 revalidate 会被 Next 当成约一年缓存。
+    // no-store 与 next.revalidate 互斥，不能同时传。
+    if (options.cache !== 'no-store' && options.revalidate !== undefined) {
+      init.next = { revalidate: options.revalidate };
+    }
+    const res = await fetchImpl(`${base}/api/opportunities?${buildOpportunityParams(query).toString()}`, init);
     if (!res.ok) return { docs: [], hasMore: false };
     const body = (await res.json()) as { docs?: unknown[]; hasNextPage?: boolean };
     const docs = Array.isArray(body.docs) ? body.docs : [];
@@ -61,11 +78,26 @@ export async function fetchCmsOpportunities(
   }
 }
 
+/** sitemap 用：按 hasNextPage 翻完所有页，按 id 去重（翻页期间新增岗位可能让窗口漂移）。 */
+export async function fetchAllCmsOpportunities(
+  query: Omit<OpportunityListQuery, 'page'>,
+  options: OpportunityCmsOptions = {},
+): Promise<Opportunity[]> {
+  const byId = new Map<string, Opportunity>();
+  for (let page = 1; page <= MAX_OPPORTUNITY_PAGES; page += 1) {
+    const result = await fetchCmsOpportunities({ ...query, page }, options);
+    for (const doc of result.docs) byId.set(doc.id, doc);
+    if (!result.hasMore) break;
+  }
+  return [...byId.values()];
+}
+
 export async function fetchCmsOpportunityById(
   id: string,
   options: OpportunityCmsOptions = {},
 ): Promise<Opportunity | null> {
-  const page = await fetchCmsOpportunities({ ids: [id], pageSize: 1 }, options);
+  // 详情页 / 桌面端导入需要读到 expired，才能保留 200 存档页和复用历史 JD。
+  const page = await fetchCmsOpportunities({ ids: [id], pageSize: 1, includeExpired: true }, options);
   return page.docs[0] ?? null;
 }
 

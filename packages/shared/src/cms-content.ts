@@ -19,6 +19,8 @@ type CmsContentOptions = {
   baseUrl?: string;
   fetchImpl?: typeof fetch;
   cache?: CmsCacheMode;
+  /** Next Data Cache 的 revalidate 秒数；no-store 时忽略。不设置时 force-cache 会被当成约一年。 */
+  revalidate?: number;
 };
 
 type PayloadListResponse = {
@@ -129,10 +131,16 @@ async function fetchPayloadDocs(
   const baseUrl = trimTrailingSlash(options.baseUrl ?? DEFAULT_CMS_BASE_URL);
 
   try {
-    const response = await fetchImpl(`${baseUrl}/api/${collection}?${params.toString()}`, {
+    const init: RequestInit & { next?: { revalidate: number } } = {
       headers: { Accept: 'application/json' },
       cache: options.cache ?? 'no-store',
-    });
+    };
+    // 显式 revalidate：force-cache 不配 revalidate 会被 Next 当成约一年缓存。
+    // no-store 与 next.revalidate 互斥，不能同时传。
+    if (options.cache !== 'no-store' && options.revalidate !== undefined) {
+      init.next = { revalidate: options.revalidate };
+    }
+    const response = await fetchImpl(`${baseUrl}/api/${collection}?${params.toString()}`, init);
 
     if (!response.ok) {
       return null;

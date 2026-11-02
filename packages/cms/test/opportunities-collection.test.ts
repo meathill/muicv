@@ -17,10 +17,10 @@ test('opportunities：dedupeKey 唯一、fingerprint / postedAt / status 有索�
   assert.equal(field('status')?.defaultValue, 'published');
 });
 
-test('opportunities：匿名只能读 published', () => {
+test('opportunities：匿名可读 published + expired（过期页保留存档），draft 仍隐藏', () => {
   const read = Opportunities.access?.read;
   assert.ok(read);
   const anon = read({ req: { user: null } } as never);
-  assert.deepEqual(anon, { status: { equals: 'published' } });
+  assert.deepEqual(anon, { status: { in: ['published', 'expired'] } });
   assert.equal(read({ req: { user: { id: 1 } } } as never), true);
 });

@@ -4,11 +4,12 @@ import type { Access, CollectionConfig, Where } from 'payload';
 /**
  * 采集来的国际 / 远程技术岗（由 api worker 的 scheduled 采集（packages/api/src/cron）定时写入）。
  * 与社区贡献 JD（api D1 communityJd）在 /jobs 合并展示，并统一进 Vectorize 做自然语言搜索。
- * 匿名只能读 published；expired 由 cron 按 postedAt 自动标记。
+ * 匿名可读 published + expired：过期岗位详情页保留 200 存档，避免外链 404。
+ * draft 仍对匿名隐藏；需要真正下架 / 删除请用 draft 或删除记录，不要用 expired。
  */
-const PUBLISHED_ONLY: Where = { status: { equals: 'published' } };
+const PUBLIC_READABLE: Where = { status: { in: ['published', 'expired'] } };
 
-const readPublishedOrAuthenticated: Access = ({ req }) => (req.user ? true : PUBLISHED_ONLY);
+const readPublicOrAuthenticated: Access = ({ req }) => (req.user ? true : PUBLIC_READABLE);
 
 function toOptions(values: readonly string[]) {
   return values.map((value) => ({ label: value, value }));
@@ -17,7 +18,7 @@ function toOptions(values: readonly string[]) {
 export const Opportunities: CollectionConfig = {
   slug: 'opportunities',
   access: {
-    read: readPublishedOrAuthenticated,
+    read: readPublicOrAuthenticated,
   },
   admin: {
     useAsTitle: 'title',
