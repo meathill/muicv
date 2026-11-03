@@ -1,8 +1,26 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-11-01
+最后更新：2026-11-04
 
 ## 当前进行中
+
+### coss ui 接入 + 全站按钮统一（2026-11-04）
+
+- [x] 事实核查：仓库从未有 radix（lockfile / node_modules 双零）；coss ui 与 @base-ui/react 同底座
+- [x] packages/ui 换血：Button（+loading）/ Input / Popover 换 coss 当前版，press/press-ink 变体移植，
+      Spinner 换 phosphor；--radius 统一 6px
+- [x] 地基：app 接变量层 styles.css + @source 扫 ui 包 + body isolate relative
+- [x] 19 文件约 60 颗手写按钮 → <Button>（press/press-ink/outline/ghost 映射，4 处有意保留原生）；
+      chat-model-selector 外壳换 coss Popover
+- [x] app 206 测试 / typecheck / build 全绿（coss 样式确认进产物），其余包回归通过，lint 0 诊断
+- [ ] 用户 dev 冒烟：按钮逐个过视觉（重点：xs 高度收窄、press 字重变 extrabold、
+      聊天工具条芯片边框变深出硬阴影、登录 CTA 变矮）、chat-model-selector 弹层、暗色模式
+- [ ] 后续项在 TODO.md「UI 组件化后续」：website 按钮组件化 / app 弹层组件化 / Menu·ToggleGroup
+
+### 依赖增量升级（2026-11-04）
+
+- [x] pnpm up -r +138/-140（11 天增量）；biome 2.6.4 + schema migrate（08f5022）
+- [x] stripe 维持 22 暂缓；app 加 @muicv/ui、ui 包加 @phosphor-icons/react
 
 ### 新增对话类型「岗位库匹配」（2026-10-24）
 
