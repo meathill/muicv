@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import type { ReactElement } from 'react';
 
 import type { RecorderPhase } from '../lib/use-recorder';
@@ -57,21 +58,12 @@ export function RecordingBar({ phase, elapsedMs, limitSec, rms, errorMsg, onCanc
           {phase === 'error' && <span className="text-tongue">{errorMsg || '录音失败'}</span>}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="press-ink shrink-0 rounded-lg border-2 border-rule-strong bg-cream px-3 py-2 text-[14px] font-bold text-ink transition hover:border-ink"
-      >
+      <Button onClick={onCancel} variant="press-ink">
         取消
-      </button>
-      <button
-        type="button"
-        onClick={onFinish}
-        disabled={!canFinish}
-        className="press shrink-0 rounded-lg bg-yellow px-3.5 py-2 text-[14px] font-bold text-ink disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      </Button>
+      <Button onClick={onFinish} disabled={!canFinish} variant="press">
         完成
-      </button>
+      </Button>
     </div>
   );
 }

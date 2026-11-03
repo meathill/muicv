@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import { CloudArrowDownIcon, MicrophoneIcon, SpinnerGapIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
@@ -133,14 +134,15 @@ export function WhisperEngineCard() {
             </p>
           </div>
           {engineInstalled ? (
-            <button
-              type="button"
+            <Button
               onClick={() => void onUninstallEngine()}
               disabled={busy != null}
-              className="rounded-lg border-2 border-rule-strong bg-cream px-3 py-1.5 text-[12px] font-bold text-ink hover:bg-fluff disabled:cursor-not-allowed disabled:opacity-60"
+              variant="outline"
+              size="xs"
+              className="border-2 border-rule-strong font-bold hover:bg-fluff"
             >
               卸载
-            </button>
+            </Button>
           ) : (
             <DownloadButton
               busy={busy?.kind === 'engine'}
@@ -186,22 +188,24 @@ export function WhisperEngineCard() {
                       {installed ? (
                         <>
                           {!isDefault && (
-                            <button
-                              type="button"
+                            <Button
                               onClick={() => void onChangeDefault(opt.id)}
-                              className="rounded-lg border-2 border-rule-strong bg-cream px-2 py-1 text-[12px] font-bold text-ink hover:bg-fluff"
+                              variant="outline"
+                              size="xs"
+                              className="border-2 border-rule-strong font-bold hover:bg-fluff"
                             >
                               设为默认
-                            </button>
+                            </Button>
                           )}
-                          <button
-                            type="button"
+                          <Button
                             onClick={() => void onUninstallModel(opt.id)}
                             disabled={busy != null}
-                            className="rounded-lg border-2 border-rule-strong bg-cream px-2 py-1 text-[12px] font-bold text-ink hover:bg-fluff disabled:cursor-not-allowed disabled:opacity-60"
+                            variant="outline"
+                            size="xs"
+                            className="border-2 border-rule-strong font-bold hover:bg-fluff"
                           >
                             卸载
-                          </button>
+                          </Button>
                         </>
                       ) : (
                         <DownloadButton
@@ -231,18 +235,18 @@ export function WhisperEngineCard() {
             const localReady = engineInstalled && status.models.some((m) => m.installed);
             const disabled = opt.id === 'local-preferred' && !localReady;
             return (
-              <button
-                type="button"
+              <Button
                 key={opt.id}
                 onClick={() => {
                   if (!disabled) void onChangePref(opt.id);
                 }}
                 disabled={disabled}
                 title={disabled ? '先下载引擎和至少一个模型' : ''}
-                className={`flex items-start gap-3 rounded-lg border-2 px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                variant="outline"
+                className={`h-auto items-start gap-3 py-2 text-left font-normal whitespace-normal transition sm:h-auto ${
                   selected
                     ? 'border-ink bg-fluff shadow-[0_2px_0_0_var(--color-ink)]'
-                    : 'border-rule-strong bg-cream enabled:hover:bg-paper'
+                    : 'border-rule-strong enabled:hover:bg-paper'
                 }`}
               >
                 <div className="min-w-0 flex-1">
@@ -252,7 +256,7 @@ export function WhisperEngineCard() {
                   </p>
                   <p className="mt-0.5 text-[12px] text-mute">{opt.hint}</p>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -274,15 +278,9 @@ function DownloadButton({
   label: string;
   compact?: boolean;
 }) {
-  const sizeCls = compact ? 'px-2 py-1 text-[12px]' : 'px-3 py-1.5 text-[12px]';
   const iconSize = compact ? 12 : 13;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`press inline-flex items-center gap-1.5 rounded-lg bg-yellow font-bold text-ink disabled:cursor-not-allowed disabled:opacity-60 ${sizeCls}`}
-    >
+    <Button onClick={onClick} disabled={disabled} variant="press" size="xs" className={compact ? undefined : 'px-3'}>
       {busy ? (
         <>
           <SpinnerGapIcon size={iconSize} weight="bold" className="animate-spin" />
@@ -294,7 +292,7 @@ function DownloadButton({
           {label}
         </>
       )}
-    </button>
+    </Button>
   );
 }
 

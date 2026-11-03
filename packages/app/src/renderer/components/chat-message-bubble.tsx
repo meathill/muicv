@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import {
   ArrowCounterClockwiseIcon,
   BrainIcon,
@@ -143,16 +144,17 @@ export function MessageBubble({
 
         {isUser && onRollback && (
           <div className="mt-1 flex items-center justify-end px-1 opacity-75 hover:opacity-100 transition-opacity">
-            <button
-              type="button"
+            <Button
               title="回滚到此发言并重新编辑"
               aria-label="回滚到此发言并重新编辑"
               onClick={() => setShowRollbackConfirm(true)}
-              className="press inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold text-mute hover:bg-rule/40 hover:text-ink"
+              variant="ghost"
+              size="xs"
+              className="text-mute hover:bg-rule/40 hover:text-ink"
             >
               <ArrowCounterClockwiseIcon size={12} weight="bold" />
               <span>回滚重新编辑</span>
-            </button>
+            </Button>
           </div>
         )}
 

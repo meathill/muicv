@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import {
   CheckCircleIcon,
   CheckSquareIcon,
@@ -129,16 +130,16 @@ function QuestionItem({
           {options.map((opt) => {
             const isChecked = selected.includes(opt);
             return (
-              <button
+              <Button
                 key={opt}
-                type="button"
                 onClick={() => onToggle(opt)}
                 disabled={disabled}
-                className={`press flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-bold transition ${
+                variant="press"
+                className={
                   isChecked
-                    ? 'border-2 border-ink bg-yellow text-ink shadow-[0_2px_0_0_var(--color-ink)]'
-                    : 'border-2 border-rule bg-paper text-ink-soft hover:border-rule-strong hover:bg-paper-deep'
-                }`}
+                    ? undefined
+                    : 'border-rule bg-paper text-ink-soft hover:border-rule-strong hover:bg-paper-deep'
+                }
               >
                 {multiSelect ? (
                   isChecked ? (
@@ -152,7 +153,7 @@ function QuestionItem({
                   <CircleIcon size={15} className="text-mute" />
                 )}
                 <span>{opt}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -324,11 +325,11 @@ export function ChatQuestionGroup({ calls }: { calls: ToolCallRecord[] }) {
       {error && <p className="text-[12px] font-bold text-danger">{error}</p>}
 
       <div className="flex justify-end">
-        <button
-          type="button"
+        <Button
           onClick={() => void handleSubmit()}
           disabled={!canSubmit || submitting}
-          className="press inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-ink bg-yellow px-4 py-1.5 text-[13px] font-bold text-ink shadow-[0_2px_0_0_var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          variant="press"
+          className="disabled:opacity-50 disabled:shadow-none"
         >
           {submitting ? (
             <>
@@ -341,7 +342,7 @@ export function ChatQuestionGroup({ calls }: { calls: ToolCallRecord[] }) {
               <span>提交回答</span>
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

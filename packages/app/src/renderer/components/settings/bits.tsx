@@ -2,6 +2,8 @@
  * 设置页内多张卡复用的小组件 / 常量。
  */
 
+import { Button } from '@muicv/ui';
+
 export const DASHBOARD_URL = 'https://muicv.com/dashboard';
 export const MUIROUTER_URL = 'https://muirouter.com';
 
@@ -19,16 +21,13 @@ export function Avatar({ session }: { session: { name: string; image: string | n
 
 export function ExternalButton({ href, label, primary }: { href: string; label: string; primary?: boolean }) {
   return (
-    <button
-      type="button"
+    <Button
       onClick={() => void window.muicv.shell.openExternal(href)}
-      className={
-        primary
-          ? 'press inline-flex items-center justify-center gap-1.5 rounded-lg bg-yellow px-3.5 py-1.5 text-[12px] font-bold text-ink'
-          : 'rounded-lg border-2 border-rule-strong bg-cream px-3.5 py-1.5 text-[12px] font-bold text-ink hover:bg-fluff'
-      }
+      variant={primary ? 'press' : 'outline'}
+      size="xs"
+      className={primary ? undefined : 'border-2 border-rule-strong font-bold hover:bg-fluff'}
     >
       {label}
-    </button>
+    </Button>
   );
 }

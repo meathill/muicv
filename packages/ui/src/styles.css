@@ -9,7 +9,8 @@
  * ----------------------------------------------------------- */
 
 :root {
-  --radius: 8px;
+  /* 设计硬约束：圆角紧凑，全局基准 6px（与 app / website 的 @theme 一致） */
+  --radius: 6px;
 
   --background: var(--color-cream);
   --foreground: var(--color-ink);

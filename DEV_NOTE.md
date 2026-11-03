@@ -880,6 +880,41 @@ dashboard 或 app 点关联
 - 手动全仓规整一次：`pnpm run lint:fix`（2026-09 已跑过一次，提交 `5dee4c2`）。
 - 绕开 hook（不推荐）：`git commit --no-verify`。
 
+## UI 组件层：coss ui 接入（2026-11-04）
+
+**决策**：`packages/ui`（@muicv/ui）的组件以 [coss ui](https://coss.com/ui)（前身 Origin UI，
+Cal.com 官方设计系统）当前版为基底，叠加 Meathill Studio 品牌变体（`press` / `press-ink`）。
+事实核查：仓库从没装过 radix（lockfile + node_modules 双零）——`@base-ui/react` 是 Radix
+原班人马的无样式原语库，和 coss ui 同底座，所以这是「同底座换样式层」，不是迁移。
+
+- **分发方式**：coss ui 走 shadcn registry（`pnpm dlx shadcn@latest add @coss/button`），
+  但 registry JSON 直接从 GitHub `cosscom/ui` 的 `apps/ui/registry/default/ui/*.tsx` 拉更稳
+  （monorepo 里跑 shadcn CLI 需要 components.json，对不上我们的布局）。拉回来的源码改三处：
+  `cn` 的 import 路径、引号风格交给 biome、Spinner 的 lucide 图标换 phosphor（AGENTS 图标规范）。
+- **主题机制**：coss ui 组件用 shadcn 语义变量（`--primary` / `--popover` / `--border`…），
+  `packages/ui/src/styles.css` 把这层语义名映射到品牌 token（`--primary: var(--color-yellow)`
+  等），`@theme inline` 暴露成 Tailwind utility。**消费方必须 import 这层 CSS**：
+  website 早已 import；app 是 2026-11-04 起在 renderer globals.css 加
+  `@import "@muicv/ui/styles.css"`。暗色不用单独写 `.dark` 覆写段——语义变量全指向
+  `var(--color-*)`，消费方暗色改的就是底层 token，自动跟随（这是当初分层的意图）。
+- **两个接线坑**：
+  1. `@source`：app 的 tailwind 只扫 `app/src`，ui 包组件里的 class（`bg-primary` 等）
+     不会被生成——globals.css 要加 `@source "../../../../ui/src/**/*.{ts,tsx}"`（website 有先例）。
+  2. Base UI portal 层级：coss ui 要求根容器 `isolation: isolate` + body `position: relative`，
+     app 的 index.html body 已加（tailwind 工具类 `isolate relative`）。
+- **半径冲突**：styles.css 的 `--radius` 曾是 8px，与 app/website `@theme` 的 6px 冲突
+  （谁后加载谁赢）。已统一 6px（设计硬约束）。
+- **品牌变体**：`press` / `press-ink`（2px 描边 + 硬阴影 + hover 浮起 / active 压下）是
+  招牌效果，作为 coss Button 的自定义 variant 保留在 cva 里，token 链
+  （`--shadow-press-yellow` → 暗色固定深色）不动。coss 组件默认 variant 引用的
+  `bg-primary`（=黄）在暗色下靠 app globals.css 的 contrast guards 保文字可读性。
+- **app 的消费现状**：`@muicv/ui` 的 Button/Input 此前零调用方，app 按钮全是 16+ 处手写
+  className。2026-11-04 起统一到 `<Button>`（chat-input-bar 是漂移规范化的范例：
+  原 press-ink 芯片 border 更浅、无硬阴影、字重轻，统一后走纯 variant，样式漂移点在
+  提交说明里列验收清单）。斜杠命令面板（slash-command-menu）刻意不换：完全受控锚点 +
+  textarea 保焦点的特殊模式，源码注释有说明。菜单选项行 / 分段控制（模型列表、思考深度）
+  不是 press 语义，后续分别走 coss 的 Menu / Select / ToggleGroup，不在按钮统一范围。
+
 ## packages/app macOS 签名 + 公证
 
 > 不签 → 用户下载装完直接「已损坏」打不开。本节记录决策依据 + 凭据怎么拿、放哪、丢了怎么办。

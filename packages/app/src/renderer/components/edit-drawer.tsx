@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import { CircleIcon, FloppyDiskIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -120,25 +121,27 @@ export function EditDrawer({ path, onClose }: { path: string | null; onClose: ()
             lastSavedAt={editorLastSavedAt}
             hasPath={Boolean(editorOpenPath)}
           />
-          <button
-            type="button"
+          <Button
             onClick={handleSave}
             disabled={!dirty || editorSaving}
             title="保存（⌘S）"
-            className="press inline-flex shrink-0 items-center gap-1 rounded-md bg-yellow px-2.5 py-1 text-[12px] font-bold text-ink disabled:opacity-50"
+            variant="press"
+            size="xs"
+            className="disabled:opacity-50"
           >
             <FloppyDiskIcon size={12} weight="bold" />
             保存
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={requestClose}
             title="关闭编辑"
             aria-label="关闭编辑"
-            className="flex shrink-0 items-center justify-center rounded-md px-2 py-1 text-mute hover:bg-fluff hover:text-ink"
+            variant="ghost"
+            size="icon-xs"
+            className="text-mute hover:bg-fluff hover:text-ink"
           >
             <XIcon size={14} weight="bold" />
-          </button>
+          </Button>
         </header>
 
         {editorError && (

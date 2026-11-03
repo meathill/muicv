@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import { ArrowCircleUpIcon, ArrowsClockwiseIcon, DownloadSimpleIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
@@ -52,14 +53,15 @@ export function UpdateCard() {
     return (
       <>
         <div className="h-px bg-rule" />
-        <button
-          type="button"
+        <Button
           onClick={() => setReadyDismissed(false)}
-          className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-[12px] font-medium text-yellow-deep hover:bg-fluff/60"
+          variant="ghost"
+          size="xs"
+          className="w-full justify-start gap-1.5 text-yellow-deep hover:bg-fluff/60"
         >
           <ArrowCircleUpIcon size={13} weight="fill" />
           <span className="truncate">v{status.version} 已就绪 · 点此重启</span>
-        </button>
+        </Button>
       </>
     );
   }
@@ -110,20 +112,17 @@ export function UpdateCard() {
               <span className="truncate">v{status.version} 已就绪</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => void handleInstall()}
-                className="press flex-1 rounded-md bg-yellow px-2 py-1 text-[12px] font-bold text-ink"
-              >
+              <Button onClick={() => void handleInstall()} variant="press" size="xs" className="flex-1">
                 立即重启
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={() => setReadyDismissed(true)}
-                className="rounded-md border-2 border-rule-strong bg-cream px-2 py-1 text-[12px] font-medium text-ink-soft hover:bg-fluff"
+                variant="outline"
+                size="xs"
+                className="border-2 border-rule-strong bg-cream text-ink-soft hover:bg-fluff"
               >
                 稍后
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -137,30 +136,33 @@ export function UpdateCard() {
                 <WarningIcon size={13} weight="fill" className="mt-0.5 shrink-0 text-warning" />
                 <span className="break-words font-medium">{friendlyMsg}</span>
               </div>
-              <button
-                type="button"
+              <Button
                 onClick={() => setStatus({ phase: 'idle' })}
-                className="shrink-0 text-mute hover:text-ink p-0.5"
+                variant="ghost"
+                size="icon-xs"
+                className="text-mute hover:text-ink"
                 title="忽略"
               >
                 <XIcon size={12} weight="bold" />
-              </button>
+              </Button>
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <button
-                type="button"
+              <Button
                 onClick={() => void handleCheck()}
-                className="rounded border border-rule-strong bg-cream px-2 py-0.5 text-[11px] font-medium text-ink hover:bg-fluff"
+                variant="outline"
+                size="xs"
+                className="rounded border-rule-strong bg-cream text-ink hover:bg-fluff"
               >
                 重试
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={() => setStatus({ phase: 'idle' })}
-                className="text-[11px] text-mute hover:text-ink"
+                variant="ghost"
+                size="xs"
+                className="text-mute hover:text-ink"
               >
                 忽略
-              </button>
+              </Button>
             </div>
           </div>
         );

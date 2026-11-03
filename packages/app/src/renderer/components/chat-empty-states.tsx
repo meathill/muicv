@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import { FileTextIcon, NotePencilIcon, TargetIcon } from '@phosphor-icons/react';
 
 import { CONVERSATION_TYPE_META, type ConversationType } from '../../shared/types.ts';
@@ -22,13 +23,9 @@ export function CenteredCard({
         <CorgiMascot className="mx-auto h-16 w-16" />
         <h2 className="mt-3 text-2xl font-extrabold text-ink">{title}</h2>
         <p className="mt-2 text-[14px] text-ink-soft">{body}</p>
-        <button
-          type="button"
-          onClick={onCta}
-          className="press mt-5 inline-flex rounded-lg bg-yellow px-5 py-2 text-[14px] font-bold text-ink"
-        >
+        <Button onClick={onCta} variant="press" size="lg" className="mt-5">
           {ctaLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -67,6 +64,8 @@ export function NoConversationCard() {
         </p>
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {starts.map(({ title, body, Icon, onClick }) => (
+            // 多行内容卡片（flex-col + min-h + 自定义阴影/hover），与 Button 的固定高度、
+            // 居中布局、[&_svg] 规则整体冲突，保留原生 button。
             <button
               key={title}
               type="button"
@@ -120,20 +119,12 @@ export function AiSetupCard({ onGoSettings, onDismiss }: { onGoSettings: () => v
             muirouter，类似话费充值），或升级 Pro 会员后由我们提供。
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={onGoSettings}
-              className="press inline-flex items-center justify-center rounded-lg bg-yellow px-4 py-2 text-[14px] font-bold text-ink"
-            >
+            <Button onClick={onGoSettings} variant="press" size="lg">
               去设置完成 →
-            </button>
-            <button
-              type="button"
-              onClick={onDismiss}
-              className="rounded-lg px-3 py-2 text-[12px] text-mute hover:text-ink"
-            >
+            </Button>
+            <Button onClick={onDismiss} variant="ghost" size="xs" className="text-mute hover:text-ink">
               先关掉
-            </button>
+            </Button>
           </div>
         </div>
       </div>

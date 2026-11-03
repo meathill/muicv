@@ -25,6 +25,8 @@ export function ThemeCard() {
         {OPTIONS.map((opt) => {
           const active = theme === opt.value;
           return (
+            // 保留原生 button：这是双行 flex-col 的选择瓦片（role="radio"），与 Button 基础样式
+            // （固定高度 h-9、nowrap、justify-center、svg 尺寸覆写）冲突，迁移需全量覆写才能等价，得不偿失。
             // biome-ignore lint/a11y/useSemanticElements: 三态主题的分段选择器，样式定制不走原生 radio
             <button
               key={opt.value}

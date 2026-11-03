@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import { GitForkIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -62,14 +63,15 @@ export function ForkConversationDialog({
               <p className="text-[12px] text-ink-soft">由此 AI 发言开启新分支，探索不同方案</p>
             </div>
           </div>
-          <button
-            type="button"
+          <Button
             onClick={onCancel}
-            className="press inline-flex h-7 w-7 items-center justify-center rounded-lg text-mute hover:bg-rule/40 hover:text-ink"
+            variant="ghost"
+            size="icon-sm"
+            className="text-mute hover:bg-rule/40 hover:text-ink"
             aria-label="关闭"
           >
             <XIcon size={16} />
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-1.5">
@@ -88,21 +90,13 @@ export function ForkConversationDialog({
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="press inline-flex items-center justify-center rounded-lg border-2 border-rule bg-paper px-3.5 py-1.5 text-[14px] font-bold text-ink-soft hover:bg-rule/40"
-          >
+          <Button onClick={onCancel} variant="press" className="border-rule bg-paper text-ink-soft hover:bg-rule/40">
             取消
-          </button>
-          <button
-            type="button"
-            onClick={() => onConfirm(title.trim() || defaultTitle)}
-            className="press inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-ink bg-yellow px-4 py-1.5 text-[14px] font-bold text-ink shadow-[0_2px_0_0_var(--color-ink)]"
-          >
+          </Button>
+          <Button onClick={() => onConfirm(title.trim() || defaultTitle)} variant="press">
             <GitForkIcon size={16} weight="bold" />
             <span>分叉并前往</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

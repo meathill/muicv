@@ -1,4 +1,5 @@
 import { DEFAULT_LLM_MODEL, resolveModelAlias, SUPPORTED_LLM_MODELS } from '@muicv/shared';
+import { Button } from '@muicv/ui';
 import { CheckIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
@@ -105,11 +106,7 @@ export function CustomLlmCard() {
         </details>
 
         <div className="flex flex-wrap gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => void onSave()}
-            className="press inline-flex items-center justify-center gap-1.5 rounded-lg bg-yellow px-4 py-2 text-[14px] font-bold text-ink"
-          >
+          <Button onClick={() => void onSave()} variant="press">
             {saved ? (
               <>
                 <CheckIcon size={13} weight="bold" />
@@ -118,15 +115,16 @@ export function CustomLlmCard() {
             ) : (
               <span>保存</span>
             )}
-          </button>
+          </Button>
           {customConfigured && (
-            <button
-              type="button"
+            <Button
               onClick={() => void onClearCustom()}
-              className="rounded-lg border-2 border-rule-strong bg-cream px-3.5 py-2 text-[12px] font-medium text-mute hover:text-ink"
+              variant="outline"
+              size="xs"
+              className="border-2 border-rule-strong text-mute hover:text-ink"
             >
               清掉自带配置（恢复走 muicv 平台）
-            </button>
+            </Button>
           )}
         </div>
       </div>

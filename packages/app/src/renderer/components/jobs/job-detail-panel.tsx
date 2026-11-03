@@ -1,4 +1,5 @@
 import { describeRestrictions, type JobListing } from '@muicv/shared';
+import { Button } from '@muicv/ui';
 import { ArrowSquareOutIcon, DownloadSimpleIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
@@ -72,22 +73,13 @@ export function JobDetailPanel({ item }: { item: JobListing | null }) {
           ))}
         </div>
         <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={importing}
-            className="press inline-flex items-center gap-1.5 rounded-md bg-yellow px-3 py-1.5 text-[14px] font-bold text-ink disabled:opacity-60"
-          >
+          <Button onClick={handleImport} disabled={importing} variant="press" className="rounded-md">
             <DownloadSimpleIcon size={16} weight="bold" />
             {importing ? '导入中…' : '导入到档案'}
-          </button>
-          <button
-            type="button"
-            onClick={handleOpen}
-            className="inline-flex items-center gap-1.5 rounded-md border-2 border-ink bg-cream px-3 py-1.5 text-[14px] font-bold text-ink"
-          >
+          </Button>
+          <Button onClick={handleOpen} variant="outline" className="rounded-md border-2 border-ink font-bold">
             <ArrowSquareOutIcon size={16} weight="bold" />去 {item.kind === 'community' ? '原帖' : sourceLabel} 投递
-          </button>
+          </Button>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto pt-3 text-[14px]">

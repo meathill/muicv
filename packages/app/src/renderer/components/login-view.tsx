@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import { ArrowUpRightIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
@@ -79,15 +80,15 @@ export function LoginView() {
 
             {!waitingCallback ? (
               <>
-                <button
-                  type="button"
+                <Button
                   onClick={() => void onBeginConnect()}
                   disabled={busy}
-                  className="press mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-yellow px-5 py-3 text-[16px] font-bold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                  variant="press"
+                  className="mt-7 w-full rounded-xl"
                 >
                   {busy ? '准备中…' : '登录'}
                   <ArrowUpRightIcon size={16} weight="bold" />
-                </button>
+                </Button>
                 <p className="mt-3 text-center text-[12px] text-mute">会在浏览器里登录，完成后自动回到这里</p>
               </>
             ) : (
@@ -102,21 +103,27 @@ export function LoginView() {
                   <strong className="font-bold">"始终允许"</strong>，之后不会再弹。
                 </p>
                 <div className="flex items-center justify-center gap-3 text-[12px]">
-                  <button type="button" onClick={() => setWaitingCallback(false)} className="text-mute hover:text-ink">
+                  <Button
+                    onClick={() => setWaitingCallback(false)}
+                    variant="ghost"
+                    size="xs"
+                    className="text-mute hover:text-ink"
+                  >
                     取消
-                  </button>
+                  </Button>
                   <span className="text-mute">·</span>
-                  <button
-                    type="button"
+                  <Button
                     onClick={() => {
                       setWaitingCallback(false);
                       setStep('paste');
                     }}
                     title="高级：直接用一段 API key 登录"
+                    variant="ghost"
+                    size="xs"
                     className="text-mute hover:text-ink"
                   >
                     卡住了？
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -214,22 +221,18 @@ function PasteFallback({
           </div>
         )}
 
-        <button
-          type="button"
+        <Button
           onClick={() => void onLoginClick()}
           disabled={busy || !keyInput.trim()}
-          className="press inline-flex w-full items-center justify-center gap-2 rounded-lg bg-yellow px-4 py-2.5 text-[14px] font-bold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+          variant="press"
+          className="w-full"
         >
           {busy ? '验证中…' : '登录'}
-        </button>
+        </Button>
 
-        <button
-          type="button"
-          onClick={onBack}
-          className="block w-full text-center text-[12px] text-mute hover:text-ink"
-        >
+        <Button onClick={onBack} variant="ghost" size="xs" className="w-full text-mute hover:text-ink">
           ← 用浏览器登录
-        </button>
+        </Button>
       </div>
 
       <p className="mt-5 text-center text-[12px] text-mute">

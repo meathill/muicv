@@ -53,3 +53,12 @@
 - ~~electron 44 → 45~~ — 已升级到 45，等用户手工冒烟（升级器 / 附件 / whisper / 托盘）。
 - ~~biome lint 存量欠账~~ — 2026-10-24 已清零（实际规模 195 处，远超早前"约 20 处"的截断误报；
   决策记录见 DEV_NOTE.md biome 小节）。
+
+## UI 组件化后续（2026-11-04 coss ui 接入后剩下的）
+
+- **website 按钮组件化**：website 的按钮仍是 `.btn-press` / `.press` CSS 工具类（globals.css），
+  未消费 @muicv/ui。接入 = marketing 区块逐个换 `<Button>`，需整站视觉回归，单独立项。
+- **app 弹层组件化**：confirm-dialog / edit-drawer / fork-conversation-dialog 的外层弹层是
+  手写 div，可换 coss ui 的 Dialog / AlertDialog / Sheet（变量层已就位）。
+- **菜单/分段控制**：chat-model-selector 里的模型列表与思考深度分段、slash-command-menu，
+  语义是菜单/分段而非按钮，后续走 coss 的 Menu / Select / ToggleGroup。

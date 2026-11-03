@@ -1,3 +1,4 @@
+import { Button } from '@muicv/ui';
 import {
   CaretDownIcon,
   CircleIcon,
@@ -37,6 +38,7 @@ export function ProfileSection() {
   return (
     <div ref={ref} className="relative shrink-0">
       <div className="flex w-full min-w-0 items-center gap-2 px-3 py-3">
+        {/* 布局型触发行（mascot + 文本 + caret），Button 的固定高度/居中/nowrap 会破坏布局，保留原生 */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -51,8 +53,7 @@ export function ProfileSection() {
           <CaretDownIcon size={11} weight="bold" className="shrink-0 text-mute" />
         </button>
         {activeProfile && (
-          <button
-            type="button"
+          <Button
             onClick={() => {
               setOpen(false);
               if (treeOpen) closeRightPanel();
@@ -61,12 +62,14 @@ export function ProfileSection() {
             title={treeOpen ? '关闭文件浏览' : '查看文件'}
             aria-label={treeOpen ? '关闭文件浏览' : '查看文件'}
             aria-pressed={treeOpen}
-            className={`flex shrink-0 items-center justify-center rounded-md px-1.5 py-1 hover:bg-fluff ${
-              treeOpen ? 'bg-fluff text-yellow-deep' : 'text-mute hover:text-ink'
-            }`}
+            size="icon-xs"
+            variant="ghost"
+            className={
+              treeOpen ? 'bg-fluff text-yellow-deep hover:bg-fluff' : 'text-mute hover:bg-fluff hover:text-ink'
+            }
           >
             {treeOpen ? <FolderOpenIcon size={16} weight="fill" /> : <FolderSimpleIcon size={16} />}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -159,6 +162,7 @@ function ProfileItem({
         isActive ? 'bg-fluff' : 'hover:bg-fluff/60'
       }`}
     >
+      {/* 布局型触发行（状态点 + 档案名），同上保留原生 button */}
       <button
         type="button"
         onClick={onSwitch}
@@ -216,19 +220,18 @@ function IconBtn({
   danger?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Button
       title={title}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      className={`rounded px-1.5 py-0.5 text-[12px] ${
-        danger ? 'text-mute hover:bg-tongue/10 hover:text-tongue' : 'text-mute hover:bg-paper hover:text-ink'
-      }`}
+      size="icon-xs"
+      variant="ghost"
+      className={`rounded ${danger ? 'text-mute hover:bg-tongue/10 hover:text-tongue' : 'text-mute hover:bg-paper hover:text-ink'}`}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -238,13 +241,14 @@ function CreateInline({ onCreate }: { onCreate: (name: string) => Promise<void> 
 
   if (!editing) {
     return (
-      <button
-        type="button"
+      <Button
         onClick={() => setEditing(true)}
-        className="block w-full rounded-md px-2 py-1.5 text-left text-[12px] text-yellow-deep hover:bg-fluff"
+        variant="ghost"
+        size="xs"
+        className="w-full justify-start text-yellow-deep hover:bg-fluff"
       >
         + 新建职业档案
-      </button>
+      </Button>
     );
   }
 
@@ -267,24 +271,26 @@ function CreateInline({ onCreate }: { onCreate: (name: string) => Promise<void> 
         className="block w-full rounded-md border-2 border-rule-strong bg-cream px-2 py-1 text-[12px] text-ink placeholder:text-mute focus:border-ink focus:outline-none"
       />
       <div className="flex gap-1">
-        <button
-          type="button"
+        <Button
           onClick={() => name.trim() && void onCreate(name.trim())}
           disabled={!name.trim()}
-          className="press inline-flex flex-1 items-center justify-center rounded-md bg-yellow px-2 py-1 text-[12px] font-bold text-ink disabled:opacity-50"
+          variant="press"
+          size="xs"
+          className="flex-1"
         >
           选择目录
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
           onClick={() => {
             setEditing(false);
             setName('');
           }}
-          className="rounded-md px-2 py-1 text-[12px] text-mute hover:text-ink"
+          variant="ghost"
+          size="xs"
+          className="text-mute hover:text-ink"
         >
           取消
-        </button>
+        </Button>
       </div>
     </div>
   );

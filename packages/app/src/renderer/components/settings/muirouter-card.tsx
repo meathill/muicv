@@ -1,4 +1,5 @@
 import { formatCents } from '@muicv/shared';
+import { Button } from '@muicv/ui';
 import { ArrowClockwiseIcon, WalletIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
@@ -52,14 +53,15 @@ export function MuirouterCard({
               muicv 平台余额优先；耗尽后自动走 muirouter。模型切换和详细管理在网页 dashboard。
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
+              <Button
                 onClick={() => void onRefresh()}
-                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-rule-strong bg-cream px-3.5 py-1.5 text-[12px] font-bold text-ink-soft hover:bg-paper"
+                variant="outline"
+                size="xs"
+                className="border-2 border-rule-strong font-bold text-ink-soft hover:bg-paper"
               >
                 <ArrowClockwiseIcon size={12} weight="bold" />
                 <span>同步状态</span>
-              </button>
+              </Button>
               <ExternalButton href={`${DASHBOARD_URL}/muirouter`} label="去 dashboard 管理 →" />
             </div>
           </div>
@@ -83,14 +85,9 @@ export function MuirouterCard({
           </p>
           {error && <p className="mt-2 text-[12px] font-medium text-tongue">{error}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void onLink()}
-              disabled={busy}
-              className="press inline-flex items-center justify-center gap-1.5 rounded-lg bg-yellow px-3.5 py-1.5 text-[12px] font-bold text-ink disabled:opacity-60"
-            >
+            <Button onClick={() => void onLink()} disabled={busy} variant="press" size="xs">
               {busy ? '正在打开浏览器…' : '关联 muirouter'}
-            </button>
+            </Button>
             <ExternalButton href={MUIROUTER_URL} label="先去 muirouter 看看" />
           </div>
         </div>

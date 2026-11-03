@@ -8,6 +8,7 @@ import {
   WORKPLACES,
   type Workplace,
 } from '@muicv/shared';
+import { Button } from '@muicv/ui';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
@@ -87,13 +88,9 @@ export function JobSearchBar({ initial, busy, onSearch }: Props) {
             className="min-w-0 flex-1 bg-transparent py-2 text-[14px] text-ink outline-none placeholder:text-mute"
           />
         </div>
-        <button
-          type="submit"
-          disabled={busy}
-          className="press rounded-md bg-yellow px-4 py-2 text-[14px] font-bold text-ink disabled:opacity-60"
-        >
+        <Button type="submit" disabled={busy} variant="press" className="rounded-md">
           {busy ? '搜索中…' : '搜索'}
-        </button>
+        </Button>
       </div>
       <div className="flex flex-wrap gap-2">
         <FilterSelect<JobKind>

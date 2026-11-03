@@ -1,4 +1,5 @@
 import { modelSupportsAudioInput } from '@muicv/shared';
+import { Button } from '@muicv/ui';
 import {
   ArrowRightIcon,
   DownloadSimpleIcon,
@@ -187,11 +188,11 @@ export function ChatInputBar({
           >
             <p>转写失败，已保留这段录音（{Math.round(failedAudio.durationMs / 1000)} 秒）。</p>
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
+              <Button
                 onClick={() => void recorderState.handleRetryTranscribe()}
                 disabled={retryPending}
-                className="press-ink inline-flex items-center gap-1.5 rounded-lg border-2 border-rule-strong bg-cream px-2.5 py-1 text-[12px] font-medium text-ink transition hover:border-ink disabled:cursor-not-allowed disabled:opacity-60"
+                variant="press-ink"
+                size="xs"
               >
                 {retryPending ? (
                   <>
@@ -201,33 +202,26 @@ export function ChatInputBar({
                 ) : (
                   '重试转写'
                 )}
-              </button>
-              <button
-                type="button"
-                onClick={recorderState.handleDownloadFailedAudio}
-                className="press-ink inline-flex items-center gap-1.5 rounded-lg border-2 border-rule-strong bg-cream px-2.5 py-1 text-[12px] font-medium text-ink transition hover:border-ink"
-              >
+              </Button>
+              <Button onClick={recorderState.handleDownloadFailedAudio} variant="press-ink" size="xs">
                 <DownloadSimpleIcon size={12} weight="bold" />
                 下载录音
-              </button>
+              </Button>
               {!failedAudio.localReady && onOpenSettings && (
-                <button
-                  type="button"
-                  onClick={onOpenSettings}
-                  className="press-ink inline-flex items-center gap-1.5 rounded-lg border-2 border-rule-strong bg-cream px-2.5 py-1 text-[12px] font-medium text-ink transition hover:border-ink"
-                >
+                <Button onClick={onOpenSettings} variant="press-ink" size="xs">
                   安装本地模型
-                </button>
+                </Button>
               )}
-              <button
-                type="button"
+              <Button
                 onClick={recorderState.clearFailedAudio}
-                className="press-ink ml-auto inline-flex items-center gap-1.5 rounded-lg border-2 border-rule-strong bg-cream px-2.5 py-1 text-[12px] font-medium text-ink-soft transition hover:border-ink hover:text-ink"
+                variant="press-ink"
+                size="xs"
+                className="ml-auto text-ink-soft hover:text-ink"
                 aria-label="放弃这段录音"
               >
                 <TrashIcon size={12} weight="bold" />
                 放弃
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -295,25 +289,27 @@ export function ChatInputBar({
             />
             <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-rule/30 mt-1">
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
+                <Button
                   onClick={attachments.onPickFiles}
                   disabled={busy || attachments.pendingAttachments.length >= MAX_ATTACHMENTS_PER_SEND}
                   title={`上传附件（PDF / DOCX / Markdown / 文本 / 图像；也可拖入或粘贴。单次最多 ${MAX_ATTACHMENTS_PER_SEND} 个）`}
-                  className="inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-ink-soft transition hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-ink-soft hover:bg-paper hover:text-ink"
                   aria-label="上传附件"
                 >
                   <PlusIcon size={18} weight="bold" />
-                </button>
+                </Button>
                 <ChatModelSelector onOpenSettings={onOpenSettings} />
               </div>
               <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
+                <Button
                   onClick={() => void recorderState.handleMicClick()}
                   disabled={busy || recording}
                   title={recording ? '录音 / 转写中…' : '语音输入（最长 3 分钟）'}
-                  className="inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-ink-soft transition hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-ink-soft hover:bg-paper hover:text-ink"
                   aria-label="语音输入"
                 >
                   {recording ? (
@@ -321,28 +317,30 @@ export function ChatInputBar({
                   ) : (
                     <MicrophoneIcon size={18} weight="regular" />
                   )}
-                </button>
+                </Button>
                 {busy ? (
-                  <button
-                    type="button"
+                  <Button
                     onClick={onAbort}
                     title="停止生成"
-                    className="press-ink inline-flex shrink-0 items-center justify-center h-8 w-8 rounded-full bg-ink text-cream transition hover:bg-ink-soft shadow-xs cursor-pointer"
+                    size="icon-sm"
+                    variant="ghost"
+                    className="rounded-full bg-ink text-cream shadow-xs hover:bg-ink-soft hover:text-cream"
                     aria-label="停止"
                   >
                     <StopIcon size={14} weight="fill" />
-                  </button>
+                  </Button>
                 ) : (
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleSendClick}
                     disabled={!canSend}
                     title={canSend ? '发送 (Enter)' : '输入内容后发送'}
-                    className="press inline-flex shrink-0 items-center justify-center h-8 w-8 rounded-full bg-yellow text-ink transition hover:bg-yellow-warm shadow-xs disabled:bg-rule/40 disabled:text-mute/50 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
+                    size="icon-sm"
+                    variant="ghost"
+                    className="rounded-full bg-yellow text-ink shadow-xs hover:bg-yellow-warm hover:text-ink disabled:bg-rule/40 disabled:text-mute/50"
                     aria-label="发送"
                   >
                     <ArrowRightIcon size={16} weight="bold" />
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
