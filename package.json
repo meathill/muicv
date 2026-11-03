@@ -16,7 +16,7 @@
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.33.2",
   "devDependencies": {
-    "@biomejs/biome": "^2.6.3",
-    "wrangler": "^4.152.0"
+    "@biomejs/biome": "^2.6.4",
+    "wrangler": "^4.157.0"
   }
 }
