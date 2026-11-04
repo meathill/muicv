@@ -3,6 +3,7 @@ import { isTemplateId } from '@muicv/shared';
 import { app, type BrowserWindow, shell } from 'electron';
 
 import type { MuirouterLinkResult, SessionCheckResult } from '../shared/types.ts';
+import { importJobById } from './job-import.ts';
 import { loginWithKey } from './session.ts';
 import { getActiveProfile, getConfig, setProfileDefaultTemplate } from './store.ts';
 
@@ -238,7 +239,6 @@ async function handleMuirouterLinked(parsed: URL): Promise<void> {
 async function handleImportCommunityJd(parsed: URL): Promise<void> {
   const opportunityId = parsed.searchParams.get('opportunity');
   const id = parsed.searchParams.get('id');
-  const { importJobById } = await import('./job-import.ts');
   try {
     if (opportunityId) await importJobById('collected', opportunityId);
     else if (id) await importJobById('community', id);

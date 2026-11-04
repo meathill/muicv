@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { app, BrowserWindow, protocol, shell } from 'electron';
 
@@ -18,14 +17,14 @@ import { dedupeProfiles, getConfig } from './store.ts';
 import { setupUpdater, triggerInitialCheck } from './updater.ts';
 import { registerWhisperEngineIpc } from './whisper-engine/index.ts';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const currentDir = import.meta.dirname;
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
 
 // dev: BrowserWindow icon 在 macOS 被忽略，下面 whenReady 还会调 dock.setIcon。
 // prod: macOS 走 .app bundle 的 icns，无需在这里设置。
-const devIconPath = join(__dirname, '../../build/icon.png');
+const devIconPath = join(currentDir, '../../build/icon.png');
 
 // -------------------- Single instance（Windows/Linux deep-link 必需） --------------------
 
@@ -67,8 +66,8 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 function createWindow() {
-  const preloadJs = join(__dirname, '../preload/index.js');
-  const preloadMjs = join(__dirname, '../preload/index.mjs');
+  const preloadJs = join(currentDir, '../preload/index.js');
+  const preloadMjs = join(currentDir, '../preload/index.mjs');
   const preloadPath = existsSync(preloadJs) ? preloadJs : preloadMjs;
 
   mainWindow = new BrowserWindow({
@@ -109,7 +108,7 @@ function createWindow() {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
     mainWindow.webContents.openDevTools({ mode: 'right' });
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(join(currentDir, '../renderer/index.html'));
   }
 
   mainWindow.on('closed', () => {
