@@ -177,6 +177,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
 
   // 提到 try 外面，让 error / abort 路径也能拿到部分输出存盘
   let assistantText = '';
+  let modelTurn = 0;
   const assistantToolCalls: ToolCallRecord[] = [];
 
   // 空转看门狗：stream open 后 N 秒内没收到任何 event（mimo / 第三方代理偶发
@@ -211,6 +212,8 @@ export async function runAgent(opts: RunOpts): Promise<void> {
       lastEventAt = Date.now();
       if (event.type === 'raw_model_stream_event') {
         const data = event.data as unknown as { type?: string; delta?: string; text?: string };
+        // SDK 在每次模型响应结束后发出该轮的工具调用，随后才执行工具。
+        if (data?.type === 'response_done') modelTurn += 1;
         if (data?.type && /text.*delta/i.test(data.type) && typeof data.delta === 'string') {
           assistantText += data.delta;
           send({ type: 'text-delta', delta: data.delta });
@@ -233,8 +236,10 @@ export async function runAgent(opts: RunOpts): Promise<void> {
           } catch {
             parsedInput = argsJson;
           }
-          assistantToolCalls.push({ id: toolCallId, name: toolName, input: parsedInput });
-          send({ type: 'tool-called', toolCallId, toolName, argsJson });
+          const placement =
+            toolName === 'ask_question' ? { questionPlacement: { textOffset: assistantText.length, modelTurn } } : {};
+          assistantToolCalls.push({ id: toolCallId, name: toolName, input: parsedInput, ...placement });
+          send({ type: 'tool-called', toolCallId, toolName, argsJson, ...placement });
         } else if (event.name === 'tool_output' && item.type === 'tool_call_output_item') {
           const raw = item.rawItem ?? {};
           const toolCallId = String(raw.callId ?? raw.id ?? '');

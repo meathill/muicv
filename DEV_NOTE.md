@@ -497,8 +497,9 @@
   pending.reject，测试断言已按新行为约定（test/question-tools.test.ts）。
 - **watchdog 抑制**：等待期间 `isWaitingForQuestion = true`，runtime 的空转看门狗不判超时
   （用户思考多久都不算"上游卡住"）。
-- **UI**：`chat-question-card.tsx` 从消息的 `toolCalls` 里按 `name === 'ask_question'` 取出
-  渲染成交互卡片（气泡里其余工具仍收进 OpsGroup）。
+- **UI**：主进程在 `ask_question` 调用上记录当时的正文长度和模型轮次，随流式事件传给前端，
+  并写入对话文件。消息气泡按位置插入问答，同一轮的并行问题共用一张卡片。旧对话缺少位置信息时，
+  问答仍显示在正文末尾。其余工具调用收进 OpsGroup。
   - 卡片只在**当前有活跃 run**（`store.activeChannel !== null`）时可提交。中断 / 重新打开后
     的历史里，未回答的提问仍留在落盘记录（abort 路径也会 `flushConversation`），但主进程已无
     pending——此时渲染"提问已失效"而不是让用户白点。

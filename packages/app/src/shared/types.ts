@@ -158,10 +158,18 @@ export type MuirouterLinkResult =
 
 export type ChatRole = 'system' | 'user' | 'assistant' | 'tool';
 
+export type QuestionPlacement = {
+  /** 调用时已收到的正文长度，用于在正文中插入问答。 */
+  textOffset: number;
+  /** 同一次模型响应中的并行提问共用一张卡片。 */
+  modelTurn: number;
+};
+
 export type ToolCallRecord = {
   id: string;
   name: string;
   input: unknown;
+  questionPlacement?: QuestionPlacement;
   output?: unknown;
   error?: string;
 };
@@ -422,7 +430,13 @@ export type AgentChunk =
   /** 一段完整 message_output_item 已确认（用于纠错 / 完整文本）。 */
   | { type: 'message-completed'; text: string }
   /** 工具调用开始：name + 输入参数（JSON 字符串） */
-  | { type: 'tool-called'; toolCallId: string; toolName: string; argsJson: string }
+  | {
+      type: 'tool-called';
+      toolCallId: string;
+      toolName: string;
+      argsJson: string;
+      questionPlacement?: QuestionPlacement;
+    }
   /** 工具调用结束：output 字符串（截断 to ~2KB） */
   | { type: 'tool-output'; toolCallId: string; output: string }
   /** 整个 run 结束（reason: 'completed' / 'error' / 'aborted'） */

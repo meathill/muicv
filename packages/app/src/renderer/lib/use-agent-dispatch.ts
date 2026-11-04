@@ -116,6 +116,7 @@ export function useAgentDispatch(callbacks: DispatchCallbacks): AgentDispatchApi
                 id: chunk.toolCallId,
                 name: chunk.toolName,
                 input: safeParseJson(chunk.argsJson),
+                ...(chunk.questionPlacement ? { questionPlacement: chunk.questionPlacement } : {}),
               });
               break;
             case 'tool-output':

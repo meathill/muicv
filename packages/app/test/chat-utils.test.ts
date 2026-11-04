@@ -7,8 +7,60 @@ import {
   isChatSubmitHotkey,
   resolveWorkspacePath,
   safeParseJson,
+  splitAssistantContent,
   stripAttachmentFooter,
 } from '../src/renderer/components/chat-utils.ts';
+import type { ToolCallRecord } from '../src/shared/types.ts';
+
+test('并行问题留在提问位置，回答与重新打开对话后都先于后续建议', () => {
+  const intro = '## 需要确认两件事\n\n';
+  const advice = '\n## 根据你的回答，建议这样处理';
+  const placement = { textOffset: intro.length, modelTurn: 2 };
+  const questions = [
+    { id: 'jd', name: 'ask_question', input: { question: '如何补充 JD？' }, questionPlacement: placement },
+    { id: 'hooks', name: 'ask_question', input: { question: '用过 Hooks 吗？' }, questionPlacement: placement },
+  ];
+
+  assert.deepEqual(splitAssistantContent(intro, questions), [
+    { type: 'text', key: 'text:0', content: intro },
+    { type: 'questions', key: 'jd', calls: questions },
+  ]);
+
+  const answered = [
+    { ...questions[0], output: '我来贴正文' },
+    { ...questions[1], output: '写过脚本' },
+  ];
+  const reloaded = JSON.parse(JSON.stringify(answered)) as ToolCallRecord[];
+  assert.deepEqual(splitAssistantContent(intro + advice, reloaded), [
+    { type: 'text', key: 'text:0', content: intro },
+    { type: 'questions', key: 'jd', calls: answered },
+    { type: 'text', key: `text:${intro.length}`, content: advice },
+  ]);
+});
+
+test('连续两轮提问之间没有正文时仍是两个独立问题组', () => {
+  const first = {
+    id: 'first',
+    name: 'ask_question',
+    input: {},
+    output: '已回答',
+    questionPlacement: { textOffset: 0, modelTurn: 1 },
+  };
+  const next = { id: 'next', name: 'ask_question', input: {}, questionPlacement: { textOffset: 0, modelTurn: 2 } };
+
+  assert.deepEqual(splitAssistantContent('', [first, next]), [
+    { type: 'questions', key: 'first', calls: [first] },
+    { type: 'questions', key: 'next', calls: [next] },
+  ]);
+});
+
+test('旧对话缺少提问位置时保留原先的正文和问答', () => {
+  const old = { id: 'old', name: 'ask_question', input: {}, output: '旧答案' };
+  assert.deepEqual(splitAssistantContent('旧正文', [old]), [
+    { type: 'text', key: 'text:0', content: '旧正文' },
+    { type: 'questions', key: 'old', calls: [old] },
+  ]);
+});
 
 test('classifyError 空字符串 / NOT_LOGGED_IN → plain', () => {
   assert.equal(classifyError(''), 'plain');

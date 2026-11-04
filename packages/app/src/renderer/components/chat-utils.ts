@@ -1,6 +1,39 @@
 import { ATTACHMENT_FOOTER_HEADER } from '@muicv/shared';
 
-import type { AttachmentKind, AttachmentRef } from '../../shared/types.ts';
+import type { AttachmentKind, AttachmentRef, ToolCallRecord } from '../../shared/types.ts';
+
+type AssistantContentBlock =
+  | { type: 'text'; key: string; content: string }
+  | { type: 'questions'; key: string; calls: ToolCallRecord[] };
+
+export function splitAssistantContent(content: string, questions: ToolCallRecord[]): AssistantContentBlock[] {
+  const blocks: AssistantContentBlock[] = [];
+  let offset = 0;
+
+  for (const call of questions) {
+    // 旧记录只有拼接后的正文，保留末尾问答。
+    const nextOffset = call.questionPlacement?.textOffset ?? content.length;
+    if (nextOffset > offset) {
+      blocks.push({ type: 'text', key: `text:${offset}`, content: content.slice(offset, nextOffset) });
+      offset = nextOffset;
+    }
+
+    const previous = blocks.at(-1);
+    if (
+      previous?.type === 'questions' &&
+      previous.calls[0]?.questionPlacement?.modelTurn === call.questionPlacement?.modelTurn
+    ) {
+      previous.calls.push(call);
+    } else {
+      blocks.push({ type: 'questions', key: call.id, calls: [call] });
+    }
+  }
+
+  if (offset < content.length) {
+    blocks.push({ type: 'text', key: `text:${offset}`, content: content.slice(offset) });
+  }
+  return blocks;
+}
 
 /**
  * agent runtime 上来的错误分三类，决定 UI 怎么展示：

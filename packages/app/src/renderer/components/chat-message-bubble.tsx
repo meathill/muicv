@@ -15,7 +15,7 @@ import { ArtifactCard } from './artifact-card';
 import { AttachmentChip } from './chat-attachment-chip';
 import { MessageFeedbackBar } from './chat-message-feedback';
 import { ChatQuestionGroup } from './chat-question-card';
-import { stripAttachmentFooter } from './chat-utils';
+import { splitAssistantContent, stripAttachmentFooter } from './chat-utils';
 import { ConfirmDialog } from './confirm-dialog';
 import { ForkConversationDialog } from './fork-conversation-dialog';
 import { MarkdownView } from './markdown-view';
@@ -94,14 +94,20 @@ export function MessageBubble({
             <ReasoningBlock text={reasoning} streaming={!displayContent} />
           )}
 
-          {displayContent &&
-            (isUser ? (
-              <div className="whitespace-pre-wrap">{displayContent}</div>
-            ) : (
-              <MarkdownView source={displayContent} className="text-ink-soft" onPathClick={onPathClick} />
-            ))}
-
-          {hasQuestions && <ChatQuestionGroup calls={questionCalls} />}
+          {isUser
+            ? displayContent && <div className="whitespace-pre-wrap">{displayContent}</div>
+            : splitAssistantContent(displayContent, questionCalls).map((block) =>
+                block.type === 'questions' ? (
+                  <ChatQuestionGroup key={block.key} calls={block.calls} />
+                ) : (
+                  <MarkdownView
+                    key={block.key}
+                    source={block.content}
+                    className="text-ink-soft"
+                    onPathClick={onPathClick}
+                  />
+                ),
+              )}
 
           {hasAttachments && (
             <div className="flex flex-wrap gap-1.5 pt-1">
