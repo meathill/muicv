@@ -1,8 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { basename, join, resolve } from 'node:path';
 
 type WranglerConfig = {
   account_id?: string;
@@ -22,7 +21,7 @@ type Migration = {
   path: string;
 };
 
-const scriptDir = dirname(fileURLToPath(import.meta.url));
+const scriptDir = import.meta.dirname;
 const cmsDir = resolve(scriptDir, '..');
 const migrationsDir = join(cmsDir, 'migrations');
 const isStatusOnly = process.argv.includes('--status');

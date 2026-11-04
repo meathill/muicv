@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { sqliteD1Adapter } from '@payloadcms/db-d1-sqlite';
@@ -17,8 +16,7 @@ import { Users } from './collections/users';
 import { migrations } from './migrations';
 import { resolvePayloadSecret } from './utilities/resolve-secret';
 
-const filename = fileURLToPath(import.meta.url);
-const dirname = path.dirname(filename);
+const dirname = import.meta.dirname;
 
 const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build';
 const cloudflare = isNextBuild ? null : await getCloudflareContext({ async: true });

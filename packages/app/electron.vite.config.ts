@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin({ exclude: ['@muicv/shared'], include: ['electron'] })],
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'src/main/index.ts') },
+        input: { index: resolve(import.meta.dirname, 'src/main/index.ts') },
       },
     },
     ssr: {
@@ -15,8 +15,8 @@ export default defineConfig({
     },
     resolve: {
       alias: {
-        '@main': resolve(__dirname, 'src/main'),
-        '@skills': resolve(__dirname, '../../skills'),
+        '@main': resolve(import.meta.dirname, 'src/main'),
+        '@skills': resolve(import.meta.dirname, '../../skills'),
       },
     },
     assetsInclude: ['**/*.md'],
@@ -25,7 +25,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin({ include: ['electron'] })],
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'src/preload/index.ts') },
+        input: { index: resolve(import.meta.dirname, 'src/preload/index.ts') },
       },
     },
     ssr: {
@@ -33,17 +33,17 @@ export default defineConfig({
     },
   },
   renderer: {
-    root: resolve(__dirname, 'src/renderer'),
+    root: resolve(import.meta.dirname, 'src/renderer'),
     plugins: [react()],
     resolve: {
       alias: {
-        '@': resolve(__dirname, 'src/renderer'),
-        '@shared': resolve(__dirname, 'src/shared'),
+        '@': resolve(import.meta.dirname, 'src/renderer'),
+        '@shared': resolve(import.meta.dirname, 'src/shared'),
       },
     },
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'src/renderer/index.html') },
+        input: { index: resolve(import.meta.dirname, 'src/renderer/index.html') },
       },
     },
   },

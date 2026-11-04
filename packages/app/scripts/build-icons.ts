@@ -1,13 +1,11 @@
 import { execSync } from 'node:child_process';
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 import pngToIco from 'png-to-ico';
 import sharp from 'sharp';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const appRoot = join(__dirname, '..');
+const appRoot = join(import.meta.dirname, '..');
 const buildDir = join(appRoot, 'build');
 const publicDir = join(appRoot, 'src/renderer/public');
 

@@ -66,9 +66,9 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 function createWindow() {
-  const preloadJs = join(currentDir, '../preload/index.js');
   const preloadMjs = join(currentDir, '../preload/index.mjs');
-  const preloadPath = existsSync(preloadJs) ? preloadJs : preloadMjs;
+  const preloadJs = join(currentDir, '../preload/index.js');
+  const preloadPath = existsSync(preloadMjs) ? preloadMjs : preloadJs;
 
   mainWindow = new BrowserWindow({
     width: 1180,
