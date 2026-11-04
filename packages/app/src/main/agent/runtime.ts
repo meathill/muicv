@@ -5,7 +5,7 @@ import {
   modelSupportsVision,
   resolveModelAlias,
 } from '@muicv/shared';
-import { Agent, run } from '@openai/agents';
+import { Agent, Runner } from '@openai/agents';
 import type { WebContents } from 'electron';
 
 import { dedupeArtifactRefs } from '../../shared/artifact-refs.ts';
@@ -33,6 +33,7 @@ import { type ArtifactEmitter, buildFileTools } from './tools.ts';
 import { buildWebTools } from './web-tools.ts';
 
 const activeRuns = new Map<string, AbortController>();
+const agentRunner = new Runner({ tracingDisabled: true });
 
 type RunOpts = {
   channelId: string;
@@ -202,7 +203,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
     console.log(
       `[agent runtime] starting run with model=${effectiveModel}, items=${input.length}, est=${estimatedTokens}t`,
     );
-    const stream = await run(agent, input, {
+    const stream = await agentRunner.run(agent, input, {
       stream: true,
       signal: abort.signal,
       maxTurns: AGENT_MAX_TURNS,
