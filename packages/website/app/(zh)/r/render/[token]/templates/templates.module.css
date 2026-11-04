@@ -399,7 +399,7 @@
 }
 .t2__expMeta {
   font-size: 14px;
-  color: var(--ink-2);
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 .t2 .t2__expBullets {
