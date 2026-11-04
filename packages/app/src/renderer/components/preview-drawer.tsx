@@ -1,4 +1,13 @@
-import { FolderOpenIcon, ImageSquareIcon, PencilSimpleIcon, XIcon } from '@phosphor-icons/react';
+import { Tabs } from '@base-ui/react/tabs';
+import { Button } from '@muicv/ui';
+import {
+  FileTextIcon,
+  FolderOpenIcon,
+  ImageSquareIcon,
+  PencilSimpleIcon,
+  SidebarSimpleIcon,
+  XIcon,
+} from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -22,29 +31,27 @@ import {
 const TRANSITION_MS = 220;
 
 /**
- * 文件预览 drawer。从右侧滑入，覆盖整个窗口（含 titlebar）；ESC / 点 backdrop 关闭。
- *
- * 跟文件树 (SidebarRight) 解耦：触发条件 = rightPanelPreviewPath 不空，
- * 关闭只清 previewPath。需要看文件树的话用左上角 toggle 按钮。
- *
- * 进 / 出场动画走 useEnterAnimation hook（双 RAF + setTimeout TRANSITION_MS）。
+ * 文件预览从右侧滑入。收起时保留标签和当前选中项，由窗口顶部重新打开。
  */
 export function PreviewDrawer() {
-  const previewPath = useAppStore((s) => s.rightPanelPreviewPath);
-  const closePreview = useAppStore((s) => s.closePreview);
+  const { paths, activePath, isOpen } = useAppStore((s) => s.previewTabs);
+  const openPreview = useAppStore((s) => s.openRightPanel);
+  const closeTab = useAppStore((s) => s.closePreviewTab);
+  const hidePreview = useAppStore((s) => s.hidePreview);
+  const [editingPath, setEditingPath] = useState<string | null>(null);
 
-  const { mounted: mountedPath, visible } = useEnterAnimation(previewPath, TRANSITION_MS);
+  const { mounted, visible } = useEnterAnimation(isOpen ? true : null, TRANSITION_MS);
 
   useEffect(() => {
-    if (!mountedPath) return;
+    if (!isOpen || editingPath) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') closePreview();
+      if (e.key === 'Escape') hidePreview();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [mountedPath, closePreview]);
+  }, [isOpen, editingPath, hidePreview]);
 
-  if (!mountedPath) return null;
+  if (!mounted || !activePath) return null;
 
   return createPortal(
     // titlebar-no-drag：portal 是叠在 TitleBar 之上的全屏对话层，TitleBar 的
@@ -57,7 +64,7 @@ export function PreviewDrawer() {
           visible ? 'opacity-100' : 'opacity-0'
         }`}
         aria-hidden
-        onClick={closePreview}
+        onClick={hidePreview}
       />
       <aside
         role="dialog"
@@ -68,22 +75,66 @@ export function PreviewDrawer() {
           visible ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <PreviewContent path={mountedPath} onClose={closePreview} />
+        <Tabs.Root
+          value={activePath}
+          onValueChange={(path) => {
+            if (typeof path === 'string') openPreview(path);
+          }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="flex shrink-0 items-center gap-1 border-b border-rule bg-cream px-2">
+            <Tabs.List aria-label="已打开的文件" className="flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 py-1.5">
+              {paths.map((path) => (
+                <Tabs.Tab
+                  key={path}
+                  value={path}
+                  title={path}
+                  ref={
+                    path === activePath
+                      ? (tab) => tab?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                      : undefined
+                  }
+                  className="flex h-8 max-w-48 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2 text-left text-xs text-mute hover:bg-fluff hover:text-ink focus-visible:outline-2 focus-visible:outline-ink data-active:border-rule-strong data-active:bg-paper-deep data-active:font-bold data-active:text-ink"
+                >
+                  <FileTextIcon size={14} className="shrink-0" />
+                  <span className="truncate">{path.split(/[/\\]/).pop() ?? path}</span>
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              title="关闭当前标签"
+              aria-label="关闭当前标签"
+              onClick={() => closeTab(activePath)}
+            >
+              <XIcon weight="bold" />
+            </Button>
+            <Button size="xs" variant="ghost" title="收起文件预览" onClick={hidePreview}>
+              <SidebarSimpleIcon className="-scale-x-100" />
+              收起
+            </Button>
+          </div>
+          {paths.map((path) => (
+            <Tabs.Panel key={path} value={path} className="flex min-h-0 flex-1 flex-col">
+              <PreviewContent path={path} onEdit={setEditingPath} />
+            </Tabs.Panel>
+          ))}
+        </Tabs.Root>
       </aside>
+      <EditDrawer path={editingPath} onClose={() => setEditingPath(null)} />
     </div>,
     document.body,
   );
 }
 
-function PreviewContent({ path, onClose }: { path: string; onClose: () => void }) {
+function PreviewContent({ path, onEdit }: { path: string; onEdit: (path: string) => void }) {
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // 用户在 footer 切换的预览模板。null = 跟随 JSON 里的 _template 字段 / 兜底 t2-minimal。
   // path 变化时重置，避免上一份 .resume.json 的选择"穿透"到下一份。
   const [overrideTemplate, setOverrideTemplate] = useState<JsonTemplateId | null>(null);
-  // EditDrawer 控制：null = 不显示；string = 编辑该 path
-  const [editingPath, setEditingPath] = useState<string | null>(null);
   // EditDrawer 保存的时间戳，用于触发 PreviewContent 重新读取文件
   const editorLastSavedAt = useAppStore((s) => s.editorLastSavedAt);
   const editorOpenPath = useAppStore((s) => s.editorOpenPath);
@@ -190,7 +241,7 @@ function PreviewContent({ path, onClose }: { path: string; onClose: () => void }
         {isEditable && (
           <button
             type="button"
-            onClick={() => setEditingPath(path)}
+            onClick={() => onEdit(path)}
             title="编辑（在叠加层打开 CodeMirror）"
             aria-label="编辑文件"
             className="flex shrink-0 items-center gap-1 rounded-md border-2 border-rule-strong bg-paper px-2 py-1 text-[12px] font-bold text-ink hover:bg-fluff"
@@ -203,15 +254,6 @@ function PreviewContent({ path, onClose }: { path: string; onClose: () => void }
           <ChangeTemplateButton kind="resume-json" content={content} template={jsonTemplate} />
         )}
         {isPdf && <ChangeTemplateButton kind="pdf" pdfPath={path} />}
-        <button
-          type="button"
-          onClick={onClose}
-          title="关闭预览"
-          aria-label="关闭预览"
-          className="flex shrink-0 items-center justify-center rounded-md px-2 py-1 text-mute hover:bg-fluff hover:text-ink"
-        >
-          <XIcon size={14} weight="bold" />
-        </button>
       </header>
 
       <div
@@ -319,8 +361,6 @@ function PreviewContent({ path, onClose }: { path: string; onClose: () => void }
           </>
         )}
       </footer>
-
-      <EditDrawer path={editingPath} onClose={() => setEditingPath(null)} />
     </>
   );
 }

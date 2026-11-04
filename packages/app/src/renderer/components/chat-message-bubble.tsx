@@ -2,6 +2,7 @@ import { Button } from '@muicv/ui';
 import {
   ArrowCounterClockwiseIcon,
   BrainIcon,
+  CaretDownIcon,
   CheckIcon,
   FileTextIcon,
   GearIcon,
@@ -98,7 +99,7 @@ export function MessageBubble({
             ? displayContent && <div className="whitespace-pre-wrap">{displayContent}</div>
             : splitAssistantContent(displayContent, questionCalls).map((block) =>
                 block.type === 'questions' ? (
-                  <ChatQuestionGroup key={block.key} calls={block.calls} />
+                  <ChatQuestionGroup key={block.key} calls={block.calls} messageId={messageId} />
                 ) : (
                   <MarkdownView
                     key={block.key}
@@ -129,11 +130,18 @@ export function MessageBubble({
           )}
 
           {writeRefs.length > 0 && (
-            <div className="space-y-1.5 pt-1">
-              {writeRefs.map((a) => (
-                <ArtifactCard key={a.path} artifact={a} onOpen={() => onOpenArtifact(a)} />
-              ))}
-            </div>
+            <details className="group rounded-md border border-rule bg-fluff/50">
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-ink-soft hover:bg-fluff focus-visible:outline-2 focus-visible:outline-ink">
+                <FileTextIcon size={14} className="shrink-0" />
+                <span className="flex-1">生成或更新了 {writeRefs.length} 个文件</span>
+                <CaretDownIcon size={12} className="-rotate-90 shrink-0 group-open:rotate-0" />
+              </summary>
+              <div className="space-y-1.5 border-t border-rule px-2 py-2">
+                {writeRefs.map((a) => (
+                  <ArtifactCard key={a.path} artifact={a} onOpen={() => onOpenArtifact(a)} />
+                ))}
+              </div>
+            </details>
           )}
         </div>
 

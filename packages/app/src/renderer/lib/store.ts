@@ -14,6 +14,7 @@ import type {
   UpdaterStatus,
 } from '../../shared/types.ts';
 import { DEFAULT_CONFIG } from '../../shared/types.ts';
+import { closePreviewTab, EMPTY_PREVIEW_TABS, openPreviewTab, type PreviewTabs } from './preview-tabs.ts';
 
 type View = 'login' | 'onboarding' | 'chat' | 'settings' | 'jobs';
 
@@ -112,33 +113,28 @@ type AppStore = {
 
   /** 当前 streaming 的 channelId，none 表示空闲。 */
   activeChannel: string | null;
-  setActiveChannel: (c: string | null) => void;
+  activeAssistantId: string | null;
+  setActiveChannel: (channelId: string | null, assistantId?: string) => void;
 
   // -------------------- 三栏 UI 状态 --------------------
 
   leftCollapsed: boolean;
   rightCollapsed: boolean;
-  /**
-   * 右栏 tree / preview 是两个**独立**通道，不互斥：
-   *   - rightPanelTreeRoot：文件树根目录（null = 树没开）
-   *   - rightPanelPreviewPath：当前预览的文件（null = 没在预览）
-   *
-   * Preview 以 overlay 形式盖在 tree 上面，关掉 preview 后树状态原封不动
-   * （expand 的目录 / 已加载的子项都还在内存里）。
-   */
+  /** 文件树和预览抽屉分别控制，收起抽屉时保留预览标签。 */
   rightPanelTreeRoot: string | null;
-  rightPanelPreviewPath: string | null;
+  previewTabs: PreviewTabs;
   /** 右栏宽度（像素），可拖拽调整，localStorage 持久化。 */
   rightPanelWidth: number;
   toggleLeft: () => void;
   toggleRight: () => void;
   /** 打开文件树（path 缺省时用当前 profile 的 workspaceDir）。 */
   openFileTree: (path?: string) => void;
-  /** 打开文件预览（被工件卡片 / 文件树点击调用）。 */
+  /** 打开文件预览，已有标签时切换到该标签。 */
   openRightPanel: (path: string) => void;
-  /** 只关 preview overlay，保留树。 */
-  closePreview: () => void;
-  /** 关掉整个右栏（树 + preview 全清）。 */
+  closePreviewTab: (path: string) => void;
+  hidePreview: () => void;
+  showPreview: () => void;
+  /** 关闭文件树。 */
   closeRightPanel: () => void;
   /** 拖拽 resize handle 时调用，自动 clamp + 写 localStorage。 */
   setRightPanelWidth: (w: number) => void;
@@ -531,14 +527,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
   clearAutoSend: () => set({ autoSend: null }),
 
   activeChannel: null,
-  setActiveChannel: (c) => set({ activeChannel: c }),
+  activeAssistantId: null,
+  setActiveChannel: (channelId, assistantId) =>
+    set({ activeChannel: channelId, activeAssistantId: assistantId ?? null }),
 
   // -------------------- 三栏 UI --------------------
 
   leftCollapsed: false,
   rightCollapsed: true,
   rightPanelTreeRoot: null,
-  rightPanelPreviewPath: null,
+  previewTabs: EMPTY_PREVIEW_TABS,
   rightPanelWidth: loadRightWidth(),
   toggleLeft: () => set((s) => ({ leftCollapsed: !s.leftCollapsed })),
   toggleRight: () => set((s) => ({ rightCollapsed: !s.rightCollapsed })),
@@ -547,9 +545,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!root) return;
     set({ rightPanelTreeRoot: root, rightCollapsed: false });
   },
-  openRightPanel: (path) => set({ rightPanelPreviewPath: path }),
-  closePreview: () => set({ rightPanelPreviewPath: null }),
-  closeRightPanel: () => set({ rightPanelTreeRoot: null, rightPanelPreviewPath: null, rightCollapsed: true }),
+  openRightPanel: (path) => set((s) => ({ previewTabs: openPreviewTab(s.previewTabs, path) })),
+  closePreviewTab: (path) => set((s) => ({ previewTabs: closePreviewTab(s.previewTabs, path) })),
+  hidePreview: () => set((s) => ({ previewTabs: { ...s.previewTabs, isOpen: false } })),
+  showPreview: () => set((s) => ({ previewTabs: { ...s.previewTabs, isOpen: s.previewTabs.activePath !== null } })),
+  closeRightPanel: () => set({ rightPanelTreeRoot: null, rightCollapsed: true }),
   setRightPanelWidth: (w) => {
     const clamped = clampRightWidth(w);
     set({ rightPanelWidth: clamped });
@@ -622,6 +622,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   updaterStatus: { phase: 'idle' },
   setUpdaterStatus: (status) => set({ updaterStatus: status }),
 }));
+
+useAppStore.subscribe((state, previous) => {
+  if (state.activeProfile?.id !== previous.activeProfile?.id || state.session?.id !== previous.session?.id) {
+    useAppStore.setState({ previewTabs: EMPTY_PREVIEW_TABS });
+  }
+});
 
 /**
  * 登录态变化后保证有一份 profile + 加载对话列表。

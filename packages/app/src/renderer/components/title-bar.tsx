@@ -1,4 +1,5 @@
-import { SidebarSimpleIcon } from '@phosphor-icons/react';
+import { Button } from '@muicv/ui';
+import { FilesIcon, SidebarSimpleIcon } from '@phosphor-icons/react';
 
 import { useAppStore } from '../lib/store';
 
@@ -14,6 +15,8 @@ export function TitleBar() {
   const leftCollapsed = useAppStore((s) => s.leftCollapsed);
   const rightCollapsed = useAppStore((s) => s.rightCollapsed);
   const treeRoot = useAppStore((s) => s.rightPanelTreeRoot);
+  const previewCount = useAppStore((s) => s.previewTabs.paths.length);
+  const showPreview = useAppStore((s) => s.showPreview);
   const toggleLeft = useAppStore((s) => s.toggleLeft);
   const toggleRight = useAppStore((s) => s.toggleRight);
 
@@ -46,6 +49,20 @@ export function TitleBar() {
       </div>
 
       <div className="titlebar-no-drag flex items-center gap-1">
+        {session && previewCount > 0 && (
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={showPreview}
+            aria-haspopup="dialog"
+            aria-label={`打开文件预览，${previewCount} 个标签`}
+            title="打开文件预览"
+            className="text-mute hover:text-ink"
+          >
+            <FilesIcon />
+            预览 <span className="tabular-nums">{previewCount}</span>
+          </Button>
+        )}
         {session && canToggleRight && (
           <button
             type="button"

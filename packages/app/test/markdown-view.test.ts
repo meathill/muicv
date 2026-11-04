@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { inlineHtml } from '../src/renderer/components/markdown-parser.ts';
+import { inlineHtml, parseAlignRow } from '../src/renderer/components/markdown-parser.ts';
+
+test('Markdown 表格默认左对齐，支持显式对齐，文件按钮继承单元格对齐', () => {
+  assert.deepEqual(parseAlignRow('| --- | :---: | ---: |'), ['left', 'center', 'right']);
+  assert.match(inlineHtml('`experience/long-file-name.md`'), /\[text-align:inherit\]/);
+});
 
 test('inlineHtml 裸 URL 自动转换为 <a> 标签', () => {
   const input = '👉 https://muicv.com/preview/a2e3736f-d631-411b-9b4b-caa68a486426';

@@ -143,13 +143,14 @@ export function MarkdownView({
             a === 'center' ? 'text-center' : a === 'right' ? 'text-right' : 'text-left';
           return (
             <div key={key} className="overflow-x-auto">
-              <table className="w-full border-collapse text-[14px]">
+              <table className="w-full border-collapse border border-rule-strong text-[14px]">
                 <thead>
-                  <tr className="border-b-2 border-rule-strong text-ink">
+                  <tr className="bg-paper-deep text-ink">
                     {b.head.map((cell, ci) => (
                       <th
                         key={ci}
-                        className={`px-3 py-1.5 font-bold ${alignClass(b.aligns[ci] ?? 'left')}`}
+                        scope="col"
+                        className={`border border-rule-strong px-3 py-1.5 font-bold ${alignClass(b.aligns[ci] ?? 'left')}`}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: 输入已经 escapeHtml 过
                         dangerouslySetInnerHTML={{ __html: inlineHtml(cell) }}
                       />
@@ -158,11 +159,11 @@ export function MarkdownView({
                 </thead>
                 <tbody>
                   {b.rows.map((row, ri) => (
-                    <tr key={ri} className="border-b border-rule">
+                    <tr key={ri}>
                       {row.map((cell, ci) => (
                         <td
                           key={ci}
-                          className={`px-3 py-1.5 align-top ${alignClass(b.aligns[ci] ?? 'left')}`}
+                          className={`border border-rule-strong px-3 py-1.5 align-top ${alignClass(b.aligns[ci] ?? 'left')}`}
                           // biome-ignore lint/security/noDangerouslySetInnerHtml: 输入已经 escapeHtml 过
                           dangerouslySetInnerHTML={{ __html: inlineHtml(cell) }}
                         />

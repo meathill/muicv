@@ -187,7 +187,7 @@ export function inlineHtml(text: string): string {
   let s = text.replace(/`([^`]+)`/g, (_m, code: string) => {
     if (looksLikePath(code)) {
       codes.push(
-        `<button type="button" data-path="${escapeHtml(code)}" class="cursor-pointer rounded bg-fluff px-1 py-0.5 font-mono text-[12px] text-yellow-deep underline decoration-corgi decoration-2 underline-offset-2 hover:bg-yellow/30">${escapeHtml(code)}</button>`,
+        `<button type="button" data-path="${escapeHtml(code)}" class="cursor-pointer rounded bg-fluff px-1 py-0.5 font-mono text-[12px] text-yellow-deep underline decoration-corgi decoration-2 underline-offset-2 [text-align:inherit] hover:bg-yellow/30">${escapeHtml(code)}</button>`,
       );
     } else {
       codes.push(`<code class="rounded bg-fluff px-1 py-0.5 font-mono text-[12px]">${escapeHtml(code)}</code>`);

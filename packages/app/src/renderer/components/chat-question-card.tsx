@@ -1,5 +1,7 @@
 import { Button } from '@muicv/ui';
 import {
+  CaretLeftIcon,
+  CaretRightIcon,
   CheckCircleIcon,
   CheckSquareIcon,
   CircleIcon,
@@ -9,7 +11,7 @@ import {
   SpinnerGapIcon,
   SquareIcon,
 } from '@phosphor-icons/react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { ToolCallRecord } from '../../shared/types.ts';
 import { useAppStore } from '../lib/store';
 
@@ -107,21 +109,12 @@ function QuestionItem({
   disabled: boolean;
 }) {
   const { question, options, multiSelect } = parseQuestionInput(call);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  function handleTextareaInput() {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }
-
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <p className="text-[14px] font-bold text-ink leading-relaxed">{question}</p>
         {multiSelect && (
-          <span className="rounded bg-paper-deep px-1.5 py-0.2 font-mono text-[10px] font-bold text-mute">多选</span>
+          <span className="shrink-0 rounded bg-paper-deep px-1.5 font-mono text-xs font-bold text-mute">多选</span>
         )}
       </div>
 
@@ -132,14 +125,11 @@ function QuestionItem({
             return (
               <Button
                 key={opt}
+                aria-pressed={isChecked}
                 onClick={() => onToggle(opt)}
                 disabled={disabled}
-                variant="press"
-                className={
-                  isChecked
-                    ? undefined
-                    : 'border-rule bg-paper text-ink-soft hover:border-rule-strong hover:bg-paper-deep'
-                }
+                variant={isChecked ? 'press' : 'outline'}
+                className="h-auto min-h-8 max-w-full whitespace-normal py-1 text-left"
               >
                 {multiSelect ? (
                   isChecked ? (
@@ -160,14 +150,13 @@ function QuestionItem({
       )}
 
       <textarea
-        ref={textareaRef}
+        aria-label={options.length > 0 ? '其他或补充说明' : '你的回答'}
         value={customText}
         onChange={(e) => onCustomTextChange(e.target.value)}
-        onInput={handleTextareaInput}
         placeholder={options.length > 0 ? '其他或补充说明（可选）…' : '输入你的回答…'}
         disabled={disabled}
         rows={1}
-        className="w-full resize-none rounded-lg border-2 border-rule-strong bg-paper px-3 py-1.5 text-[13px] text-ink placeholder:text-mute focus:border-ink focus:outline-none"
+        className="field-sizing-content max-h-[120px] min-h-8 w-full resize-none rounded-md border border-rule-strong bg-paper px-3 py-1.5 text-[14px] text-ink placeholder:text-mute focus:border-ink focus:outline-none"
       />
     </div>
   );
@@ -175,9 +164,8 @@ function QuestionItem({
 
 /* ---------- 提问组：统一管理多个问题的回答和提交 ---------- */
 
-export function ChatQuestionGroup({ calls }: { calls: ToolCallRecord[] }) {
-  const activeChannel = useAppStore((s) => s.activeChannel);
-  const hasActiveRun = activeChannel !== null;
+export function ChatQuestionGroup({ calls, messageId }: { calls: ToolCallRecord[]; messageId: string }) {
+  const isCurrentReply = useAppStore((s) => s.activeAssistantId === messageId);
 
   // 按完成状态分组
   const doneCalls = calls.filter((c) => c.output !== undefined);
@@ -186,6 +174,7 @@ export function ChatQuestionGroup({ calls }: { calls: ToolCallRecord[] }) {
   // 每个 pending 问题独立的选择状态
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [customTexts, setCustomTexts] = useState<Record<string, string>>({});
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -259,7 +248,7 @@ export function ChatQuestionGroup({ calls }: { calls: ToolCallRecord[] }) {
   }
 
   // 没有活跃 run → 全部失效
-  if (!hasActiveRun) {
+  if (!isCurrentReply) {
     return (
       <div className="space-y-1">
         {doneCalls.map((c) => (
@@ -286,16 +275,23 @@ export function ChatQuestionGroup({ calls }: { calls: ToolCallRecord[] }) {
     );
   }
 
-  // 活跃状态：展示问题 + 统一提交按钮
+  const currentIndex = Math.min(questionIndex, pendingCalls.length - 1);
+  const current = pendingCalls[currentIndex];
+  if (!current) return null;
+  const isLastQuestion = currentIndex === pendingCalls.length - 1;
+
   return (
     <div className="my-2 flex flex-col gap-4 rounded-xl border-2 border-ink bg-cream p-4 text-ink shadow-[0_3px_0_0_var(--color-ink)] animate-in fade-in duration-200">
       <div className="flex items-center gap-2.5">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ink bg-yellow text-ink shadow-[0_1px_0_0_var(--color-ink)]">
           <QuestionIcon size={16} weight="bold" />
         </span>
-        <span className="text-[12px] font-bold text-yellow-deep">
-          AI 正在提问{pendingCalls.length > 1 ? `（${pendingCalls.length} 个问题）` : ''}
-        </span>
+        <span className="flex-1 text-xs font-bold text-ink">AI 正在提问</span>
+        {pendingCalls.length > 1 && (
+          <span aria-live="polite" className="text-xs tabular-nums text-mute">
+            第 {currentIndex + 1} / {pendingCalls.length} 题
+          </span>
+        )}
       </div>
 
       {/* 已完成的问题（折叠行） */}
@@ -307,42 +303,45 @@ export function ChatQuestionGroup({ calls }: { calls: ToolCallRecord[] }) {
         </div>
       )}
 
-      {/* 待回答的问题 */}
-      <div className="flex flex-col gap-4">
-        {pendingCalls.map((c) => (
-          <QuestionItem
-            key={c.id}
-            call={c}
-            selected={getSelected(c.id)}
-            onToggle={(opt) => toggleOption(c.id, opt, Boolean(parseQuestionInput(c).multiSelect))}
-            customText={getCustomText(c.id)}
-            onCustomTextChange={(text) => setCustomText(c.id, text)}
-            disabled={submitting}
-          />
-        ))}
-      </div>
+      <QuestionItem
+        key={current.id}
+        call={current}
+        selected={getSelected(current.id)}
+        onToggle={(opt) => toggleOption(current.id, opt, parseQuestionInput(current).multiSelect)}
+        customText={getCustomText(current.id)}
+        onCustomTextChange={(text) => setCustomText(current.id, text)}
+        disabled={submitting}
+      />
 
       {error && <p className="text-[12px] font-bold text-danger">{error}</p>}
 
-      <div className="flex justify-end">
-        <Button
-          onClick={() => void handleSubmit()}
-          disabled={!canSubmit || submitting}
-          variant="press"
-          className="disabled:opacity-50 disabled:shadow-none"
-        >
-          {submitting ? (
-            <>
-              <SpinnerGapIcon size={15} className="animate-spin" />
-              <span>提交中…</span>
-            </>
-          ) : (
-            <>
-              <PaperPlaneTiltIcon size={15} weight="bold" />
-              <span>提交回答</span>
-            </>
-          )}
-        </Button>
+      <div className="flex items-center justify-end gap-2">
+        {pendingCalls.length > 1 && (
+          <Button
+            onClick={() => setQuestionIndex(currentIndex - 1)}
+            disabled={currentIndex === 0 || submitting}
+            variant="ghost"
+          >
+            <CaretLeftIcon />
+            上一题
+          </Button>
+        )}
+        {isLastQuestion ? (
+          <Button
+            onClick={() => void handleSubmit()}
+            disabled={!canSubmit || submitting}
+            variant="press"
+            className="disabled:opacity-50 disabled:shadow-none"
+          >
+            {submitting ? <SpinnerGapIcon className="animate-spin" /> : <PaperPlaneTiltIcon weight="bold" />}
+            {submitting ? '提交中…' : '提交回答'}
+          </Button>
+        ) : (
+          <Button onClick={() => setQuestionIndex(currentIndex + 1)} disabled={submitting} variant="outline">
+            下一题
+            <CaretRightIcon />
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -98,7 +98,7 @@ export function useAgentDispatch(callbacks: DispatchCallbacks): AgentDispatchApi
           type: activeConversation.type,
           messages: [...activeConversation.messages, userMsg],
         });
-        setActiveChannel(channelId);
+        setActiveChannel(channelId, assistantId);
 
         const handler = (e: Event) => {
           const chunk = (e as CustomEvent<AgentChunk>).detail;
@@ -132,7 +132,7 @@ export function useAgentDispatch(callbacks: DispatchCallbacks): AgentDispatchApi
               attachArtifact(assistantId, artifact);
               // 写盘类工件（用户的产物）自动开右栏预览，让用户立即看到结果
               // 读取类（参考资料）只是过程信息，不打扰用户当前视图
-              if (chunk.source === 'write') {
+              if (chunk.source === 'write' && useAppStore.getState().activeProfile?.id === activeProfile.id) {
                 openRightPanel(chunk.path);
               }
               break;

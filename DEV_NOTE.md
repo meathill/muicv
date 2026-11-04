@@ -323,12 +323,11 @@
   每份对应硬盘上一个独立目录。**目录与 profile 强绑定，按 dir 去重**（`findByDir`），
   避免历史脏数据产生重复 profile。`ensureDefault` 用 in-flight promise 序列化，
   防止 bootstrap + onAutoLogin 并发竞争。
-- **右栏 tree / preview 两个独立通道**：tree 是文件树根，preview 是当前预览路径，
-  两者**不互斥** —— preview 以 overlay 形式盖在 tree 上面，关掉 preview 后
-  tree 状态（展开的目录）原样保留。
+- **右栏文件树与预览抽屉独立**：文件树保留目录展开状态。预览按路径去重，用标签切换文件，
+  收起后可从标题栏的「预览」恢复选中项和其它标签。标签保存在当前应用会话中，切换职业档案或账号时清空。
 - **artifact source 二分**：agent 工具调用 emit 的 artifact 分 `read`（参考资料）/
-  `write`（产物）。read 类折叠到操作组里不打扰，write 类显眼卡片**自动开右栏**
-  让用户看到结果。判断完全靠 `source` 字段，不靠 path 推断。
+  `write`（产物）。read 类折叠到操作组，write 类自动加入预览抽屉，对话里默认折叠为文件计数。
+  判断完全靠 `source` 字段，不靠 path 推断。
 - **设置页三分组**：`settings-view.tsx` 是壳，左侧 nav 三分组（通用 / 模型 / Skill）+ 右
   侧分组面板，由 `activeSection` state 切。具体卡片仍在 `components/settings/` 子目录：
   - 通用：`plan-card`（会员档位 + 余额）/ `theme-card`（三态主题）/ footer 版本检查
@@ -500,7 +499,7 @@
 - **UI**：主进程在 `ask_question` 调用上记录当时的正文长度和模型轮次，随流式事件传给前端，
   并写入对话文件。消息气泡按位置插入问答，同一轮的并行问题共用一张卡片。旧对话缺少位置信息时，
   问答仍显示在正文末尾。其余工具调用收进 OpsGroup。
-  - 卡片只在**当前有活跃 run**（`store.activeChannel !== null`）时可提交。中断 / 重新打开后
+  - 卡片只在所属的 assistant 消息正在流式接收时可提交。中断 / 重新打开后
     的历史里，未回答的提问仍留在落盘记录（abort 路径也会 `flushConversation`），但主进程已无
     pending——此时渲染"提问已失效"而不是让用户白点。
   - `answerQuestion` 返回 `false` 表示没匹配到 pending，卡片据此报错并恢复可提交，不把状态机
@@ -509,7 +508,7 @@
 - **一次调用一个问题**：schema 只有一个 `question` 字符串，多问题靠模型在同一条回复里**并行调用多次**
   `ask_question` 实现——@openai/agents 对同一消息的多个 function tool 默认并发执行（`toolExecution.mjs`
   的 `executeToolRunsWithConcurrency`，无并发上限时直接全量并行），全部挂起、一起等回答；UI
-  `ChatQuestionGroup` 会把同一轮的多个调用合并成一张卡片，每题独立选项和补充说明输入框，一次提交。
+  `ChatQuestionGroup` 把同一轮的多个调用合并成一张卡片，逐题前后翻页并保留草稿，在末题统一提交。
   系统 prompt prelude（skills.ts「提问与互动」节）、工具 description 和 muicv-core SKILL.md
   「一次问清」里都有硬性约束。2026-10 修复：此前模型会把【1】【2】多个子问题拼进一个 `question`，
   导致选项混淆、只有一个补充说明框、记录也挤成一行。回归断言见 `test/skill-prompt.test.ts`。
