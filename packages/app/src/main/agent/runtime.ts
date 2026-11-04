@@ -8,6 +8,7 @@ import {
 import { Agent, run } from '@openai/agents';
 import type { WebContents } from 'electron';
 
+import { dedupeArtifactRefs } from '../../shared/artifact-refs.ts';
 import type { AgentChunk, AppConfig, ChatMessage, ConversationType, ToolCallRecord } from '../../shared/types.ts';
 import { getConversation, saveConversation } from '../conversations.ts';
 import { buildApiTools } from './api-tools.ts';
@@ -319,7 +320,7 @@ export async function runAgent(opts: RunOpts): Promise<void> {
       createdAt: Date.now(),
     };
     if (assistantToolCalls.length > 0) assistantMsg.toolCalls = assistantToolCalls;
-    if (collectedArtifacts.length > 0) assistantMsg.artifacts = collectedArtifacts;
+    if (collectedArtifacts.length > 0) assistantMsg.artifacts = dedupeArtifactRefs(collectedArtifacts);
     conv.messages.push(assistantMsg);
     await saveConversation(conv);
   }

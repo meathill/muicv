@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 
+import { dedupeArtifactRefs } from '../../shared/artifact-refs.ts';
 import type { ArtifactRef, AttachmentRef, ChatMessageFeedback, ToolCallRecord } from '../../shared/types.ts';
 import { ArtifactCard } from './artifact-card';
 import { AttachmentChip } from './chat-attachment-chip';
@@ -58,9 +59,10 @@ export function MessageBubble({
   const isUser = role === 'user';
   const displayContent = isUser ? stripAttachmentFooter(content) : content;
 
-  // 工件按 source 分两类：read = 过程参考资料（折叠到操作组里）/ write = 最终产物（显眼卡片）
-  const readRefs = artifacts?.filter((a) => a.source === 'read') ?? [];
-  const writeRefs = artifacts?.filter((a) => a.source === 'write' && a.kind !== 'resume-preview') ?? [];
+  // 流式事件和旧对话都可能重复引用同一文件，展示前统一去重。
+  const uniqueArtifacts = dedupeArtifactRefs(artifacts);
+  const readRefs = uniqueArtifacts.filter((a) => a.source === 'read');
+  const writeRefs = uniqueArtifacts.filter((a) => a.source === 'write' && a.kind !== 'resume-preview');
 
   // 工具调用分离：普通工具收进 OpsGroup，ask_question 单独作为交互卡片突出展示
   const questionCalls = toolCalls?.filter((c) => c.name === 'ask_question') ?? [];
@@ -122,9 +124,8 @@ export function MessageBubble({
 
           {writeRefs.length > 0 && (
             <div className="space-y-1.5 pt-1">
-              {writeRefs.map((a, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 同一文件可能被写多次，path 拼 index 才能保证唯一
-                <ArtifactCard key={`${a.path}-${i}`} artifact={a} onOpen={() => onOpenArtifact(a)} />
+              {writeRefs.map((a) => (
+                <ArtifactCard key={a.path} artifact={a} onOpen={() => onOpenArtifact(a)} />
               ))}
             </div>
           )}
@@ -272,9 +273,8 @@ function OpsGroup({ toolCalls, reads }: { toolCalls: ToolCallRecord[]; reads: Ar
           <div className="mt-2 border-t border-rule pt-2">
             <p className="mb-1 px-1 text-[12px] text-mute">参考的素材：</p>
             <ul className="space-y-0.5">
-              {reads.map((r, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 同一素材可能被读多次，path 拼 index 才能保证唯一
-                <li key={`${r.path}-${i}`} className="flex items-center gap-1 px-1 font-mono text-[12px] text-ink-soft">
+              {reads.map((r) => (
+                <li key={r.path} className="flex items-center gap-1 px-1 font-mono text-[12px] text-ink-soft">
                   <FileTextIcon size={11} className="shrink-0 text-mute" />
                   <span className="truncate">{r.title}</span>
                 </li>
