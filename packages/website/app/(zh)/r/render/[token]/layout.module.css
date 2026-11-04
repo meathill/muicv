@@ -8,3 +8,11 @@
   min-height: 100vh;
   width: 100%;
 }
+
+@media print {
+  /* PDF 末页的留白超出 .surface 时，不能印出站点根节点的奶油底色。 */
+  :global(html):has(.surface),
+  :global(body):has(.surface) {
+    background: none;
+  }
+}

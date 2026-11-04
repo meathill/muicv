@@ -32,7 +32,6 @@
 
 ## 待手工验证
 
-- **t2 模板"下方一大块色块"**：bullet 已修（disc + accent ::marker），色块来源不明，跑通完整渲染流程复测。
 - **证件照上传完整流程**：代码 review 无明显 bug，需 pick → upload → R2 → 复制 URL → 用到 .resume.json 一遍。
 
 ## 上游跟踪
