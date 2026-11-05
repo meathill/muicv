@@ -23,24 +23,27 @@ const VIEW_MAP: Record<'onboarding' | 'chat' | 'settings' | 'jobs', ComponentTyp
 };
 
 /**
- * 三栏布局：left navigator | center main | right file tree。
+ * 三栏布局：left navigator | center main | right artifacts & file tree。
  *
- * 左栏可折叠（默认展开）；右栏只在 rightPanelTreeRoot 不空时展开。
- * 文件预览走全局 PreviewDrawer（drawer overlay），跟右栏解耦。
- * 中栏是 view 路由（chat / settings 切换），不再切左右栏。
+ * 左栏可折叠（默认展开）。
+ * 右栏保持业界通用规范（Devin 等）：生成新 artifacts 或批量修改后在右栏保持打开（split pane），
+ * 并与中栏对话区并排显示，可拖拽调宽，可关闭；文件浏览亦由右栏承载。
+ * 全局 PreviewDrawer 仅在用户主动发起临时沉浸预览时呼出。
  */
 export function AppShell() {
   const view = useAppStore((s) => s.view);
   const leftCollapsed = useAppStore((s) => s.leftCollapsed);
   const rightCollapsed = useAppStore((s) => s.rightCollapsed);
   const treeRoot = useAppStore((s) => s.rightPanelTreeRoot);
+  const previewTabs = useAppStore((s) => s.previewTabs);
   const rightWidth = useAppStore((s) => s.rightPanelWidth);
 
   // M4：监听 main 端 transcribe_audio_file 工具发起的转码请求，
   // 把任意音频转成 16k mono WAV 回传。无 UI。
   useAudioTranscoder();
 
-  const showRight = !rightCollapsed && treeRoot !== null;
+  const hasRightContent = treeRoot !== null || (previewTabs.paths.length > 0 && previewTabs.activePath !== null);
+  const showRight = !rightCollapsed && hasRightContent;
 
   return (
     <div className="flex h-screen flex-col bg-cream">

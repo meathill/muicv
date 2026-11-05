@@ -120,21 +120,32 @@ type AppStore = {
 
   leftCollapsed: boolean;
   rightCollapsed: boolean;
-  /** 文件树和预览抽屉分别控制，收起抽屉时保留预览标签。 */
+  /** 文件树根路径，null 表示未打开过文件树。 */
   rightPanelTreeRoot: string | null;
+  /** 右栏展示视图：'preview' 工件多标签预览，'tree' 工作目录文件树。 */
+  rightPanelView: 'preview' | 'tree';
+  /** 是否打开临时抽屉全屏预览（用于沉浸大屏临时预览，默认不开启）。 */
+  previewDrawerOpen: boolean;
   previewTabs: PreviewTabs;
   /** 右栏宽度（像素），可拖拽调整，localStorage 持久化。 */
   rightPanelWidth: number;
   toggleLeft: () => void;
   toggleRight: () => void;
+  setRightPanelView: (v: 'preview' | 'tree') => void;
   /** 打开文件树（path 缺省时用当前 profile 的 workspaceDir）。 */
   openFileTree: (path?: string) => void;
-  /** 打开文件预览，已有标签时切换到该标签。 */
+  /** 打开文件工件预览，保持在右栏分栏中打开（不弹全屏遮罩抽屉）。 */
   openRightPanel: (path: string) => void;
   closePreviewTab: (path: string) => void;
+  /** 打开临时抽屉全屏预览（用于沉浸大屏临时预览）。 */
+  openDrawerPreview: (path?: string) => void;
+  /** 关闭临时抽屉全屏预览。 */
+  closeDrawerPreview: () => void;
+  /** 收起临时抽屉预览。 */
   hidePreview: () => void;
+  /** 展开右栏工件预览。 */
   showPreview: () => void;
-  /** 关闭文件树。 */
+  /** 关闭右侧分栏。 */
   closeRightPanel: () => void;
   /** 拖拽 resize handle 时调用，自动 clamp + 写 localStorage。 */
   setRightPanelWidth: (w: number) => void;
@@ -536,20 +547,56 @@ export const useAppStore = create<AppStore>((set, get) => ({
   leftCollapsed: false,
   rightCollapsed: true,
   rightPanelTreeRoot: null,
+  rightPanelView: 'preview',
+  previewDrawerOpen: false,
   previewTabs: EMPTY_PREVIEW_TABS,
   rightPanelWidth: loadRightWidth(),
   toggleLeft: () => set((s) => ({ leftCollapsed: !s.leftCollapsed })),
-  toggleRight: () => set((s) => ({ rightCollapsed: !s.rightCollapsed })),
+  toggleRight: () =>
+    set((s) => {
+      const willCollapse = !s.rightCollapsed;
+      return {
+        rightCollapsed: willCollapse,
+        previewDrawerOpen: willCollapse ? false : s.previewDrawerOpen,
+      };
+    }),
+  setRightPanelView: (v) => set({ rightPanelView: v }),
   openFileTree: (path) => {
     const root = path ?? get().activeProfile?.dir;
     if (!root) return;
-    set({ rightPanelTreeRoot: root, rightCollapsed: false });
+    set({ rightPanelTreeRoot: root, rightPanelView: 'tree', rightCollapsed: false });
   },
-  openRightPanel: (path) => set((s) => ({ previewTabs: openPreviewTab(s.previewTabs, path) })),
-  closePreviewTab: (path) => set((s) => ({ previewTabs: closePreviewTab(s.previewTabs, path) })),
-  hidePreview: () => set((s) => ({ previewTabs: { ...s.previewTabs, isOpen: false } })),
-  showPreview: () => set((s) => ({ previewTabs: { ...s.previewTabs, isOpen: s.previewTabs.activePath !== null } })),
-  closeRightPanel: () => set({ rightPanelTreeRoot: null, rightCollapsed: true }),
+  openRightPanel: (path) =>
+    set((s) => ({
+      previewTabs: openPreviewTab(s.previewTabs, path),
+      rightPanelView: 'preview',
+      rightCollapsed: false,
+      previewDrawerOpen: false,
+    })),
+  closePreviewTab: (path) =>
+    set((s) => {
+      const nextTabs = closePreviewTab(s.previewTabs, path);
+      const hasTabs = nextTabs.paths.length > 0;
+      return {
+        previewTabs: nextTabs,
+        rightPanelView: hasTabs ? s.rightPanelView : s.rightPanelTreeRoot ? 'tree' : 'preview',
+        rightCollapsed: hasTabs || s.rightPanelTreeRoot !== null ? s.rightCollapsed : true,
+        previewDrawerOpen: hasTabs ? s.previewDrawerOpen : false,
+      };
+    }),
+  openDrawerPreview: (path) =>
+    set((s) => ({
+      previewTabs: path ? openPreviewTab(s.previewTabs, path) : s.previewTabs,
+      previewDrawerOpen: true,
+    })),
+  closeDrawerPreview: () => set({ previewDrawerOpen: false }),
+  hidePreview: () => set({ previewDrawerOpen: false }),
+  showPreview: () =>
+    set((s) => ({
+      rightCollapsed: false,
+      rightPanelView: s.previewTabs.activePath !== null ? 'preview' : s.rightPanelView,
+    })),
+  closeRightPanel: () => set({ rightCollapsed: true, previewDrawerOpen: false }),
   setRightPanelWidth: (w) => {
     const clamped = clampRightWidth(w);
     set({ rightPanelWidth: clamped });
@@ -625,7 +672,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
 useAppStore.subscribe((state, previous) => {
   if (state.activeProfile?.id !== previous.activeProfile?.id || state.session?.id !== previous.session?.id) {
-    useAppStore.setState({ previewTabs: EMPTY_PREVIEW_TABS });
+    useAppStore.setState({ previewTabs: EMPTY_PREVIEW_TABS, previewDrawerOpen: false });
   }
 });
 

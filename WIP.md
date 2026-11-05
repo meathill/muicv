@@ -1,8 +1,24 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-11-04
+最后更新：2026-11-05
 
 ## 当前进行中
+
+### Artifacts 分栏常驻与抽屉临时预览（2026-11-05）
+
+- [x] 架构对齐：Artifacts 像业界（Devin 等）一样在右侧分栏保持打开（persistent split pane），不再默认用全屏 drawer 遮盖主聊天区
+- [x] 状态与语义：
+  - `openRightPanel(path)`：加入 previewTabs，展开右栏（`rightCollapsed: false`），切到 preview 视图，保持平级打开；默认不打开遮罩 Drawer
+  - 临时抽屉预览（`previewDrawerOpen`）：在用户主动需要全屏/抽屉沉浸预览时使用（如右栏顶部「全屏抽屉预览」按钮）
+  - 右栏支持工件预览与工作目录文件树自由切换（`rightPanelView: 'preview' | 'tree'`）
+  - 支持关闭当前 tab，支持关闭右栏（右上角 X 按钮收起分栏）
+- [x] UI 实现：
+  - `AppShell`：右栏显示条件对齐（`!rightCollapsed && (treeRoot !== null || activePath !== null)`）
+  - `SidebarRight`：承载多标签预览（Tabs + PreviewContent）与文件树（FileTree），带全屏抽屉临时预览、关闭 tab、关闭右栏操作
+  - `PreviewDrawer`：收拢为「临时抽屉预览」，支持 ESC、点遮罩或收起按钮退出回到分栏
+  - `TitleBar`：右栏折叠按钮状态与工件计数对齐
+- [x] 测试用例：右栏状态流、批量工件生成、tab 关闭级联、抽屉临时预览触发与退出等测试全绿
+- [x] 类型检查（tsc --noEmit）、biome 格式化（0 诊断）、构建（electron-vite build）全部通过
 
 ### coss ui 接入 + 全站按钮统一（2026-11-04）
 

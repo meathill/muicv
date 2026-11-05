@@ -21,7 +21,7 @@ export function TitleBar() {
   const toggleRight = useAppStore((s) => s.toggleRight);
 
   const busy = activeChannel !== null;
-  const canToggleRight = treeRoot !== null;
+  const canToggleRight = treeRoot !== null || previewCount > 0;
 
   return (
     <header className="titlebar-drag flex h-11 shrink-0 items-center justify-between border-b border-rule bg-cream/85 pl-[80px] pr-3 backdrop-blur-sm">
@@ -54,21 +54,20 @@ export function TitleBar() {
             variant="ghost"
             size="xs"
             onClick={showPreview}
-            aria-haspopup="dialog"
-            aria-label={`打开文件预览，${previewCount} 个标签`}
-            title="打开文件预览"
+            aria-label={`展开工件预览，${previewCount} 个标签`}
+            title={rightCollapsed ? '展开右栏工件预览' : '右栏工件预览'}
             className="text-mute hover:text-ink"
           >
             <FilesIcon />
-            预览 <span className="tabular-nums">{previewCount}</span>
+            工件 <span className="tabular-nums">{previewCount}</span>
           </Button>
         )}
         {session && canToggleRight && (
           <button
             type="button"
             onClick={toggleRight}
-            title={rightCollapsed ? '展开文件浏览' : '收起文件浏览'}
-            aria-label={rightCollapsed ? '展开文件浏览' : '收起文件浏览'}
+            title={rightCollapsed ? '展开右栏' : '收起右栏'}
+            aria-label={rightCollapsed ? '展开右栏' : '收起右栏'}
             aria-pressed={!rightCollapsed}
             className="flex items-center justify-center rounded-md px-2 py-0.5 text-mute hover:bg-fluff hover:text-ink"
           >

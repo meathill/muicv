@@ -29,7 +29,9 @@ export function ProfileSection() {
   const createPick = useAppStore((s) => s.createProfilePickFolder);
   const openFileTree = useAppStore((s) => s.openFileTree);
   const closeRightPanel = useAppStore((s) => s.closeRightPanel);
-  const treeOpen = useAppStore((s) => s.rightPanelTreeRoot !== null);
+  const rightCollapsed = useAppStore((s) => s.rightCollapsed);
+  const rightPanelView = useAppStore((s) => s.rightPanelView);
+  const treeOpen = !rightCollapsed && rightPanelView === 'tree';
 
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
