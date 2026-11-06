@@ -193,6 +193,7 @@ Senior Frontend Engineer · 北京 · zhang@example.com · https://github.com/zh
 ```json
 {
   "schemaVersion": 1,
+  "lang": "zh",
   "name": "张三",
   "title": "Senior Frontend Engineer",
   "contact": {
@@ -238,8 +239,11 @@ Senior Frontend Engineer · 北京 · zhang@example.com · https://github.com/zh
 [references/resume-json-schema.md](references/resume-json-schema.md)
 
 - `schemaVersion` 写死 `1`
+- **`lang` 必写**：`"zh"` / `"en"`，即简历语言（目标语言 = 用户明示 > JD 语言 > 素材语言，
+  详见 prompts.md「简历语言」段）。模板标题排版语言和在线预览都靠它，
+  缺省会被当成中文渲染，英文简历会配中文标题
 - 中英双语字段（如果素材里只有中文）写成纯字符串即可，`pickLang` 会兜底；
-  写成 `{ zh: "...", en: "..." }` 是显式双语
+  写成 `{ zh: "...", en: "..." }` 是显式双语（内容双语时用户可在预览页一键切换语言）
 - bullets 跟 markdown 输出**完全同一批**（已经经过第 4 步自检），不要单独再改
 
 ### 6. 交付

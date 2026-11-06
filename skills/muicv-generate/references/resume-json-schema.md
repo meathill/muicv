@@ -7,6 +7,7 @@
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `schemaVersion` | `1` | ✅ | 写死 `1`，将来加字段会升 version |
+| `lang` | `"zh"` / `"en"` | ✅ | **简历主语言**。模板标题排版语言和预览页语言切换都靠它；目标语言 = 用户明示 > JD 语言 > 素材语言。缺省会被当成中文渲染，英文简历会配中文标题 |
 | `name` | `Bilingual` | ✅ | 中英姓名 |
 | `title` | `Bilingual` | ✅ | 一行职业 tag，对齐 target JD |
 | `tagline` | `Bilingual?` | | 可选的座右铭/价值主张（仅 t5 用） |
@@ -21,6 +22,10 @@
 | `languages` | `Language[]?` | | 语言能力 |
 | `awards` | `Award[]?` | | 荣誉奖项 |
 | `interests` | `Bilingual<string[]>?` | | 兴趣（可选） |
+
+**空 section 语义**：`experience` / `education` / `projects` / `skills` 虽必填，但可以是空数组
+`[]`——模板对空 section **整体不渲染**（连标题都不出），不会出现"有标题没内容"的空洞版式；
+可选数组（publications / languages / awards / interests）同理。所以素材缺什么就写 `[]` 或省略，放心。
 
 ### `Bilingual` 的两种写法
 
@@ -70,7 +75,8 @@
 {
   "title": "「论文标题」",
   "venue": "CHI 2025",
-  "authors": "Wei, L., Zhang, M."
+  "authors": "Wei, L., Zhang, M.",
+  "year": "2025"    // 可选；不写则模板不渲染年份
 }
 
 // Skills
@@ -92,6 +98,7 @@
 ```json
 {
   "schemaVersion": 1,
+  "lang": "zh",
   "name": "李 凌",
   "title": "前端工程师",
   "contact": {
