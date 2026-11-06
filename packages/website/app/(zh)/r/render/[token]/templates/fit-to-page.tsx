@@ -2,7 +2,14 @@
 
 import { useEffect } from 'react';
 
-import { computeFitScale, PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/fit';
+import { computeFitScale, FIT_HEIGHT_EXP, FIT_MAX_SCALE, FIT_MIN_SCALE, PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/fit';
+
+const VISUAL_TOLERANCE_PX = 24;
+const MAX_ITERATIONS = 4;
+
+function clampScale(scale: number): number {
+  return Math.min(FIT_MAX_SCALE, Math.max(FIT_MIN_SCALE, scale));
+}
 
 /**
  * 模板自动排版（auto-fit）：测量内容自然高度，用 CSS zoom 把简历收进最近的整页。
@@ -23,20 +30,41 @@ export default function FitToPage() {
       // 字体就绪后再测量，否则行高不准。
       await document.fonts.ready.catch(() => {});
       if (!root.isConnected) return;
-      // 重置到 zoom=1、min-height=0，量自然内容高度。
+      // 测量自然内容高度：必须 inline 覆盖 min-height 为 0——removeProperty 会让
+      // CSS 的 1123px 重新生效，偏少的内容会量出"正好一页"，放大路径永不触发。
       root.style.removeProperty('zoom');
       root.style.removeProperty('width');
-      root.style.removeProperty('min-height');
-      const contentHeight = root.scrollHeight;
-      const scale = computeFitScale(contentHeight, PAGE_HEIGHT);
+      root.style.minHeight = '0';
+      const natural = root.scrollHeight;
+      let scale = computeFitScale(natural, PAGE_HEIGHT);
       if (scale === 1) {
+        root.style.removeProperty('min-height');
         document.documentElement.dataset.fitScale = '1';
-      } else {
-        root.style.zoom = String(scale);
-        root.style.width = `${PAGE_WIDTH / scale}px`;
-        root.style.minHeight = `${PAGE_HEIGHT / scale}px`;
-        document.documentElement.dataset.fitScale = scale.toFixed(3);
+        document.documentElement.dataset.fitDone = '1';
+        return;
       }
+
+      const targetPages = Math.max(1, Math.round(natural / PAGE_HEIGHT));
+      const targetVisual = targetPages * PAGE_HEIGHT;
+      const applyZoom = (s: number) => {
+        root.style.zoom = String(s);
+        root.style.width = `${PAGE_WIDTH / s}px`;
+        root.style.minHeight = '0';
+      };
+
+      // zoom 高度按 ~s^2.5 复合增长（列宽变窄折行 + 字号变大），初值只是近似，
+      // 用实测视觉高度做阻尼不动点迭代收敛到目标页高。
+      for (let i = 0; i < MAX_ITERATIONS; i++) {
+        applyZoom(scale);
+        const visual = root.scrollHeight * scale;
+        if (Math.abs(visual - targetVisual) <= VISUAL_TOLERANCE_PX) break;
+        const next = clampScale(scale * (targetVisual / visual) ** (1 / FIT_HEIGHT_EXP));
+        if (Math.abs(next - scale) < 0.005) break; // 已收敛到边界或极值附近
+        scale = next;
+      }
+
+      root.style.minHeight = `${PAGE_HEIGHT / scale}px`;
+      document.documentElement.dataset.fitScale = scale.toFixed(3);
       document.documentElement.dataset.fitDone = '1';
     };
 
@@ -46,10 +74,11 @@ export default function FitToPage() {
     };
 
     void apply();
-    // 内容变化（预览页切模板 / 切语言 / 传头像）后重排。自身写样式也会触发一轮，
-    // 但稳定状态下尺寸不再变化，观察器随之静默，不会死循环。
-    const observer = new ResizeObserver(scheduleRefit);
-    observer.observe(root);
+    // 内容变化（预览页切模板 / 切语言 / 传头像）后重排。
+    // 注意不能用 ResizeObserver：.page 有 min-height 1123px，内容变短时盒子尺寸不变，
+    // RO 不触发；MutationObserver 监听 DOM 内容变化（不监听 style 属性，自身写样式不会触发）。
+    const observer = new MutationObserver(scheduleRefit);
+    observer.observe(root, { childList: true, subtree: true, characterData: true });
 
     return () => {
       observer.disconnect();
