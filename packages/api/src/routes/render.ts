@@ -57,11 +57,18 @@ export async function handleRender(c: Context<AppEnv>): Promise<Response> {
         400,
       );
     }
-    const lang: TemplateLang = isTemplateLang(payload.lang) ? payload.lang : 'zh';
+    // lang 优先级：请求显式指定 > 简历内容一等 lang 字段 > 'zh'。
+    // 内容字段由生成端（muicv-generate）写入，桌面端工具不传 lang 也能拿到正确语言。
+    const resume = payload.resumeJson as TemplateResumeData;
+    const lang: TemplateLang = isTemplateLang(payload.lang)
+      ? payload.lang
+      : isTemplateLang(resume.lang)
+        ? resume.lang
+        : 'zh';
     templateForLog = payload.template;
     renderInput = {
       kind: 'json',
-      resume: payload.resumeJson as TemplateResumeData,
+      resume,
       template: payload.template,
       lang,
       ...(typeof payload.accent === 'string' ? { accent: payload.accent } : {}),

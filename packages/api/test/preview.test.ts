@@ -199,6 +199,38 @@ test('POST /preview 正常 → 201 + 返回 url / token / expiresAt', async () =
   assert.ok(body.expiresAt > Date.now());
 });
 
+test('POST /preview 内容带 lang 字段、请求未指定 → 用内容的 lang', async () => {
+  const res = await app.request(
+    '/preview',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...AUTH },
+      body: JSON.stringify({ resumeJson: { ...sampleResume(), lang: 'en' }, template: 't2-minimal' }),
+    },
+    mockEnv({ authenticated: true }),
+    ctx,
+  );
+  assert.equal(res.status, 201);
+  const body = (await res.json()) as { lang: string };
+  assert.equal(body.lang, 'en');
+});
+
+test('POST /preview 显式 lang 优先于内容的 lang 字段', async () => {
+  const res = await app.request(
+    '/preview',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...AUTH },
+      body: JSON.stringify({ resumeJson: { ...sampleResume(), lang: 'en' }, template: 't2-minimal', lang: 'zh' }),
+    },
+    mockEnv({ authenticated: true }),
+    ctx,
+  );
+  assert.equal(res.status, 201);
+  const body = (await res.json()) as { lang: string };
+  assert.equal(body.lang, 'zh');
+});
+
 test('GET /preview/:token 不存在 → 404', async () => {
   const res = await app.request(
     '/preview/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
