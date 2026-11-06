@@ -1,5 +1,6 @@
 'use client';
 
+import { isJsonTemplateId, TEMPLATE_META, type TemplateMeta } from '@muicv/shared';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -19,6 +20,11 @@ export type PreviewToolbarProps = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.muicv.com';
+
+/** currentTemplate 来自 D1，类型宽松；未知 id 原样展示。 */
+function templateMeta(id: string): TemplateMeta {
+  return isJsonTemplateId(id) ? TEMPLATE_META[id] : { label: id, tagline: '' };
+}
 
 /**
  * 精确到分钟。预览 TTL 较短，分钟级展示足够直观。
@@ -42,19 +48,6 @@ function formatExpiresLocal(ms: number): string {
     minute: '2-digit',
   });
 }
-
-/**
- * 中文模板标签，跟桌面端 TemplateSelect 保持一致。
- * 改名要同时改桌面端 packages/app/src/renderer/components/preview-drawer.tsx。
- */
-const TEMPLATE_META: Record<string, { label: string; tagline: string }> = {
-  't1-classic': { label: 't1 经典', tagline: '深海军蓝 · 大公司 / 传统行业' },
-  't2-minimal': { label: 't2 极简', tagline: '瑞士留白 · 设计 / 产品' },
-  't3-sidebar': { label: 't3 双栏', tagline: '深绿侧栏 · 突出技能矩阵' },
-  't4-tech': { label: 't4 技术', tagline: '雾青 · 工程 / 开发岗' },
-  't5-timeline': { label: 't5 时间线', tagline: '靛蓝 · 经历较多' },
-  't6-academic': { label: 't6 学术', tagline: '墨红 · 学术 / 研究' },
-};
 
 export default function PreviewToolbar({
   token,
@@ -210,7 +203,7 @@ export default function PreviewToolbar({
     setToast('已触发；如未唤起桌面 app，请在 app 内对 AI 说"以后默认用此模板"');
   }
 
-  const currentMeta = TEMPLATE_META[currentTemplate] ?? { label: currentTemplate, tagline: '' };
+  const currentMeta = templateMeta(currentTemplate);
 
   return (
     <div className={styles.toolbar}>
@@ -236,7 +229,7 @@ export default function PreviewToolbar({
           {templateOpen ? (
             <div className={styles.dropdownMenu} role="listbox">
               {templateOptions.map((id) => {
-                const meta = TEMPLATE_META[id] ?? { label: id, tagline: '' };
+                const meta = templateMeta(id);
                 const active = id === currentTemplate;
                 return (
                   <button
