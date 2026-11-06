@@ -1,6 +1,6 @@
 'use client';
 
-import { isJsonTemplateId, TEMPLATE_META, type TemplateMeta } from '@muicv/shared';
+import { isJsonTemplateId, TEMPLATE_META, type TemplateLang, type TemplateMeta } from '@muicv/shared';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -17,6 +17,10 @@ export type PreviewToolbarProps = {
   currentTemplate: string;
   /** 可选模板列表（JSON_TEMPLATE_IDS）。 */
   templateOptions: string[];
+  /** 当前渲染语言（来自 D1，默认 zh）。 */
+  currentLang: TemplateLang;
+  /** 内容是否真双语（含另一种语言的字段）。true 且 owner 登录时显示语言切换器。 */
+  hasAltLang: boolean;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.muicv.com';
@@ -57,6 +61,8 @@ export default function PreviewToolbar({
   isOwner,
   currentTemplate,
   templateOptions,
+  currentLang,
+  hasAltLang,
 }: PreviewToolbarProps) {
   const router = useRouter();
   const [downloading, setDownloading] = useState(false);
@@ -67,6 +73,7 @@ export default function PreviewToolbar({
   const [shareSaving, setShareSaving] = useState(false);
   const [templateSaving, setTemplateSaving] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [langSaving, setLangSaving] = useState(false);
   // SSR-stable 文案，mount 后才切到本地时间格式，避免 toLocaleString hydration mismatch (#418)
   const [expiresStr, setExpiresStr] = useState(() => isoMinute(expiresAt));
   useEffect(() => {
@@ -167,6 +174,35 @@ export default function PreviewToolbar({
     [currentTemplate, router, templateSaving, token],
   );
 
+  /** 切换渲染语言。复用 template 端点（body 必须带 template），只改 lang 字段。 */
+  const handleLangChange = useCallback(
+    async (next: TemplateLang) => {
+      if (next === currentLang || langSaving) return;
+      setLangSaving(true);
+      try {
+        const res = await fetch(`/api/previews/${token}/template`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ template: currentTemplate, lang: next }),
+        });
+        if (res.status === 401) {
+          setToast('需要拥有者登录才能切换语言');
+          return;
+        }
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? `HTTP ${res.status}`);
+        }
+        router.refresh();
+      } catch (err) {
+        setToast(err instanceof Error ? err.message : String(err));
+      } finally {
+        setLangSaving(false);
+      }
+    },
+    [currentLang, currentTemplate, langSaving, router, token],
+  );
+
   const handleShareModeChange = useCallback(
     async (next: 'link' | 'public') => {
       if (next === shareMode || shareSaving) return;
@@ -248,6 +284,28 @@ export default function PreviewToolbar({
             </div>
           ) : null}
         </div>
+        {isOwner && hasAltLang ? (
+          <div className={styles.segmented}>
+            <button
+              type="button"
+              className={`${styles.segmentedButton} ${currentLang === 'zh' ? styles.segmentedActive : ''}`}
+              disabled={langSaving}
+              onClick={() => void handleLangChange('zh')}
+              aria-pressed={currentLang === 'zh'}
+            >
+              中文
+            </button>
+            <button
+              type="button"
+              className={`${styles.segmentedButton} ${currentLang === 'en' ? styles.segmentedActive : ''}`}
+              disabled={langSaving}
+              onClick={() => void handleLangChange('en')}
+              aria-pressed={currentLang === 'en'}
+            >
+              EN
+            </button>
+          </div>
+        ) : null}
         {isOwner ? (
           <button
             type="button"
