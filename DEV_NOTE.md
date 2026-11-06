@@ -1104,3 +1104,32 @@ api 单测补了 Pro 年付的回归用例（曾显示 free）。
 - **sitemap 数据缓存**：`force-cache` 必须显式配 `next.revalidate`（岗位 / 内容都是 3600），否则 Next 会把它存成约一年，
   过期 URL 会长期滞留在 sitemap。岗位 sitemap 按 `hasNextPage` 翻页收全量（`fetchAllCmsOpportunities`），不再截断 500 条。
 - **限流**：Workers Rate Limiting，带 key 按 userId 60/min，匿名按 IP 20/min。website 走 service binding 时没有 `cf-connecting-ip`，此时才信任 `x-muicv-client-ip`（公网请求 CF 必注入 cf-connecting-ip，伪造不了）。
+
+## 简历模版渲染：fit 自动排版与 lang 链路（2026-11-06）
+
+### fit 自动排版的三个 zoom 坑（fit-to-page.tsx / lib/fit.ts）
+
+1. **测量自然高度必须 inline `minHeight = '0'`**，不能 `removeProperty`——`.page` 的 CSS
+   `min-height: 1123px` 会重新生效，scrollHeight 永远 ≥ 1123，偏少的内容量出"正好一页"，
+   放大路径永不触发。
+2. **内容变化监听不能用 ResizeObserver**——`.page` 有 min-height，内容变短时盒子尺寸不变，
+   RO 不触发。用 MutationObserver（childList + subtree + characterData；不含 attributes，
+   自身写 style 不会触发，无死循环）。
+3. **zoom 的高度是 ~s^2.5 复合增长，不是线性**——放大时列宽按 1/s 变窄（折行更多）+ 字号 ×s。
+   线性初值 `s = 目标/高度` 会溢出（放大）/欠填（压缩）。初值和迭代校正都用
+   `target/visual` 的 0.4 次幂阻尼，浏览器里用实测视觉高度做不动点迭代（≤4 轮，容差 24px）。
+   `FIT_EPSILON` 只能设 0.001：1.005 / 2.05 页的孤行页需要 ~0.99 的微小 zoom，0.01 会吃掉。
+
+puppeteer 出 PDF 前等 `documentElement.dataset.fitDone === '1'`（表达式字符串形式——
+api 包 tsconfig 没有 DOM lib，函数回调过不了 tsc）。脚本异常不阻塞出 PDF。
+
+### 简历 lang 链路
+
+- `TemplateResumeData.lang?: 'zh' | 'en'` 是一等字段（生成端 muicv-generate 必写）；
+  旧 `.resume.json` 的 `_lang` 扩展字段继续兼容（preview-drawer tools.ts 同时读两个）。
+- 服务端解析顺序：请求显式 `lang` > 内容 `lang` > `'zh'`（/render、/preview 两个路由），
+  桌面端工具不用传 lang。t1~t6 模板标签本来就是双语的，之前断的是这条链路。
+- 预览页「中/EN」切换器只在内容真双语（`hasBilingualSide`）时显示；单语内容切换只会改
+  模板标题，容易产生"英文标题 + 中文内容"的错配。
+- t4-tech 的英文小写标签（summary/stack/extras）是终端风格设计，中文简历下也是英文 chrome，
+  不是缺陷，不要"修"。

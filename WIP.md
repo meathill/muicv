@@ -1,24 +1,23 @@
 # WIP：Mui简历开发计划
 
-最后更新：2026-11-05
+最后更新：2026-11-06
 
 ## 当前进行中
 
-### Artifacts 分栏常驻与抽屉临时预览（2026-11-05）
+### 简历模版：内容自适应 + 英文简历支持（2026-11-06）
 
-- [x] 架构对齐：Artifacts 像业界（Devin 等）一样在右侧分栏保持打开（persistent split pane），不再默认用全屏 drawer 遮盖主聊天区
-- [x] 状态与语义：
-  - `openRightPanel(path)`：加入 previewTabs，展开右栏（`rightCollapsed: false`），切到 preview 视图，保持平级打开；默认不打开遮罩 Drawer
-  - 临时抽屉预览（`previewDrawerOpen`）：在用户主动需要全屏/抽屉沉浸预览时使用（如右栏顶部「全屏抽屉预览」按钮）
-  - 右栏支持工件预览与工作目录文件树自由切换（`rightPanelView: 'preview' | 'tree'`）
-  - 支持关闭当前 tab，支持关闭右栏（右上角 X 按钮收起分栏）
-- [x] UI 实现：
-  - `AppShell`：右栏显示条件对齐（`!rightCollapsed && (treeRoot !== null || activePath !== null)`）
-  - `SidebarRight`：承载多标签预览（Tabs + PreviewContent）与文件树（FileTree），带全屏抽屉临时预览、关闭 tab、关闭右栏操作
-  - `PreviewDrawer`：收拢为「临时抽屉预览」，支持 ESC、点遮罩或收起按钮退出回到分栏
-  - `TitleBar`：右栏折叠按钮状态与工件计数对齐
-- [x] 测试用例：右栏状态流、批量工件生成、tab 关闭级联、抽屉临时预览触发与退出等测试全绿
-- [x] 类型检查（tsc --noEmit）、biome 格式化（0 诊断）、构建（electron-vite build）全部通过
+背景：模版对内容形状的硬性假设导致渲染效果差（截断丢内容、空 section 渲染空标题、t6 年份硬编码、排版失衡）；英文简历链路断裂（模版标签已双语，断在生成端不写 lang、API 默认 zh、api-tools 不传 lang）。
+
+- [x] shared schema：`TemplateResumeData.lang?`、`TemplateResumePublication.year?`、校验、`hasBilingualSide()` + 单测
+- [x] template-meta 收敛到 shared（preview-toolbar / app tools 统一引用；营销页 styleLabel 是本地化文案，保留）
+- [x] t1~t6 渲染健壮化：移除全部静默截断、空 section 整体不渲染、t4 `[0]` 计数、t6 publication.year
+- [x] fit 自动排版：`computeFitScale` 纯函数 + 单测、`FitToPage` 组件、接入渲染页与预览页、render-pdf 等待 fitDone
+- [x] API lang 解析：render.ts / preview.ts 改为 payload.lang > resumeJson.lang > 'zh'（桌面端零改动生效）
+- [x] 预览页「中/EN」切换器（`hasBilingualSide` 为 true 且 owner 登录时显示）
+- [x] skill 文档：muicv-generate 语言规则（用户明示 > JD 语言 > 素材语言）+ 写 lang 字段 + schema 文档 + muicv-render 说明
+- [x] 回归：642 测试全绿、biome 0 诊断、website/app 构建通过；fit 三处实测问题修复后浏览器三场景验证收敛 794×1123
+- [ ] **用户**：线上英文简历端到端跑一遍（生成 → 预览 → 切语言 → PDF）；fit 在真实简历上的观感
+- 决策与踩坑已沉淀 [DEV_NOTE.md](./DEV_NOTE.md)「简历模版渲染：fit 自动排版与 lang 链路」
 
 ### coss ui 接入 + 全站按钮统一（2026-11-04）
 
@@ -33,22 +32,6 @@
       聊天工具条芯片边框变深出硬阴影、登录 CTA 变矮）、chat-model-selector 弹层、暗色模式
 - [ ] 后续项在 TODO.md「UI 组件化后续」：website 按钮组件化 / app 弹层组件化 / Menu·ToggleGroup
 
-### 依赖增量升级（2026-11-04）
-
-- [x] pnpm up -r +138/-140（11 天增量）；biome 2.6.4 + schema migrate（08f5022）
-- [x] stripe 维持 22 暂缓；app 加 @muicv/ui、ui 包加 @phosphor-icons/react
-
-### 新增对话类型「岗位库匹配」（2026-10-24）
-
-- [x] type `job-match` + meta（🧲 岗位库匹配）+ MagnetIcon + ALL_TYPES + 斜杠命令模板
-- [x] 创建即自动执行：store `autoSend` 挂目标对话 id，chat-view 空态消费发出合成 user 消息
-      （含系统真实时区 UTC±N；`matchAutoPromptFor` 纯函数可测）
-- [x] 新 skill `muicv-job-match`：读素材库 → search_jobs 组 2~4 组查询（remote 优先 /
-      country 按素材推断 / utcOffset 传入）→ 逐岗位评匹配 → 对话内出榜单（不落盘）→
-      下一步引导（挑中 → fetch_jd → generate）；对齐 muicv-jobs 的 match 子任务边界
-- [x] 测试：match-auto.test.ts（prompt 关键句 + 时区格式 + skill 注入与章节断言）；
-      slash-command 断言 6→7；206 测试全绿、typecheck、构建通过
-
 ### 发版前依赖升级（2026-10-24）
 
 - [x] 第一批 `pnpm up -r`（semver 内）：next 16.4.3、payload 3.92、openai 7.43、vite 8.3.5、
@@ -58,46 +41,6 @@
 - [x] electron 44→45（0f9f9b3），等用户手工冒烟
 - [x] biome.json migrate 到 2.6.3 schema；biome 2.6 格式化漂移一次性收口（14 个文件纯格式）
 - [ ] 暂缓项记入 TODO.md「依赖升级跟进」：stripe 23（CN 支付迁移需实测）
-
-### biome lint 存量清零（2026-10-24）
-
-- [x] 实际规模 195 处（114 errors + 81 warnings，此前"约 20 处"是 biome 默认
-      `--max-diagnostics=20` 截断误报）；现在 `pnpm run lint` 0 诊断
-- [x] 机械问题真修；Button 条件调用 hook、stale closure 依赖漏配等结构性问题修复；
-      模式性场景加带理由的抑制；生成文件 / CSS Modules / 简历模板目录走 biome.json overrides
-- [x] pre-commit hook 从「只修不拦」收紧为「违规阻断」（仓库文档里预设的存量清零后动作）
-- [x] 全仓回归：6 包 595 测试 + typecheck + 构建（含两个 next build）全绿
-
-### 修复 ask_question 多问题排版（2026-10-24）
-
-- [x] prompt 三处硬性约束：系统 prelude「提问与互动」、工具 description / 参数 describe、muicv-core「一次问清」——
-      一次调用只问一个问题，多问题在同一条回复里并行多次调用（UI 本就支持一卡多题，每题独立选项和补充说明）
-- [x] DoneQuestionRow 题干截断到 80 字 + title 悬浮看全文
-- [x] 回归断言进 `test/skill-prompt.test.ts`；typecheck / 全量测试 / 构建通过；决策记入 DEV_NOTE.md
-
-### 提交异步化 + 清理 + 上架准备（2026-10-21）
-
-- [x] api：AI / 外链路径进 Cloudflare Queue（muicv-job-submit + DLQ），202 + `GET /jobs/submit/:id`；消费幂等可重试，死信全额退款
-- [x] extension：轮询退避、chrome.storage 持久化待处理 id，重开 popup 续看结果（不加 notifications 权限）
-- [x] 清理：桌面端 extension-bridge / IPC / 站点专用抽取代码 / 无用 shared 类型 / 过时文档；app typecheck 修复
-- [x] 上架：0.3.0、_locales 9 语言 + popup i18n、release zip（Chrome/Edge + Firefox）、隐私页 /privacy/extension、
-      `packages/extension/store/`（各语言文案 + README 清单 + 截图 / 宣传图）
-
-### 扩展重做：任意页面提交岗位 + 服务端识别 / 计费（2026-10-20）
-
-目标：扩展脱离桌面端，凭 muicv API key 独立工作；用户可提交任意页面，服务端识别岗位并按规则计费 / 奖励。
-
-- [x] shared：提交请求 / 响应类型、计费常量与结算规则（纯函数）
-- [x] D1 迁移 0019：jobSubmission（提交与结算记录）、savedJob（私藏）、jobLinkCache（外链抓取缓存）
-- [x] api：`POST /jobs/submit` 流水线——JSON-LD / 已知 ATS 确定性识别 → Workers AI 判别 + 抽取（可多岗位）→
-      候选链接（≤3，SSRF 防护、大小 / 超时限制、缓存）→ 地域解析 → 公共池（去重、jobIndex + 向量）/ 私藏
-- [x] api：计费——预扣估算、余额不足早拒；公共且识别到岗位全免、有新岗位发奖；未识别 / 私藏按实际 AI 成本结算；幂等流水；限流
-- [x] api：`GET /jobs/saved` 私藏列表；CORS 放行扩展来源
-- [x] extension：去掉桌面端连接（bridge / 队列 / content script），只留 activeTab + scripting；
-      点击时注入抽取脚本（Readability → turndown，截断）+ JSON-LD + 外链
-- [x] extension：popup 重做（页面信息、公共 / 私藏切换、计费说明、进度、结果、错误、API key 设置），用新图标
-- [x] 测试（每个计费分支）、typecheck、构建、dry-run、远端执行新增迁移、推送并验证部署
-
 
 ### 统一岗位频道 /jobs + 自然语言搜索（2026-10-20，分支 feat/opportunities）
 
@@ -111,7 +54,6 @@
 - [x] app：agent 工具 `search_jobs`
 - [x] website：/jobs 合并展示（来源 tab + 搜索）、采集岗位详情页、sitemap
 - [x] 文档：DEPLOYMENT（Vectorize / secret / migration）、DEV_NOTE
-- [ ] **用户**：按 DEPLOYMENT「统一岗位频道」建 Vectorize 索引、跑 CMS 迁移、建采集账号与 secret、依序部署、回填向量
 - [x] app：桌面端岗位库面板（左栏入口，搜索 / 筛选 / 无限滚动 / 详情 / 导入 / 投递）
 - [x] 地域限制：结构化字段（workplace / allowedCountries / allowedRegions / utcOffset / officeLocations）+ 规则解析 + LLM 兜底（cron）
 - [x] 按求职者国家 / 时区排除不可投岗位；API / shared client / 桌面端（可删除的自动识别标签）/ website /jobs 全链路
@@ -124,164 +66,51 @@
 - [ ] **用户**：CMS 采集账号 + api 的 `CMS_API_KEY`、`JOBS_REINDEX_TOKEN`；可选手动触发 / 回填
 - [ ] 后续：多语言 /jobs
 
-### 模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）
+### 插队任务：模型换代：默认切 mimo-v2.6-flash + GPT-6 Sol/Luna 上线 + Terra 下线（2026-09-23）
 
-- [x] `packages/shared/src/pricing.ts`：4 模型表（v2.6-flash 默认 / deepseek 保留 / gpt-6-luna/sol）+ alias 全链 + displayMeta（v2.6 开 vision+audio，mimo 价格不动）
-- [x] app 注释/文案同步（store 迁移 / runtime / chat-utils / recorder / types）+ api `llm.ts` 头注释
-- [x] 测试同步：shared pricing / api routes / app history-alias-endpoint-reasoning
-- [x] 文档：DEPLOYMENT / DEV_NOTE / WIP
-- [x] 文案全扫（重点 app）：chat-utils / runtime / recorder / types / audio-preview / scripts/verify-mimo-audio 已同步；选择器与设置页表驱动自动生效；muirouter 侧独立域不动
-- [x] `pnpm -r test` 全绿（shared 107 / api 142 / app 199）+ `format` + app `typecheck` + api dry-run + app build
+- [x] 定价表 / 注释 / 测试 / 文档全链路（详见 git 8 月-9 月提交记录）
+- [x] 博客已发布并修复表格渲染；IndexNow 已提交
 - [ ] 有 key 时跑 `scripts/opencode-go-probe.ts` 实探 `mimo-v2.6-flash` 在目录里
-- [x] 博客已发布（用户后台直发，线上 200 确认：`/posts/product/gpt-6-sol-luna-mimo-v2-6-flash`）；草稿 md 与一次性发布脚本已清理；IndexNow 122 个 URL 已提交
-- [x] 博客表格渲染修复（2026-09-24）：`marked` 能解析 GFM 表格，但 `.prose-mui` 缺表格样式导致无框挤作一团；`globals.css` 补 table/thead/th/td 样式（沿用 admin 表格同款 fluff 表头 + rule 边框 + paper 斑马纹），website build + dev 实拍验证通过
 - [ ] **用户**：`wrangler secret` 无需新增（复用 OPENCODE_GO / OPENAI），部署 api + 发版 app
 
 ### 插队任务：修复 Ahrefs 报的 56 个 `/:locale/posts/*` 404（2026-09-14）
 
-sitemap alternates 无条件列全 9 语言（含不存在的译文，且是相对 URL）+ 页脚
-LangSwitch 给详情页直出 8 条坏链。修法：`lib/post-alternates.ts` 纯函数统一规则
-（head/sitemap 共用），详情页透传 `availableLocales` 只显示有译文的语言；缺译文
-保持 404 自然消退，不 301。
-
-- [x] sitemap alternates 只列真实译文 + 绝对 URL
-- [x] 详情页切换器过滤 + `test/post-alternates.test.ts` 6 用例全绿
-- [x] format + `tsc --noEmit` + `website build`（构建产物已验：坏 alternates/坏链消失）
-- [x] push（aa2e675）后自动部署，线上已验：sitemap 坏 alternates 与页脚坏链消失
-- [x] IndexNow 提交 121 个 URL 已接受
+- [x] sitemap alternates 只列真实译文 + 绝对 URL；详情页切换器过滤；测试全绿
+- [x] push（aa2e675）后自动部署，线上已验；IndexNow 已提交
 - [ ] **用户**：GSC 重交 sitemap → Ahrefs 重新 audit（56 条随重抓自然消除）
-
-### 插队任务：浏览器扩展（采集 JD → 匹配/生成 → 社区贡献）
-
-目标：用户在招聘页点一下，把 JD 交给桌面端判断是否适合投；合适则生成针对性简历。
-主动贡献的 JD 进入可搜索社区，首次去重入库奖励 token。
-
-- [x] 切片 A：扩展采集闭环（抽取器 + 页内提示条 + 本机 HTTP 配对 + 写 `targets/`）
-- [x] 切片 B：结构化 match + 绿自动 generate + 状态轮询
-- [x] 切片 C：社区表 / contribute API / 奖励 / 公开 `/jobs` / dashboard / admin 下架
-- [x] 单测 + format + typecheck；DEV_NOTE 记 bridge 端口 / 奖励口径
-
----
-
-
-### 插队任务：修复对话链接打开、去除预览卡片、多页简历预览与 PDF 导出截断
-
-目标：
-1. 对话中的链接（包括裸 URL）自动转为超链接，点击直接在默认浏览器中打开。
-2. 消息下方不再列出「在线预览」工件卡片，避免冗余。
-3. 解决多页简历在预览与 PDF 导出中因模板固定高度与 overflow: hidden 导致只显示 1 页被截断的问题。
-
-- [x] packages/app: markdown-view 支持裸 URL 自动转换为链接，并在容器层拦截点击调用 shell.openExternal 打开
-- [x] packages/app: Electron main 注册 setWindowOpenHandler 与 will-navigate 保障外链打开
-- [x] packages/app: 移除 create_resume_preview 的 emitArtifact 调用，并在 chat-message-bubble 过滤 resume-preview
-- [x] packages/website: 修改 template-base.module.css 将 height: 1123px; overflow: hidden; 改为 min-height: 1123px; 并增加分页保护样式
-- [x] packages/website: 在 templates.module.css 补充各项卡片的 break-inside: avoid; page-break-inside: avoid;
-- [x] 编写测试用例并全绿
-- [x] 代码格式化与构建校验
-
-
-> 已完成的插队任务（设置页三分组重构 / 腾讯校招内容降级 / Changelog 工作流 / Payload
-> 用户 API Key / Skill 目录 + Payload CMS / 腾讯校招内容落地 / Issue 11 首页移动端
-> LCP）的决策和约束已沉淀进 [DEV_NOTE.md](./DEV_NOTE.md)，不再保留勾选列表。
-
-### 插队任务：全仓依赖升级至最新版本（2026-09-07）
-
-目标：将根目录及 7 个子包（api / app / cms / cron / shared / ui / website）的所有外部依赖全部升级到 npm 最新版本（latest），消除 pnpm 10 告警，并通过全仓单测、类型检查和各子包构建验证。
-
-- [x] 迁移 `onlyBuiltDependencies` 到 `pnpm-workspace.yaml`，修复 pnpm 10 告警
-- [x] 关闭 packages/api 和 packages/website 中的 Cloudflare Worker `observability`（enabled: false）
-- [x] 对齐 dyqr#47：在 packages/website 与 packages/cms 的 open-next.config.ts 中将 `enableCacheInterception` 设为 `false`，并在卡片等 Link 上补充 `prefetch={false}` 防御
-- [x] 更新根目录及各子包 `package.json` 依赖版本
-- [x] 运行 `pnpm install` 更新 lockfile
-- [x] 运行 `pnpm format` 格式化代码与配置
-- [x] 运行 `pnpm -r test` 确保全包单测全部通过（365/365 pass）
-- [x] 运行各包 `typecheck` / `build` 确保编译构建无误（app / website / cms / api / opennext 全部通过）
 
 ### 插队任务：LLM 供给切换 OpenCode Go + TTS 端点（2026-08-27）
 
-目标：早期降成本——文字主力切 OpenCode Go 包月，GPT-5.6 升级档留 OpenAI；顺手建
-`/audio/tts` 用小米限免 TTS。决策与风险备忘见 DEV_NOTE「LLM 供给切换」章节。
-
-- [x] 共享定价表驱动上游 + 新五档模型表（deepseek-v4-flash 默认 / mimo-v2.5 语音 / gpt-5.6 三兄弟）
-- [x] `/llm/v1` 查表分流，Xiaomi completion 分支退役，新增 OPENCODE_GO_API_KEY secret 接线
-- [x] reasoning effort 可调（app 设置 低/中/高/极高，runtime 按端点形状注入）
-- [x] `POST /audio/tts` 端点 + 计费 + 桌面端消息「朗读」按钮
-- [x] 单测全绿（shared 85 / api 128 / app 128）+ format/typecheck/api dry-run 构建
-- [ ] **用户**：export OPENCODE_GO_API_KEY 后跑 `node scripts/opencode-go-probe.ts` 实探确认模型 id 与 tools/SSE 兼容性
+- [x] 定价表 / 分流 / TTS 端点 / 计费 / 朗读按钮（详见提交记录）
 - [ ] **用户**：`wrangler secret put OPENCODE_GO_API_KEY` + 部署 packages/api
-- [ ] `node scripts/api-smoke.ts --full`（带 MUICV_API_KEY）线上验证三路对话 + TTS 出声 + 扣账
+- [ ] `node scripts/api-smoke.ts --full` 线上验证三路对话 + TTS 出声 + 扣账
 
 ### 插队任务：多站点博客 CMS（taomenu / dyqr 共用 articles 集合）
 
-目标：muicv 的 Payload CMS 成为多个项目共用的博客后台。新增 `articles` 集合
-（site + locale + slug 复合唯一），与 muicv 自己的 `posts`（求职博文）互不影响。
-
-- [x] `packages/cms/collections/articles.ts`：site(muicv/dyqr/taomenu) × locale(en/zh-CN/fr/es/pt/th/vi/ja) 枚举，复合唯一索引，drafts 版本化，匿名只读 published
-- [x] 迁移 `20260823_183718_add_articles_collection` + 集合测试
-- [x] seed 工具 `packages/cms/scripts/seed-blog-articles.ts`：拉 dyqr 公开 `/api/site-content` → 写入 articles（幂等，`--dry-run` 支持）；dry-run 实测 37 篇可导入
-- [x] dyqr 公开博客切到读 CMS（CMS 优先、本地 D1 存档兜底），见 dyqr 仓库 aa60840
-- [x] taomenu 新增博客列表/详情页 + 导航入口 + sitemap，数据源 CMS site=taomenu
+- [x] articles collection + migration + seed 工具 + dyqr/taomenu 接入
 - [ ] 用户在 Payload 后台建 API key 后跑 seed（`MUICV_CMS_API_KEY=xxx node packages/cms/scripts/seed-blog-articles.ts`）
 - [ ] `pnpm --filter @muicv/cms migrate` 应用迁移到生产 D1，然后部署 cms
 
 ### 插队任务：Pricing 缓存化 + 缓存栈补全 + 统计/IndexNow（issue #14 + #13）
 
-目标：中英文 Pricing 从每次完整 SSR 改为构建期静态化（动态数据走客户端 API），静态资源加 immutable 头，补 DO Queue 让时间型 ISR revalidation 真正生效；接入 IndexNow 提升 Bing 收录。
-
-- [x] `GET /api/pricing/state` 聚合登录态 / 订阅 / 币种 / CN cooldown（issue #14）
-- [x] PricingView 拆静态壳 + `_pricing-client.tsx` 客户端动态区，两个 pricing page 去掉 `force-dynamic`
-- [x] `CurrencyToggle` 加可选 `onSwitch`（dashboard 行为不变）
-- [x] website / cms `public/_headers`：`/_next/static/*` immutable
-- [x] website：regional cache + DO Queue + `enableCacheInterception`；cms：regional cache + interception
-- [x] IndexNow key 文件 + `scripts/indexnow-submit.ts`（issue #13）
-- [x] website / cms build + dev 手测通过
-- [x] 验收补充：/api/* 全局 no-store（next.config）；Pricing CDN 缓存规则评估后不做（见 DEV_NOTE）
+- [x] 全部代码层落地（见提交记录）
 - [ ] 部署 website + cms（DO migration 随部署应用）
 - [ ] 部署后 curl 验证 immutable 头 + 跑 indexnow 脚本 + 关闭两个 issue
 
 ### 插队任务：连接授权页简化
 
-目标：把浏览器授权页从“解释 API key / dashboard / callback”改成普通用户能立刻理解的“确认连接并回到桌面端继续”。
-
 - [ ] 默认视图只保留账号、连接对象和一个主按钮。
-- [ ] 授权成功后只提示“已连接”，把手动 key 复制作为问题排查兜底隐藏起来。
+- [ ] 授权成功后只提示"已连接"，把手动 key 复制作为问题排查兜底隐藏起来。
 - [ ] 保留安全与错误状态，不暴露不必要的底层概念。
 - [ ] 跑 website 构建验证。
 
 ### Phase 15：云同步隐私改造
 
-目标：用户对"上云"的信任成本降到最低——服务端默认看不到明文素材；用户对 GitHub 仓库可见性有完整控制权。威胁模型：防 muicv 自己脱库 / 内部员工偷看，不是防 AI provider。
-
-skill 端（已落地）：
-
-- [x] [skills/muicv-sync/SKILL.md](skills/muicv-sync/SKILL.md) 大改：
-  - [x] push 加 zip 加密分支（用户给密码 → `zip -e` 打包加密上传到 blob 端点；不给密码 → 走老明文 JSON）
-  - [x] pull 先探 blob 端点，404 fallback 明文端点；解压前向用户要密码
-  - [x] 文件类型从仅 `.md` 扩到 `.md` + 常见图片（`.jpg/.jpeg/.png/.webp/.gif/.svg`），`.pdf` 排除
-  - [x] 单库上限 1 MB → **50 MB**，文件数 500 → **1000**
-  - [x] 密码不持久化（不写文件 / env，bash 进程结束即丢；skill 报告里不回显字面值）
-- [x] [skills/muicv-git/SKILL.md](skills/muicv-git/SKILL.md) 小改：
-  - [x] init 流程加 public/private 询问步骤，去掉硬编码 `--private`
-  - [x] init 前加 >50 MB / >1000 文件软提醒，建议把大照片 / `versions/*.pdf` 塞 `.gitignore`
-
-服务端（packages/api + packages/website，已落地代码层）：
-
-- [x] R2 bucket binding `MUICV_RESUME_BLOB` —— [packages/api/wrangler.jsonc](packages/api/wrangler.jsonc) + [packages/website/wrangler.jsonc](packages/website/wrangler.jsonc) 各加一份
-- [x] D1 schema + migration —— [packages/website/lib/schema.ts:236-263](packages/website/lib/schema.ts:236) + [packages/website/migrations/0013_resume_snapshot_blob.sql](packages/website/migrations/0013_resume_snapshot_blob.sql)
-- [x] [packages/api/src/routes/resume-sync-blob.ts](packages/api/src/routes/resume-sync-blob.ts) —— 5 个 handler：push (multipart) / get / download / history / delete
-- [x] [packages/api/src/app.ts](packages/api/src/app.ts) 注册 5 个新路由
-- [x] [packages/shared/src/resume-sync.ts](packages/shared/src/resume-sync.ts) 加 `validateBlobSummary` + 4 个新常量；老明文上限 1 MB → 50 MB / 500 → 1000（仍仅 `.md`）
-- [x] [packages/api/test/routes.test.ts](packages/api/test/routes.test.ts) 加 11 个 blob 路径测试（68 全 pass）
-- [x] dashboard `/dashboard/sync` 加密版面板（活动版 + 历史 + 下载 / 删除 / 清空）—— [packages/website/app/(dashboard)/dashboard/sync/page.tsx](packages/website/app/(dashboard)/dashboard/sync/page.tsx) + [sync-actions.tsx](packages/website/app/(dashboard)/dashboard/sync/sync-actions.tsx)
-- [x] next.js 代理路由：`/api/resume/sync/blob` (DELETE 清空) / `[id]/download` (GET 下载) / `history/[id]` (DELETE 单条)
-
-部署前操作（用户自己跑）：
-
+- [x] skill 端（加密 zip / pull 探测 / 图片类型 / 50MB·1000 文件 / 密码不持久化）+ muicv-git init 询问 public/private
+- [x] 服务端（R2 binding / D1 0013 / blob 5 handler / dashboard 面板 / next 代理）
 - [x] R2 bucket `muicv` 已建好（公开域名 i.muicv.com）
 - [ ] `pnpm --filter @muicv/website db:migrate`（应用 0013_resume_snapshot_blob.sql 到 D1 生产库）
 - [ ] `pnpm --filter @muicv/api deploy` + `pnpm --filter @muicv/website deploy`（两个 worker 都要更新，因为都新增了 R2 binding）
-
-验证清单：加密 push/pull 端到端字节级一致；明文兜底走老路；照片场景；PDF 自动忽略；密码错给出友好提示且不重试；muicv-git 双路径 + 软提醒。
 
 ### Phase 16：姆伊品牌形象重制（暂缓）
 
@@ -289,13 +118,12 @@ skill 端（已落地）：
 
 产品方向：
 
-- 姆伊的核心气质是“安静、可靠、陪伴”，不是搞笑 mascot。
+- 姆伊的核心气质是"安静、可靠、陪伴"，不是搞笑 mascot。
 - 基础形象要保留图1里的大耳朵、白色鼻梁竖纹、暖金色毛发、趴着睡的松弛感。
 - 求职场景可以扩展为：叼来 `Offer`、旁边放简历、对话气泡、放大镜评审、空状态等待。
 - 小尺寸 icon 优先识别度；大尺寸场景图优先情感和产品语义。
 
 本轮结论：第一版矢量尝试不够好看，尤其需要避免脸部竖向过长；后续应先做视觉稿/多方案评审，再进入代码替换。
-
 
 ## 方向
 
@@ -303,13 +131,14 @@ skill 端（已落地）：
 AI agent（Claude Code / Codex / Cursor 等）里直接调用；简历素材作为 **Markdown + YAML
 frontmatter** 存在 `.claude/muicv/`，由用户用 git 自己管理。完整背景见 README.md。
 
-> 已完结的 Phase 13（muicv-interview + STT 集成）/ Phase 14（首次体验设计改版）
-> 决策与教训已沉淀到 [DEV_NOTE.md](./DEV_NOTE.md) 对应章节。
+> 已完结的 Phase 13（muicv-interview + STT 集成）/ Phase 14（首次体验设计改版）、Artifacts
+> 分栏常驻、biome lint 清零、扩展重做、岗位库匹配对话类型等历史任务的决策与教训已沉淀到
+> [DEV_NOTE.md](./DEV_NOTE.md) 对应章节。
 
 ## 下一步
 
 按 [TODO.md](./TODO.md)：
 
-- 云同步 skill（muicv 平台 / GitHub 双通道）— **server 端 + skill 端均已落地；Phase 15 在做加密改造（见上方）**
 - 成为面试官 skill（角色互换，让用户练习当面试官）
 - 入职辅导 / 理解保险 类职场辅导 skill
+- 多语言 /jobs
