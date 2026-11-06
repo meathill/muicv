@@ -1,5 +1,6 @@
 import {
   assertTemplateResumeData,
+  hasBilingualSide,
   isJsonTemplateId,
   isTemplateLang,
   JSON_TEMPLATE_IDS,
@@ -178,6 +179,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
         isOwner={isOwner}
         currentTemplate={record.template}
         templateOptions={[...JSON_TEMPLATE_IDS]}
+        currentLang={lang}
+        hasAltLang={hasBilingualSide(resume, lang === 'zh' ? 'en' : 'zh')}
       />
       <div className={styles.stage}>
         <div className={styles.stageInner}>

@@ -1,15 +1,18 @@
 import {
   assertTemplateResumeData,
   isJsonTemplateId,
-  type JSON_TEMPLATE_IDS,
+  JSON_TEMPLATE_IDS,
+  type JsonTemplateId,
+  TEMPLATE_META,
   type TemplateResumeData,
 } from '@muicv/shared';
 
-export type JsonTemplateId = (typeof JSON_TEMPLATE_IDS)[number];
+export type { JsonTemplateId };
 
 /**
  * 把 .resume.json 文本解析成 `{ resume, lang }`，供"在线预览 / 更换模板"按钮统一复用。
- * lang 取 JSON 顶层 `_lang` / `lang` 字段，缺省 `zh`；JSON 解析失败 / schema 不符返回 error。
+ * lang 取 JSON 顶层 `_lang`（旧扩展字段）/ `lang`（schema 一等字段），缺省 `zh`；
+ * JSON 解析失败 / schema 不符返回 error。
  */
 export function parseResumeJsonForPreview(
   content: string,
@@ -34,15 +37,10 @@ export function parseResumeJsonForPreview(
   return { ok: true, resume: parsed, lang };
 }
 
-/** 与 packages/website /r/render/[token]/templates/registry.ts 注册的 jsonTemplates 一一对应。 */
-export const TEMPLATE_LABELS: Record<JsonTemplateId, string> = {
-  't1-classic': 't1 · 经典衬线',
-  't2-minimal': 't2 · 极简瑞士',
-  't3-sidebar': 't3 · 左暗色栏',
-  't4-tech': 't4 · 技术向',
-  't5-timeline': 't5 · 时间线',
-  't6-academic': 't6 · 学术风',
-};
+/** 模板短名，单一来源 shared 的 TEMPLATE_META（原「改名要同时改桌面端」已收敛）。 */
+export const TEMPLATE_LABELS: Record<JsonTemplateId, string> = Object.fromEntries(
+  JSON_TEMPLATE_IDS.map((id) => [id, TEMPLATE_META[id].label]),
+) as Record<JsonTemplateId, string>;
 
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
 export const ALLOWED_PHOTO_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);

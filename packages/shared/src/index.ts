@@ -4,6 +4,7 @@ export * from './content-locales.ts';
 export * from './content-types.ts';
 export * from './domain/resume-json.ts';
 export * from './domain/sample-templates.ts';
+export * from './domain/template-meta.ts';
 export * from './domain/template-resume.ts';
 export * from './format.ts';
 export * from './hsm-client.ts';

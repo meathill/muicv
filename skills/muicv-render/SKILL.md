@@ -99,7 +99,8 @@ curl -X POST "${MUICV_API_BASE}/render" \
 - `template`：
   - A 路径默认 `default`
   - B 路径必传 `t1-classic` / `t2-minimal` / `t3-sidebar` / `t4-tech` / `t5-timeline` / `t6-academic` 之一
-- `lang`（B 路径可选）：`'zh'` 或 `'en'`，默认 `'zh'`
+- `lang`（B 路径可选）：`'zh'` 或 `'en'`。不传时服务端自动用 `resumeJson.lang`（生成端会写），
+  都没有才默认 `'zh'`——所以英文简历只要内容里写了 `lang: "en"`，不用额外传参
 - `accent`（B 路径可选）：覆盖模板默认主色，CSS 颜色字符串（如 `oklch(0.42 0.08 270)`）
 
 响应：

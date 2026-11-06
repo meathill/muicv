@@ -16,6 +16,14 @@ export default function T3Sidebar({ resume, lang, accent, slots }: T3Props) {
   const arr = (node: Parameters<typeof pickLang<string[]>>[0]) => pickLang<string[]>(node, lang) as string[];
   const altLang: TemplateLang = lang === 'zh' ? 'en' : 'zh';
   const altName = pickLang(d.name, altLang) as string;
+  // 空内容整体跳过区块（含标题），避免出现"有标题没内容"的空洞版式。
+  const hasContact = Boolean(
+    d.contact.location || d.contact.email || d.contact.phone || d.contact.web || d.contact.github,
+  );
+  const hasSkills =
+    (d.skills.design?.length ?? 0) > 0 ||
+    (d.skills.code?.length ?? 0) > 0 ||
+    (d.skills.research ? arr(d.skills.research).length > 0 : false);
 
   return (
     <TemplatePage className={styles.t3} accent={accent}>
@@ -36,63 +44,67 @@ export default function T3Sidebar({ resume, lang, accent, slots }: T3Props) {
         </h1>
         <div className={styles.t3__title}>{text(d.title)}</div>
 
-        <div className={styles.t3__sideSec}>
-          <div className={styles.t3__sideH}>{lang === 'en' ? 'Contact' : '联系方式'}</div>
-          <div className={styles.t3__contact}>
-            {d.contact.location ? (
-              <div>
-                <span className={styles.t3__contactLbl}>Loc</span>
-                <span>{text(d.contact.location)}</span>
+        {hasContact ? (
+          <div className={styles.t3__sideSec}>
+            <div className={styles.t3__sideH}>{lang === 'en' ? 'Contact' : '联系方式'}</div>
+            <div className={styles.t3__contact}>
+              {d.contact.location ? (
+                <div>
+                  <span className={styles.t3__contactLbl}>Loc</span>
+                  <span>{text(d.contact.location)}</span>
+                </div>
+              ) : null}
+              {d.contact.email ? (
+                <div>
+                  <span className={styles.t3__contactLbl}>Mail</span>
+                  <span>{d.contact.email}</span>
+                </div>
+              ) : null}
+              {d.contact.phone ? (
+                <div>
+                  <span className={styles.t3__contactLbl}>Tel</span>
+                  <span>{d.contact.phone}</span>
+                </div>
+              ) : null}
+              {d.contact.web ? (
+                <div>
+                  <span className={styles.t3__contactLbl}>Web</span>
+                  <span>{d.contact.web}</span>
+                </div>
+              ) : null}
+              {d.contact.github ? (
+                <div>
+                  <span className={styles.t3__contactLbl}>Git</span>
+                  <span>{d.contact.github}</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {hasSkills ? (
+          <div className={styles.t3__sideSec}>
+            <div className={styles.t3__sideH}>{lang === 'en' ? 'Skills' : '技能'}</div>
+            {d.skills.design && d.skills.design.length > 0 ? (
+              <div className={styles.t3__skillGroup}>
+                <div className={styles.t3__skillName}>{lang === 'en' ? 'Design' : '设计'}</div>
+                <div className={styles.t3__skillItems}>{d.skills.design.join(' · ')}</div>
               </div>
             ) : null}
-            {d.contact.email ? (
-              <div>
-                <span className={styles.t3__contactLbl}>Mail</span>
-                <span>{d.contact.email}</span>
+            {d.skills.code && d.skills.code.length > 0 ? (
+              <div className={styles.t3__skillGroup}>
+                <div className={styles.t3__skillName}>{lang === 'en' ? 'Engineering' : '工程'}</div>
+                <div className={styles.t3__skillItems}>{d.skills.code.join(' · ')}</div>
               </div>
             ) : null}
-            {d.contact.phone ? (
-              <div>
-                <span className={styles.t3__contactLbl}>Tel</span>
-                <span>{d.contact.phone}</span>
-              </div>
-            ) : null}
-            {d.contact.web ? (
-              <div>
-                <span className={styles.t3__contactLbl}>Web</span>
-                <span>{d.contact.web}</span>
-              </div>
-            ) : null}
-            {d.contact.github ? (
-              <div>
-                <span className={styles.t3__contactLbl}>Git</span>
-                <span>{d.contact.github}</span>
+            {d.skills.research ? (
+              <div className={styles.t3__skillGroup}>
+                <div className={styles.t3__skillName}>{lang === 'en' ? 'Research' : '研究'}</div>
+                <div className={styles.t3__skillItems}>{arr(d.skills.research).join(' · ')}</div>
               </div>
             ) : null}
           </div>
-        </div>
-
-        <div className={styles.t3__sideSec}>
-          <div className={styles.t3__sideH}>{lang === 'en' ? 'Skills' : '技能'}</div>
-          {d.skills.design && d.skills.design.length > 0 ? (
-            <div className={styles.t3__skillGroup}>
-              <div className={styles.t3__skillName}>{lang === 'en' ? 'Design' : '设计'}</div>
-              <div className={styles.t3__skillItems}>{d.skills.design.join(' · ')}</div>
-            </div>
-          ) : null}
-          {d.skills.code && d.skills.code.length > 0 ? (
-            <div className={styles.t3__skillGroup}>
-              <div className={styles.t3__skillName}>{lang === 'en' ? 'Engineering' : '工程'}</div>
-              <div className={styles.t3__skillItems}>{d.skills.code.join(' · ')}</div>
-            </div>
-          ) : null}
-          {d.skills.research ? (
-            <div className={styles.t3__skillGroup}>
-              <div className={styles.t3__skillName}>{lang === 'en' ? 'Research' : '研究'}</div>
-              <div className={styles.t3__skillItems}>{arr(d.skills.research).join(' · ')}</div>
-            </div>
-          ) : null}
-        </div>
+        ) : null}
 
         {d.languages && d.languages.length > 0 ? (
           <div className={styles.t3__sideSec}>
@@ -129,61 +141,67 @@ export default function T3Sidebar({ resume, lang, accent, slots }: T3Props) {
           <p className={styles.t3__summary}>{text(d.summary)}</p>
         </section>
 
-        <section className={styles.t3__section}>
-          <h2 className={styles.t3__h2}>{lang === 'en' ? 'Experience' : '工作经历'}</h2>
-          <div className={styles.t3__exp}>
-            {d.experience.map((e, i) => (
-              <div key={i}>
-                <div className={styles.t3__expHead}>
-                  <span className={styles.t3__expRole}>{text(e.role)}</span>
-                  <span className={styles.t3__expOrg}>{text(e.org)}</span>
-                  <span className={styles.t3__expMeta}>{e.period}</span>
-                </div>
-                <ul>
-                  {arr(e.bullets).map((b, j) => (
-                    <li key={j}>{b}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.t3__section}>
-          <h2 className={styles.t3__h2}>{lang === 'en' ? 'Education' : '教育背景'}</h2>
-          <div className={styles.t3__edu}>
-            {d.education.map((e, i) => (
-              <div key={i}>
-                <div className={styles.t3__eduRow}>
-                  <div>
-                    <b>{text(e.school)}</b>
-                    <span className={styles.t3__eduDeg}>{text(e.degree)}</span>
+        {d.experience.length > 0 ? (
+          <section className={styles.t3__section}>
+            <h2 className={styles.t3__h2}>{lang === 'en' ? 'Experience' : '工作经历'}</h2>
+            <div className={styles.t3__exp}>
+              {d.experience.map((e, i) => (
+                <div key={i}>
+                  <div className={styles.t3__expHead}>
+                    <span className={styles.t3__expRole}>{text(e.role)}</span>
+                    <span className={styles.t3__expOrg}>{text(e.org)}</span>
+                    <span className={styles.t3__expMeta}>{e.period}</span>
                   </div>
-                  <span className={styles.t3__eduMeta}>{e.period}</span>
+                  <ul>
+                    {arr(e.bullets).map((b, j) => (
+                      <li key={j}>{b}</li>
+                    ))}
+                  </ul>
                 </div>
-                {e.detail ? <div className={styles.t3__eduDetail}>{text(e.detail)}</div> : null}
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-        <section className={styles.t3__section}>
-          <h2 className={styles.t3__h2}>{lang === 'en' ? 'Selected Projects' : '代表项目'}</h2>
-          <div className={styles.t3__projects}>
-            {d.projects.slice(0, 2).map((pr, i) => (
-              <div key={i} className={styles.t3__projRow}>
-                <div className={styles.t3__projHead}>
-                  <div>
-                    <b>{text(pr.name)}</b>
-                    {pr.stack ? <span className={styles.t3__projStack}>{pr.stack}</span> : null}
+        {d.education.length > 0 ? (
+          <section className={styles.t3__section}>
+            <h2 className={styles.t3__h2}>{lang === 'en' ? 'Education' : '教育背景'}</h2>
+            <div className={styles.t3__edu}>
+              {d.education.map((e, i) => (
+                <div key={i}>
+                  <div className={styles.t3__eduRow}>
+                    <div>
+                      <b>{text(e.school)}</b>
+                      <span className={styles.t3__eduDeg}>{text(e.degree)}</span>
+                    </div>
+                    <span className={styles.t3__eduMeta}>{e.period}</span>
                   </div>
-                  {pr.period ? <span className={styles.t3__projPeriod}>{pr.period}</span> : null}
+                  {e.detail ? <div className={styles.t3__eduDetail}>{text(e.detail)}</div> : null}
                 </div>
-                <p className={styles.t3__projDesc}>{text(pr.desc)}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {d.projects.length > 0 ? (
+          <section className={styles.t3__section}>
+            <h2 className={styles.t3__h2}>{lang === 'en' ? 'Selected Projects' : '代表项目'}</h2>
+            <div className={styles.t3__projects}>
+              {d.projects.map((pr, i) => (
+                <div key={i} className={styles.t3__projRow}>
+                  <div className={styles.t3__projHead}>
+                    <div>
+                      <b>{text(pr.name)}</b>
+                      {pr.stack ? <span className={styles.t3__projStack}>{pr.stack}</span> : null}
+                    </div>
+                    {pr.period ? <span className={styles.t3__projPeriod}>{pr.period}</span> : null}
+                  </div>
+                  <p className={styles.t3__projDesc}>{text(pr.desc)}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </TemplatePage>
   );

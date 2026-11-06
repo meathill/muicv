@@ -1,5 +1,6 @@
 'use client';
 
+import { isJsonTemplateId, TEMPLATE_META, type TemplateLang, type TemplateMeta } from '@muicv/shared';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -16,9 +17,18 @@ export type PreviewToolbarProps = {
   currentTemplate: string;
   /** 可选模板列表（JSON_TEMPLATE_IDS）。 */
   templateOptions: string[];
+  /** 当前渲染语言（来自 D1，默认 zh）。 */
+  currentLang: TemplateLang;
+  /** 内容是否真双语（含另一种语言的字段）。true 且 owner 登录时显示语言切换器。 */
+  hasAltLang: boolean;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.muicv.com';
+
+/** currentTemplate 来自 D1，类型宽松；未知 id 原样展示。 */
+function templateMeta(id: string): TemplateMeta {
+  return isJsonTemplateId(id) ? TEMPLATE_META[id] : { label: id, tagline: '' };
+}
 
 /**
  * 精确到分钟。预览 TTL 较短，分钟级展示足够直观。
@@ -43,19 +53,6 @@ function formatExpiresLocal(ms: number): string {
   });
 }
 
-/**
- * 中文模板标签，跟桌面端 TemplateSelect 保持一致。
- * 改名要同时改桌面端 packages/app/src/renderer/components/preview-drawer.tsx。
- */
-const TEMPLATE_META: Record<string, { label: string; tagline: string }> = {
-  't1-classic': { label: 't1 经典', tagline: '深海军蓝 · 大公司 / 传统行业' },
-  't2-minimal': { label: 't2 极简', tagline: '瑞士留白 · 设计 / 产品' },
-  't3-sidebar': { label: 't3 双栏', tagline: '深绿侧栏 · 突出技能矩阵' },
-  't4-tech': { label: 't4 技术', tagline: '雾青 · 工程 / 开发岗' },
-  't5-timeline': { label: 't5 时间线', tagline: '靛蓝 · 经历较多' },
-  't6-academic': { label: 't6 学术', tagline: '墨红 · 学术 / 研究' },
-};
-
 export default function PreviewToolbar({
   token,
   shareUrl,
@@ -64,6 +61,8 @@ export default function PreviewToolbar({
   isOwner,
   currentTemplate,
   templateOptions,
+  currentLang,
+  hasAltLang,
 }: PreviewToolbarProps) {
   const router = useRouter();
   const [downloading, setDownloading] = useState(false);
@@ -74,6 +73,7 @@ export default function PreviewToolbar({
   const [shareSaving, setShareSaving] = useState(false);
   const [templateSaving, setTemplateSaving] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [langSaving, setLangSaving] = useState(false);
   // SSR-stable 文案，mount 后才切到本地时间格式，避免 toLocaleString hydration mismatch (#418)
   const [expiresStr, setExpiresStr] = useState(() => isoMinute(expiresAt));
   useEffect(() => {
@@ -174,6 +174,35 @@ export default function PreviewToolbar({
     [currentTemplate, router, templateSaving, token],
   );
 
+  /** 切换渲染语言。复用 template 端点（body 必须带 template），只改 lang 字段。 */
+  const handleLangChange = useCallback(
+    async (next: TemplateLang) => {
+      if (next === currentLang || langSaving) return;
+      setLangSaving(true);
+      try {
+        const res = await fetch(`/api/previews/${token}/template`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ template: currentTemplate, lang: next }),
+        });
+        if (res.status === 401) {
+          setToast('需要拥有者登录才能切换语言');
+          return;
+        }
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? `HTTP ${res.status}`);
+        }
+        router.refresh();
+      } catch (err) {
+        setToast(err instanceof Error ? err.message : String(err));
+      } finally {
+        setLangSaving(false);
+      }
+    },
+    [currentLang, currentTemplate, langSaving, router, token],
+  );
+
   const handleShareModeChange = useCallback(
     async (next: 'link' | 'public') => {
       if (next === shareMode || shareSaving) return;
@@ -210,7 +239,7 @@ export default function PreviewToolbar({
     setToast('已触发；如未唤起桌面 app，请在 app 内对 AI 说"以后默认用此模板"');
   }
 
-  const currentMeta = TEMPLATE_META[currentTemplate] ?? { label: currentTemplate, tagline: '' };
+  const currentMeta = templateMeta(currentTemplate);
 
   return (
     <div className={styles.toolbar}>
@@ -236,7 +265,7 @@ export default function PreviewToolbar({
           {templateOpen ? (
             <div className={styles.dropdownMenu} role="listbox">
               {templateOptions.map((id) => {
-                const meta = TEMPLATE_META[id] ?? { label: id, tagline: '' };
+                const meta = templateMeta(id);
                 const active = id === currentTemplate;
                 return (
                   <button
@@ -255,6 +284,28 @@ export default function PreviewToolbar({
             </div>
           ) : null}
         </div>
+        {isOwner && hasAltLang ? (
+          <div className={styles.segmented}>
+            <button
+              type="button"
+              className={`${styles.segmentedButton} ${currentLang === 'zh' ? styles.segmentedActive : ''}`}
+              disabled={langSaving}
+              onClick={() => void handleLangChange('zh')}
+              aria-pressed={currentLang === 'zh'}
+            >
+              中文
+            </button>
+            <button
+              type="button"
+              className={`${styles.segmentedButton} ${currentLang === 'en' ? styles.segmentedActive : ''}`}
+              disabled={langSaving}
+              onClick={() => void handleLangChange('en')}
+              aria-pressed={currentLang === 'en'}
+            >
+              EN
+            </button>
+          </div>
+        ) : null}
         {isOwner ? (
           <button
             type="button"

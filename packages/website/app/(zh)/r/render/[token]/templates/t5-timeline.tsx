@@ -16,6 +16,13 @@ export default function T5Timeline({ resume, lang, accent, slots }: T5Props) {
   const arr = (node: Parameters<typeof pickLang<string[]>>[0]) => pickLang<string[]>(node, lang) as string[];
   const altLang: TemplateLang = lang === 'zh' ? 'en' : 'zh';
   const altName = pickLang(d.name, altLang) as string;
+  // 空内容整体跳过区块（含标题），避免出现"有标题没内容"的空洞版式。
+  const hasTimeline = d.experience.length > 0 || d.education.length > 0;
+  const hasSkills =
+    (d.skills.design?.length ?? 0) > 0 ||
+    (d.skills.code?.length ?? 0) > 0 ||
+    (d.skills.research ? arr(d.skills.research).length > 0 : false) ||
+    (d.languages?.length ?? 0) > 0;
 
   return (
     <TemplatePage className={styles.t5} accent={accent}>
@@ -59,91 +66,99 @@ export default function T5Timeline({ resume, lang, accent, slots }: T5Props) {
         <p className={styles.t5__summary}>{text(d.summary)}</p>
       </section>
 
-      <section className={styles.t5__section}>
-        <h2 className={styles.t5__h2}>{lang === 'en' ? 'Career Timeline' : '经历时间线'}</h2>
-        <div className={styles.t5__rail}>
-          {d.experience.map((e, i) => (
-            <div key={i} className={styles.t5__node}>
-              <div className={styles.t5__expHead}>
-                <span className={styles.t5__expRole}>{text(e.role)}</span>
-                <span className={styles.t5__expOrg}>{text(e.org)}</span>
-                <span className={styles.t5__expMeta}>
-                  {e.period}
-                  {e.location ? `  ·  ${text(e.location)}` : ''}
-                </span>
-              </div>
-              <ul>
-                {arr(e.bullets).map((b, j) => (
-                  <li key={j}>{b}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-          {d.education.map((e, i) => (
-            <div key={`edu-${i}`} className={styles.t5__node}>
-              <div className={styles.t5__expHead}>
-                <span className={styles.t5__expRole}>{text(e.school)}</span>
-                <span className={styles.t5__expOrg}>{text(e.degree)}</span>
-                <span className={styles.t5__expMeta}>{e.period}</span>
-              </div>
-              {e.detail ? <div className={styles.t5__nodeDetail}>{text(e.detail)}</div> : null}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className={`${styles.t5__section} ${styles.t5__bottom}`}>
-        <div>
-          <h2 className={styles.t5__h2}>{lang === 'en' ? 'Projects' : '代表项目'}</h2>
-          <div className={styles.t5__projects}>
-            {d.projects.slice(0, 3).map((pr, i) => (
-              <div key={i} className={styles.t5__proj}>
-                <div className={styles.t5__projHead}>
-                  <div>
-                    <b>{text(pr.name)}</b>
-                    {pr.stack ? <span className={styles.t5__projStack}> {pr.stack}</span> : null}
-                  </div>
-                  {pr.period ? <span className={styles.t5__projPeriod}>{pr.period}</span> : null}
+      {hasTimeline ? (
+        <section className={styles.t5__section}>
+          <h2 className={styles.t5__h2}>{lang === 'en' ? 'Career Timeline' : '经历时间线'}</h2>
+          <div className={styles.t5__rail}>
+            {d.experience.map((e, i) => (
+              <div key={i} className={styles.t5__node}>
+                <div className={styles.t5__expHead}>
+                  <span className={styles.t5__expRole}>{text(e.role)}</span>
+                  <span className={styles.t5__expOrg}>{text(e.org)}</span>
+                  <span className={styles.t5__expMeta}>
+                    {e.period}
+                    {e.location ? `  ·  ${text(e.location)}` : ''}
+                  </span>
                 </div>
-                <p className={styles.t5__projDesc}>{text(pr.desc)}</p>
+                <ul>
+                  {arr(e.bullets).map((b, j) => (
+                    <li key={j}>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {d.education.map((e, i) => (
+              <div key={`edu-${i}`} className={styles.t5__node}>
+                <div className={styles.t5__expHead}>
+                  <span className={styles.t5__expRole}>{text(e.school)}</span>
+                  <span className={styles.t5__expOrg}>{text(e.degree)}</span>
+                  <span className={styles.t5__expMeta}>{e.period}</span>
+                </div>
+                {e.detail ? <div className={styles.t5__nodeDetail}>{text(e.detail)}</div> : null}
               </div>
             ))}
           </div>
-        </div>
-        <div>
-          <h2 className={styles.t5__h2}>{lang === 'en' ? 'Skills & Languages' : '技能与语言'}</h2>
-          <div className={styles.t5__skills}>
-            {d.skills.design && d.skills.design.length > 0 ? (
-              <div className={styles.t5__skillRow}>
-                <span className={styles.t5__skillLbl}>{lang === 'en' ? 'Design' : '设计'}</span>
-                <span className={styles.t5__skillItems}>{d.skills.design.join(' · ')}</span>
+        </section>
+      ) : null}
+
+      {d.projects.length > 0 || hasSkills ? (
+        <section className={`${styles.t5__section} ${styles.t5__bottom}`}>
+          {d.projects.length > 0 ? (
+            <div>
+              <h2 className={styles.t5__h2}>{lang === 'en' ? 'Projects' : '代表项目'}</h2>
+              <div className={styles.t5__projects}>
+                {d.projects.map((pr, i) => (
+                  <div key={i} className={styles.t5__proj}>
+                    <div className={styles.t5__projHead}>
+                      <div>
+                        <b>{text(pr.name)}</b>
+                        {pr.stack ? <span className={styles.t5__projStack}> {pr.stack}</span> : null}
+                      </div>
+                      {pr.period ? <span className={styles.t5__projPeriod}>{pr.period}</span> : null}
+                    </div>
+                    <p className={styles.t5__projDesc}>{text(pr.desc)}</p>
+                  </div>
+                ))}
               </div>
-            ) : null}
-            {d.skills.code && d.skills.code.length > 0 ? (
-              <div className={styles.t5__skillRow}>
-                <span className={styles.t5__skillLbl}>{lang === 'en' ? 'Code' : '工程'}</span>
-                <span className={styles.t5__skillItems}>{d.skills.code.join(' · ')}</span>
-              </div>
-            ) : null}
-            {d.skills.research ? (
-              <div className={styles.t5__skillRow}>
-                <span className={styles.t5__skillLbl}>{lang === 'en' ? 'Research' : '研究'}</span>
-                <span className={styles.t5__skillItems}>{arr(d.skills.research).join(' · ')}</span>
-              </div>
-            ) : null}
-          </div>
-          {d.languages && d.languages.length > 0 ? (
-            <div className={styles.t5__lang}>
-              {d.languages.map((lg, i) => (
-                <div key={i}>
-                  <span>{text(lg.name)}</span>
-                  <span className={styles.t5__lvl}>{text(lg.level)}</span>
-                </div>
-              ))}
             </div>
           ) : null}
-        </div>
-      </section>
+          {hasSkills ? (
+            <div>
+              <h2 className={styles.t5__h2}>{lang === 'en' ? 'Skills & Languages' : '技能与语言'}</h2>
+              <div className={styles.t5__skills}>
+                {d.skills.design && d.skills.design.length > 0 ? (
+                  <div className={styles.t5__skillRow}>
+                    <span className={styles.t5__skillLbl}>{lang === 'en' ? 'Design' : '设计'}</span>
+                    <span className={styles.t5__skillItems}>{d.skills.design.join(' · ')}</span>
+                  </div>
+                ) : null}
+                {d.skills.code && d.skills.code.length > 0 ? (
+                  <div className={styles.t5__skillRow}>
+                    <span className={styles.t5__skillLbl}>{lang === 'en' ? 'Code' : '工程'}</span>
+                    <span className={styles.t5__skillItems}>{d.skills.code.join(' · ')}</span>
+                  </div>
+                ) : null}
+                {d.skills.research ? (
+                  <div className={styles.t5__skillRow}>
+                    <span className={styles.t5__skillLbl}>{lang === 'en' ? 'Research' : '研究'}</span>
+                    <span className={styles.t5__skillItems}>{arr(d.skills.research).join(' · ')}</span>
+                  </div>
+                ) : null}
+              </div>
+              {d.languages && d.languages.length > 0 ? (
+                <div className={styles.t5__lang}>
+                  {d.languages.map((lg, i) => (
+                    <div key={i}>
+                      <span>{text(lg.name)}</span>
+                      <span className={styles.t5__lvl}>{text(lg.level)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
     </TemplatePage>
   );
 }

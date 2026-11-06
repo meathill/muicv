@@ -69,6 +69,17 @@ export async function renderPdf(input: RenderPdfInput, env: RenderPdfEnv): Promi
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle0', timeout: NAVIGATION_TIMEOUT_MS });
     await page.evaluateHandle('document.fonts.ready');
+    if (isJsonTemplate) {
+      // 等 FitToPage 测量并施加 zoom 后再出 PDF，否则截到排版前的页面。
+      // 表达式字符串形式：worker 环境 tsconfig 没有 DOM lib。
+      // 超时 / 脚本异常不阻塞出 PDF（页面按 zoom=1 渲染）。
+      await page
+        .waitForFunction("document.documentElement.dataset['fitDone'] === '1'", {
+          timeout: 10_000,
+          polling: 'raf',
+        })
+        .catch(() => {});
+    }
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,

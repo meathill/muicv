@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 
+import FitToPage from './fit-to-page';
 import baseStyles from './template-base.module.css';
 import TemplateFonts from './template-fonts';
 
@@ -14,19 +15,21 @@ export type TemplatePageProps = {
 };
 
 /**
- * 模板外层壳：注入 A4 尺寸 + 字体。
+ * 模板外层壳：注入 A4 尺寸 + 字体 + 自动排版。
  *
  * 跟 default 模板的 layout.tsx 平级使用——layout.module.css 把背景刷成纯白；
  * 这里 .page 再叠 794×1123 真实 A4 尺寸 + reset 元素样式。
+ * data-fit-root 是 FitToPage 的测量挂载点（default 模板不挂，不做自动排版）。
  */
 export function TemplatePage({ className, accent, children }: TemplatePageProps) {
   const style: CSSProperties | undefined = accent ? ({ ['--accent' as string]: accent } as CSSProperties) : undefined;
   return (
     <>
       <TemplateFonts />
-      <article className={`${baseStyles.page} ${className}`} style={style}>
+      <article className={`${baseStyles.page} ${className}`} style={style} data-fit-root>
         {children}
       </article>
+      <FitToPage />
     </>
   );
 }

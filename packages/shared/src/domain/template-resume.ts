@@ -47,6 +47,8 @@ export type TemplateResumePublication = {
   title: Bilingual;
   venue: string;
   authors: string;
+  /** 发表年份，如 "2024"；缺省时模板不渲染年份。 */
+  year?: string;
 };
 
 export type TemplateResumeSkills = {
@@ -67,6 +69,8 @@ export type TemplateResumeAward = {
 
 export type TemplateResumeData = {
   schemaVersion: 1;
+  /** 简历主语言，决定模板标题 / 排版语言；缺省按 'zh' 渲染。 */
+  lang?: TemplateLang;
   /** R2 上传后拿到的 https URL；空 / undefined 表示不渲染照片。 */
   photoUrl?: string;
   name: Bilingual;
@@ -161,6 +165,9 @@ export function assertTemplateResumeData(input: unknown): asserts input is Templ
   if (input.schemaVersion !== TEMPLATE_RESUME_SCHEMA_VERSION) {
     throw new TemplateResumeValidationError('$.schemaVersion', `必须是 ${TEMPLATE_RESUME_SCHEMA_VERSION}`);
   }
+  if (input.lang !== undefined && !isTemplateLang(input.lang)) {
+    throw new TemplateResumeValidationError('$.lang', '必须是 "zh" 或 "en"');
+  }
   assertBilingual(input.name, '$.name');
   assertBilingual(input.title, '$.title');
   assertOptionalBilingual(input.tagline, '$.tagline');
@@ -220,6 +227,9 @@ export function assertTemplateResumeData(input: unknown): asserts input is Templ
         throw new TemplateResumeValidationError(`$.publications[${i}].venue`, '应为 string');
       if (typeof p.authors !== 'string')
         throw new TemplateResumeValidationError(`$.publications[${i}].authors`, '应为 string');
+      if (p.year !== undefined && typeof p.year !== 'string') {
+        throw new TemplateResumeValidationError(`$.publications[${i}].year`, '应为 string');
+      }
     });
   }
 
@@ -255,6 +265,30 @@ export function assertTemplateResumeData(input: unknown): asserts input is Templ
 
 export function isTemplateLang(value: unknown): value is TemplateLang {
   return value === 'zh' || value === 'en';
+}
+
+/**
+ * 判断简历内容里是否真的写了某种语言（至少一个双语对象带该语言的边）。
+ * 单语字符串（如纯英文简历所有字段都是 string）不算——切换渲染语言只会改模板标题，内容不变。
+ * 用于预览页「中 / EN」切换器的显示判断。
+ */
+export function hasBilingualSide(data: TemplateResumeData, lang: TemplateLang): boolean {
+  const nodes: unknown[] = [
+    data.name,
+    data.title,
+    data.tagline,
+    data.contact.location,
+    data.summary,
+    ...data.experience.flatMap((e) => [e.org, e.role, e.location, e.bullets]),
+    ...data.education.flatMap((e) => [e.school, e.degree, e.detail]),
+    ...data.projects.flatMap((p) => [p.name, p.desc]),
+    ...(data.publications ?? []).map((p) => p.title),
+    data.skills.research,
+    ...(data.languages ?? []).flatMap((lg) => [lg.name, lg.level]),
+    ...(data.awards ?? []).map((a) => a.title),
+    data.interests,
+  ];
+  return nodes.some((n) => isObject(n) && typeof n[lang] !== 'undefined');
 }
 
 /** 模板 id 的字符串字面量集合 —— 给 API / 注册表共用。 */

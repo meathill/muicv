@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   assertTemplateResumeData,
+  hasBilingualSide,
   isJsonTemplateId,
   isTemplateId,
   isTemplateLang,
@@ -95,6 +96,60 @@ test('isTemplateLang', () => {
   assert.ok(isTemplateLang('zh'));
   assert.ok(isTemplateLang('en'));
   assert.equal(isTemplateLang('jp'), false);
+});
+
+test('assertTemplateResumeData: lang 合法值通过，非法值报错', () => {
+  assert.doesNotThrow(() => assertTemplateResumeData({ ...sample(), lang: 'en' }));
+  assert.doesNotThrow(() => assertTemplateResumeData(sample()));
+  assert.throws(() => assertTemplateResumeData({ ...sample(), lang: 'jp' }), /\$\.lang/);
+  assert.throws(() => assertTemplateResumeData({ ...sample(), lang: 1 }), /\$\.lang/);
+});
+
+test('assertTemplateResumeData: publication.year 必须为 string', () => {
+  const good = sample();
+  good.publications = [{ title: { zh: '论文' }, venue: 'CVPR', authors: 'A, B', year: '2024' }];
+  assert.doesNotThrow(() => assertTemplateResumeData(good));
+  const bad = sample();
+  bad.publications = [{ title: { zh: '论文' }, venue: 'CVPR', authors: 'A, B', year: 2024 }];
+  assert.throws(() => assertTemplateResumeData(bad), /year/);
+});
+
+test('hasBilingualSide: 双语对象带该语言边才为 true', () => {
+  const bilingual = sample();
+  assert.ok(hasBilingualSide(bilingual, 'zh'));
+  assert.ok(hasBilingualSide(bilingual, 'en'));
+});
+
+test('hasBilingualSide: 纯单语内容为 false（切换语言只改模板标题）', () => {
+  const mono: TemplateResumeData = {
+    schemaVersion: 1,
+    name: 'Ling Wei',
+    title: 'Product Designer',
+    contact: { email: 'a@b.com' },
+    summary: 'One line.',
+    experience: [{ org: 'Acme', role: 'Designer', period: '2024', bullets: ['x'] }],
+    education: [{ school: 'MIT', degree: 'BS', period: '2020-2024' }],
+    projects: [{ name: 'Project', desc: 'desc' }],
+    skills: { code: ['TS'] },
+  };
+  assert.equal(hasBilingualSide(mono, 'zh'), false);
+  assert.equal(hasBilingualSide(mono, 'en'), false);
+});
+
+test('hasBilingualSide: 只有 en 边时 zh 为 false', () => {
+  const mono: TemplateResumeData = {
+    schemaVersion: 1,
+    name: { en: 'Ling Wei' },
+    title: 'Product Designer',
+    contact: { email: 'a@b.com' },
+    summary: 'One line.',
+    experience: [{ org: 'Acme', role: 'Designer', period: '2024', bullets: ['x'] }],
+    education: [{ school: 'MIT', degree: 'BS', period: '2020-2024' }],
+    projects: [{ name: 'Project', desc: 'desc' }],
+    skills: { code: ['TS'] },
+  };
+  assert.equal(hasBilingualSide(mono, 'zh'), false);
+  assert.equal(hasBilingualSide(mono, 'en'), true);
 });
 
 test('schema version 常量与样本一致', () => {
