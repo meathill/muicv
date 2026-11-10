@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { EN_ROUTES, LOCALES, LOCALIZED_ROUTES, type Locale, localizedHref } from './_i18n/locale';
+import { EN_ROUTES, LOCALES, LOCALIZED_ROUTES, type Locale, localizedHref } from './_i18n/locale.ts';
 
 const SITE_URL = 'https://muicv.com';
 
@@ -50,11 +50,12 @@ export function pageMetadata({
   locale: Locale;
   /** 中文路径，如 '/about'；各语言 URL 由 localizedHref 推导。 */
   path: string;
-  title: string;
+  title: string | { absolute: string };
   description: string;
 }): Metadata {
   const canonical = localizedHref(locale, path);
   const languages = { ...alternateLanguages(path), 'x-default': path };
+  const plainTitle = typeof title === 'string' ? title : title.absolute;
   return {
     title,
     description,
@@ -63,12 +64,12 @@ export function pageMetadata({
       type: 'website',
       siteName: locale === 'zh' ? 'Mui简历' : 'MuiCV',
       url: `${SITE_URL}${canonical}`,
-      locale: locale === 'zh' ? 'zh_CN' : locale,
-      title,
+      locale: locale === 'zh' ? 'zh_CN' : locale === 'en' ? 'en_US' : locale,
+      title: plainTitle,
       description,
       images: [DEFAULT_OPEN_GRAPH_IMAGE],
     },
-    twitter: { card: 'summary_large_image', title, description, images: [DEFAULT_TWITTER_IMAGE] },
+    twitter: { card: 'summary_large_image', title: plainTitle, description, images: [DEFAULT_TWITTER_IMAGE] },
   };
 }
 

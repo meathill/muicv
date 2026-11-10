@@ -1,34 +1,21 @@
 import type { Metadata } from 'next';
 
 import { getDictionary } from '@/app/(zh)/(marketing)/_i18n/dict';
-import { DEFAULT_OPEN_GRAPH_IMAGE, DEFAULT_TWITTER_IMAGE } from '@/app/(zh)/(marketing)/_page-meta';
+import { pageMetadata } from '@/app/(zh)/(marketing)/_page-meta';
 import { DownloadView } from '@/app/(zh)/(marketing)/download/_view';
 
 export const revalidate = 300;
 
-const SITE_URL = 'https://muicv.com';
 const dict = getDictionary('en');
 const { title, description } = dict.meta.download;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  locale: 'en',
+  path: '/download',
   // 纯串 title，走 en layout 的 '%s · MuiCV' 模板。
   title,
   description,
-  alternates: {
-    canonical: '/en/download',
-    languages: { 'zh-CN': '/download', en: '/en/download', 'x-default': '/download' },
-  },
-  openGraph: {
-    type: 'website',
-    siteName: 'MuiCV',
-    url: `${SITE_URL}/en/download`,
-    locale: 'en_US',
-    title,
-    description,
-    images: [DEFAULT_OPEN_GRAPH_IMAGE],
-  },
-  twitter: { card: 'summary_large_image', title, description, images: [DEFAULT_TWITTER_IMAGE] },
-};
+});
 
 export default function EnDownloadPage() {
   return <DownloadView locale="en" />;

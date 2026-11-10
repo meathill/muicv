@@ -2,9 +2,20 @@
 
 长期开发知识沉淀。记录决策依据、踩坑、框架/基建知识，避免日后重复。
 
-最后更新：2026-09-13
+最后更新：2026-11-10
 
 ---
+
+## 营销页多语言 hreflang 与 metadata 架构（Issue #25）
+
+- **统一走 `pageMetadata`**：所有营销页（首页 `/`、`/download`、`/pricing`、`/about`、`/contact` 等）统一通过 `_page-meta.ts` 的 `pageMetadata` 生成元数据。禁止在任何单语言 page.tsx 内手写 `alternates.languages` 硬编码，避免新增语言时集合不对称、缺回链。
+- **`alternateLanguages(path)` 规则**：
+  - `LOCALIZED_ROUTES`（`/`, `/download`, `/pricing`, `/about`, `/contact`, `/posts`）：自动生成全部 9 种语言（`zh-CN`, `en`, `ja`, `de`, `fr`, `es`, `pt`, `th`, `vi`）+ `x-default`。
+  - `EN_ROUTES`（如 `/templates`）：仅生成 `zh-CN` 与 `en` 双语 + `x-default`，与实际译文存在性严格对齐，不指向 404。
+  - 单语页（如 `/changelog`、`/privacy`、`/terms`）：使用 `soloPageMetadata`，只声明 `canonical` 自指，不输出 `languages`，避免生成不存在的译文死链。
+- **自指与对称性**：
+  - 各语言页的 `alternates.canonical` 必须严格指向自身（如 `zh` 为 `/download`、`pt` 为 `/pt/download`）。
+  - `alternates.languages` 中对应语言的 URL 必须与 self-canonical 保持绝对一致，全集群内各语言页面产出的 `languages` 字典必须完全同构（100% 对称互指）。
 
 ## 浏览器扩展（任意页面提交岗位，2026-10-20 重做）
 

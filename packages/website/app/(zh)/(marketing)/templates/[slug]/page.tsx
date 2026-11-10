@@ -7,7 +7,7 @@ import { JsonLd } from '@/components/json-ld';
 
 import { MarketingShell } from '../../_content/marketing-shell';
 import { ArrowUpRight } from '../../_icons';
-import { soloPageMetadata } from '../../_page-meta';
+import { pageMetadata } from '../../_page-meta';
 import { TemplatePreviewViewer } from '../template-preview-viewer';
 
 export const revalidate = 604800;
@@ -25,7 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const template = getSampleTemplateBySlug(slug);
   if (!template) return {};
 
-  const baseMeta = soloPageMetadata({
+  const baseMeta = pageMetadata({
+    locale: 'zh',
     path: `/templates/${template.slug}`,
     title: template.seoTitle.zh,
     description: template.seoDescription.zh,
@@ -34,14 +35,6 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   return {
     ...baseMeta,
     keywords: template.atsKeywords,
-    alternates: {
-      canonical: `/templates/${template.slug}`,
-      languages: {
-        'zh-CN': `/templates/${template.slug}`,
-        en: `/en/templates/${template.slug}`,
-        'x-default': `/templates/${template.slug}`,
-      },
-    },
   };
 }
 

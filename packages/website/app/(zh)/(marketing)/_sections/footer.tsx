@@ -86,12 +86,7 @@ export function Footer({
               aria-label="Featured on Traffiklist"
             >
               {/* biome-ignore lint/performance/noImgElement: Traffiklist official badge is an external HTML image snippet. */}
-              <img
-                src="https://www.traffiklist.com/badge.svg"
-                alt="Featured on Traffiklist"
-                width={220}
-                height={56}
-              />
+              <img src="https://www.traffiklist.com/badge.svg" alt="Featured on Traffiklist" width={220} height={56} />
             </a>
           </div>
         </div>
