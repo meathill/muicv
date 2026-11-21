@@ -123,7 +123,8 @@ export default function PrivacyPage() {
             <Li>
               <strong>站点分析</strong>：我们使用 Google Analytics 4（gtag.js）做匿名站点分析，
               统计页面访问、来源、停留时长等聚合指标，并采集 LCP / CLS / INP 等 Web Vitals 性能指标。 我们开启 IP
-              匿名化，不上传可识别个人的内容。
+              匿名化，不上传可识别个人的内容。同时使用 Microsoft Clarity 记录匿名的页面热力图与交互回放，
+              帮助改进页面布局与易用性；采集内容默认做遮罩处理，不包含你输入的具体内容。
             </Li>
           </UL>
           <P>上述服务商均有自己的隐私政策与合规义务。我们会持续审核合作方，确保数据处理符合本政策与适用法律。</P>
@@ -137,6 +138,8 @@ export default function PrivacyPage() {
             <Li>
               <strong>分析 Cookie</strong>：Google Analytics 4 写入的 <code>_ga</code>、<code>_ga_*</code> 等 Cookie，
               用于区分访客、聚合访问数据。这些 Cookie 已开启 IP 匿名化，不与你的账户信息关联，也不用于跨站追踪或广告。
+              Microsoft Clarity 默认不写 Cookie，通过 <code>sessionStorage</code> / <code>localStorage</code>（
+              <code>_clck</code>、<code>_clsk</code>）区分匿名会话。
             </Li>
           </UL>
           <P>

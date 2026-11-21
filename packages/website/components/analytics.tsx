@@ -7,10 +7,12 @@ declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
     dataLayer?: unknown[];
+    clarity?: (...args: unknown[]) => void;
   }
 }
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID;
 
 export function trackEvent(name: string, params?: Record<string, unknown>): void {
   if (typeof window === 'undefined' || !GA_ID) return;
@@ -22,27 +24,41 @@ export function trackEvent(name: string, params?: Record<string, unknown>): void
 /**
  * 站点分析 + Web Vitals 上报。
  *
- * - 没有 NEXT_PUBLIC_GA_ID 时本组件返回 null，dev / preview 默认安静。
- * - gtag.js 等页面 load 后再加载，不和首页 LCP 抢网络 / 主线程。
+ * - 没有 NEXT_PUBLIC_GA_ID / NEXT_PUBLIC_CLARITY_ID 时对应脚本不渲染，dev / preview 默认安静。
+ * - gtag.js 等页面 load 后再加载，不和首页 LCP 抢网络 / 主线程；
+ *   Clarity 走内联注入 + 异步下载 tag 脚本，afterInteractive 即可。
  * - useReportWebVitals 把 LCP / CLS / INP / FCP / TTFB / FID 全部按 GA4 推荐方式发到
  *   "web-vitals" 事件，弥补 muicv.com 当前流量太小、CrUX 长期 No Data 的问题。
  */
 export function Analytics() {
   useReportWebVitals(reportWebVitalsToGtag);
 
-  if (!GA_ID) return null;
+  if (!GA_ID && !CLARITY_ID) return null;
 
   return (
     <>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
-      <Script id="gtag-init" strategy="afterInteractive">
-        {`window.dataLayer = window.dataLayer || [];
+      {GA_ID && (
+        <>
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
+          <Script id="gtag-init" strategy="afterInteractive">
+            {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 window.gtag = gtag;
 gtag('js', new Date());
 gtag('config', '${GA_ID}', { anonymize_ip: true });`}
-      </Script>
+          </Script>
+        </>
+      )}
+      {CLARITY_ID && <ClarityScript clarityId={CLARITY_ID} />}
     </>
+  );
+}
+
+function ClarityScript({ clarityId }: { clarityId: string }) {
+  return (
+    <Script id="clarity-init" strategy="afterInteractive">
+      {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "${clarityId}");`}
+    </Script>
   );
 }
 
