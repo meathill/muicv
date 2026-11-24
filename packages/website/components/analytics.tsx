@@ -59,7 +59,7 @@ function useClarityEvents() {
       if (!(target instanceof Element)) return;
       const anchor = target.closest('a');
       if (!anchor) return;
-      const name = classifyClick(anchor.getAttribute('href') ?? '', anchor.textContent ?? '');
+      const name = classifyClick(anchor.getAttribute('href') ?? '', window.location.pathname);
       if (name) trackClarityEvent(name);
     }
     document.addEventListener('click', onClick);
