@@ -1,7 +1,11 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import Script from 'next/script';
 import { useReportWebVitals } from 'next/web-vitals';
+import { useEffect } from 'react';
+
+import { classifyClick, isTemplateDetailPath } from '@/lib/clarity-events';
 
 declare global {
   interface Window {
@@ -22,6 +26,48 @@ export function trackEvent(name: string, params?: Record<string, unknown>): void
 }
 
 /**
+ * 上报 Clarity 自定义事件。Clarity 的 API events 会自动出现在面板 Smart events 列表，
+ * 不需要先在后台注册；没配置 CLARITY_ID 时静默跳过。
+ */
+export function trackClarityEvent(name: string): void {
+  if (typeof window === 'undefined' || !CLARITY_ID) return;
+  window.clarity?.('event', name);
+}
+
+/**
+ * 关键行为埋点（发给 Clarity）：
+ * - template_detail_view：进入 /templates/{slug} 模板详情页
+ * - apply_click：点击「套用制作」类按钮（跳转 /download）
+ * - download_click：其它下载入口点击
+ * - signup_click：点击注册入口
+ *
+ * 为什么用代码而不是 Clarity 后台的 Button clicks：后台自动检测只收录真实发生过的点击，
+ * 站点流量太小时列表为空，无法预先配置。事件名与分类规则见 lib/clarity-events.ts。
+ */
+function useClarityEvents() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!CLARITY_ID || !pathname) return;
+    if (isTemplateDetailPath(pathname)) trackClarityEvent('template_detail_view');
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!CLARITY_ID) return;
+    function onClick(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest('a');
+      if (!anchor) return;
+      const name = classifyClick(anchor.getAttribute('href') ?? '', anchor.textContent ?? '');
+      if (name) trackClarityEvent(name);
+    }
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
+}
+
+/**
  * 站点分析 + Web Vitals 上报。
  *
  * - 没有 NEXT_PUBLIC_GA_ID / NEXT_PUBLIC_CLARITY_ID 时对应脚本不渲染，dev / preview 默认安静。
@@ -32,6 +78,7 @@ export function trackEvent(name: string, params?: Record<string, unknown>): void
  */
 export function Analytics() {
   useReportWebVitals(reportWebVitalsToGtag);
+  useClarityEvents();
 
   if (!GA_ID && !CLARITY_ID) return null;
 
