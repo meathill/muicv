@@ -45,6 +45,7 @@
 - **Payload 独立 Worker，复用存储**：`packages/cms` 单独跑 `cms.muicv.com`，不嵌进 `packages/website`；D1 复用现有 `muicv`，R2 media 复用现有 `muicv` bucket；CMS 不启用 OpenNext ISR cache。
 - **CMS 数据分层**：`posts` 管 `/posts/<section>/<slug>`，`skillExtensions` 管 `/skills/<slug>` 和 app catalog，`changelog` 管产品更新，`media` 走 R2；Payload 自己维护表和 migration，不混入现有手写业务表。
 - **CMS build 期不用真实 binding**：`payload.config.ts` 在 `NEXT_PHASE='phase-production-build'` 时使用 runtime-only 占位 binding，避免 Next build 的多个 route worker 同时启动 Miniflare D1 造成 SQLite lock；运行时仍由 `getCloudflareContext()` 读取真实 D1/R2。
+- **`payload.config.ts` 不能用 `import.meta.dirname`**：Next/Turbopack 打包配置时 `import.meta.dirname` 是 `undefined`，`path.resolve(dirname, ...)` 会在 build 阶段抛 `The "paths[0]" argument must be of type string`，CMS 构建直接失败（bb73072 原生 ESM 重构踩过）。必须沿用 `path.dirname(fileURLToPath(import.meta.url))`；只在 Node 直跑的 scripts 里用 `import.meta.dirname` 则没问题。
 - **CMS admin 必须使用 Payload RootLayout**：`packages/cms/app/layout.tsx` 要包 `@payloadcms/next/layouts` 的 `RootLayout` 并传入 `handleServerFunctions` / `importMap`。普通 Next layout 会让 admin 的 `PageConfigProvider` 拿不到 `ConfigProvider`，`/admin/create-first-user` 会报 `Cannot destructure property 'config' ... as it is undefined`。
 - **CMS admin 必须导入官方 CSS**：同一个 layout 还要导入 `@payloadcms/next/css`。只依赖组件自身 bundle 会缺 `template-minimal`、主题变量、dashboard/login 基础布局，表现为 admin 能登录但像完全没加载 CSS。
 - **CMS importMap 要提交**：Payload 插件的客户端组件（例如 R2 的 `R2ClientUploadHandler`）必须在 `app/(payload)/admin/importMap.js` 里注册；空 importMap 会让 admin 页面 200 但前端空白。修改 Payload config / 插件 / 自定义 admin 组件后运行 `pnpm --filter @muicv/cms generate:importmap` 并提交生成文件。
@@ -61,7 +62,7 @@
 - **CMS 部署规范（严禁本地手动 deploy）**：必须通过 `git commit` + `git push` 触发远端 CI/CD 自动构建部署，不要在本地手动运行 `opennextjs-cloudflare deploy`。
 - **CMS 运行时 `PAYLOAD_SECRET` 提取**：在 Cloudflare Workers 环境下，Secret 仅注入到 `cloudflare.env`；顶层直接读取 `process.env.PAYLOAD_SECRET` 会退化为空字符串 `""`。在登录成功后调用 `jose` 库签名 JWT 时，0 长度密钥会抛出 WebCrypto `DOMException: Zero-length key is not supported` 进而触发 500。必须通过 `resolvePayloadSecret` 优先从 `cloudflare?.env.PAYLOAD_SECRET` 读取。
 - **CMS wrangler.jsonc 必须配置 `secrets.required`**：由于 Cloudflare Workers Builds CI 会执行 `pnpm run cf-typegen`（即 `wrangler types`）而远端构建环境无本地 `.dev.vars`，若未声明 `"secrets": { "required": ["PAYLOAD_SECRET"] }`，生成的 `CloudflareEnv` 接口将不含 `PAYLOAD_SECRET` 属性，导致 TypeScript 严格模式下编译报错（TS2345/TS2559）。
-- **CMS Observability 必须显式开启**：`packages/cms/wrangler.jsonc` 必须保持 `"observability": { "enabled": true }`，否则 Cloudflare 控制台将不会记录和展示任何请求与报错日志。
+- **Worker Observability 永久关闭（2026-11-26 决策）**：`packages/website`、`packages/api`、`packages/cms` 的 `wrangler.jsonc` 统一 `"observability": { "enabled": false }`，不要单独给某个 Worker 打开。线上排查临时用 `wrangler tail` 抓实时日志，需要留存的信息由业务侧自己落 D1 / R2。
 - **Payload 升级后需检查 D1 增量迁移**：当 Payload 或 `@payloadcms/*` 升级（如 3.88 -> 3.92）引入内置表结构变更时（例如 `users.reset_password_requested_at`、`media._objectkey`），D1 不会自动执行 DDL。必须用 `pnpm --filter @muicv/cms run migrate:create <name>` 生成迁移，并执行 `pnpm --filter @muicv/cms run migrate` 应用到生产 D1，否则登录或读写时 Drizzle 查询不存在的字段会引发 500。
 
 ### 博客多语言（locale 维度，2026-09）

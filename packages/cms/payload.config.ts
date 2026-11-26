@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { sqliteD1Adapter } from '@payloadcms/db-d1-sqlite';
@@ -16,7 +17,8 @@ import { Users } from './collections/users';
 import { migrations } from './migrations';
 import { resolvePayloadSecret } from './utilities/resolve-secret';
 
-const dirname = import.meta.dirname;
+// Next/Turbopack 打包 payload.config 时 import.meta.dirname 会是 undefined，只能用 fileURLToPath
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build';
 const cloudflare = isNextBuild ? null : await getCloudflareContext({ async: true });
